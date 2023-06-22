@@ -1,0 +1,5 @@
+*
+!UltimateApocalypse.module
+!/UltimateApocalypse_THB/data/attrib/
+!/UltimateApocalypse_THB/data/attrib/**
+
