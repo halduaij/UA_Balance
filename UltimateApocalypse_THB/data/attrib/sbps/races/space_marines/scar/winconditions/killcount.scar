@@ -1,0 +1,72 @@
+----------------------------------------------------------------------------------------------------------------
+-- Kill Ratio Wincondition
+--
+--	Destroy the enemies at a set number to win!
+--
+-- Created by Cylarne @ 2021
+
+import("ScarUtil.scar")
+import("WXPScarUtil.scar")
+
+function KillRatioInit()
+
+	-- wait 0.25 seconds...
+	Rule_AddInterval( KillRatio_Wincondition, 0.25 )
+	
+	-- Setup Kill Ratio
+	KillRatio_SetupScores()
+	
+	-- Setup the objective!
+	obj_table_killratio_wc = { title_id = 15777723, short_desc_id = 15777724, help_tip_id = 15777725 }
+	Objective_Add( obj_table_killratio_wc, 1 )
+end
+
+function KillRatio_SetupScores()
+
+	-- total number of players
+	local j = World_GetPlayerCount();	
+	
+	--Go through all players and assign these commands.
+	for i = 1, j
+	do
+		-- check if player has been annihilated
+		local player = World_GetPlayerAt(i-1);
+		
+		if not (WinWarning_Exists("Game_KillRatio_P"..i)) then
+			WinWarning_Add("Game_KillRatio_P"..i, player, "", "", "");
+		end
+	end
+
+	-- Assign random number of kills to achieve!
+	nKillCount_WC = World_GetRand(100, 2500) -- Kill between 100 and 2500 enemies!
+end
+
+function KillRatio_Wincondition()
+	
+	-- total number of players
+	local j = World_GetPlayerCount();	
+	
+	--Go through all players and assign these commands.
+	for i = 1, j
+	do
+		-- check if player has been annihilated
+		local player = World_GetPlayerAt(i-1);
+		
+		if (WinWarning_Exists("Game_KillRatio_P"..i)) then
+			local nkills = Stats_PlayerUnitsKilled(Player_GetID(player));
+			
+			WinWarning_SetText("Game_KillRatio_P"..i, "Player "..i .." # of Kills: "..nkills)
+			
+			if (nkills >= nKillCount_WC) then
+				World_SetTeamWin( player, "killcount")
+				World_SetGameOver()
+			end
+		end
+		
+	end
+	
+	-- check if only one team left -- if only one team left, they win and everybody else loses
+	Util_CheckOneTeamLeft("killcount");
+end
+
+Scar_AddInit(KillRatioInit)

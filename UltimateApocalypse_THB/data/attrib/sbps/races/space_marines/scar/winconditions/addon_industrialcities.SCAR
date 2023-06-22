@@ -1,0 +1,67 @@
+--industrialcities.scar
+--Created by: Lord Cylarne
+
+-----------------------------------------------------------------------------------------
+import("ScarUtil.scar")
+import("WXPScarUtil.scar")
+import("WCUtil.scar")
+
+
+function ICInit()
+
+	--Place cities around the map! Make neutral.
+	Rule_AddOneShot(ICPlaceCities,1)
+end
+
+
+Scar_AddInit(ICInit)
+
+function ICPlaceCities()
+
+	-- Compute all players
+	g_iPlayerCount = World_GetPlayerCount()
+	for iLoop1 = 0, g_iPlayerCount-1 do
+		
+		-- Spawn cities. Random of 4-8 per player
+		for iLoop2 = 1, World_GetRand(4, 8) do
+		
+			-- To start placement, we need a string for city placement and desired location
+			local s_citystring = "npc_urbancity"
+			local random_x = World_GetRand(-126,126)
+			local random_y = World_GetRand(-126,126)
+			local citypos = World_Pos(random_x,10,random_y)
+			
+			-- Spawn possible clumps of cities
+			for iLoop3 = 1, World_GetRand(1, 4) do
+				
+				-- Spawn entity at a valid placement on map
+				local newcity = ApocalypseRules_AdvancedSpawnEntity(World_GetPlayerAt(iLoop1), s_citystring, citypos)
+				Entity_SetWorldOwner(newcity) -- Set as neutral for capture
+				
+				-- Upgrade city with addons
+				if (World_GetRand(1, 100) <= 50) then -- 50% chance to upgrade city with this addon
+					Entity_ForceAddOn(newcity, "addon_urbancity_1")
+					if (World_GetRand(1, 100) <= 50) then -- 50% chance to upgrade city with this addon
+						Entity_ForceAddOn(newcity, "addon_urbancity_2")
+						if (World_GetRand(1, 100) <= 50) then -- 50% chance to upgrade city with this addon
+							Entity_ForceAddOn(newcity, "addon_urbancity_3")
+							if (World_GetRand(1, 100) <= 50) then -- 50% chance to upgrade city with this addon
+								Entity_ForceAddOn(newcity, "addon_urbancity_4")
+								if (World_GetRand(1, 100) <= 50) then -- 50% chance to upgrade city with this addon
+									Entity_ForceAddOn(newcity, "addon_urbancity_5")
+								end 
+							end 
+						end 
+					end 
+				end 
+				
+				-- Relocate to a new position for the spawning of another Urban City
+				random_y = random_y + World_GetRand(-15,15)
+				random_x = random_x + World_GetRand(-15,15)
+			end
+		end 
+	end
+
+end
+
+

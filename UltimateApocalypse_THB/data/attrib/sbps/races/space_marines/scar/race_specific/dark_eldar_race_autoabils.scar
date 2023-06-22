@@ -1,0 +1,36 @@
+-- Abilities must be placed in descending order by range (the second parameter)
+
+-- AbilsThem are abilities used against enemy targets
+AutoAbilsSettings.AbilsThem["dark_eldar_race"] =
+{
+	{ "dark_eldar_stinger", 40 },
+	{ "dark_eldar_short_circuit", 30 },
+	{ "dark_eldar_horrorfex", 30},
+	{ "dark_eldar_animus_vitae", 30 },
+	{ "dark_eldar_crucible", 30 },
+	{ "dark_eldar_crucible_haemonculus", 30 },
+	{ "dark_eldar_terrorfex_grenade", 25},
+	{ "dark_eldar_horrorfex_grenade", 25},
+	{ "dark_eldar_darklance_sweep", 25 },
+	{ "dark_eldar_darklance_sweep2", 25 },
+	{ "dark_eldar_darklance_sweep_targeting", 25 },
+	{ "dark_eldar_tracking_device", 20 },
+	{ "dark_eldar_haywire_bombs_archon", 18},
+	{ "dark_eldar_soul_leach", 15},
+	{ "dark_eldar_haywire_bombs_sp", 15},
+	{ "dark_eldar_haywire_bombs", 15},
+	{ "dark_eldar_torture_amp", 15},
+	{ "dark_eldar_wildfire", 20 },
+	{ "dark_eldar_soul_shock", 10 },
+	{ "dark_eldar_bombard_phoenix", 10},
+	{ "dark_eldar_torture_amp", 10}
+}
+
+-- AbilsUs are abilities used on self
+AutoAbilsSettings.AbilsUs["dark_eldar_race"] =
+{
+	{ "dark_eldar_combat_drugs", 20 },
+	{ "dark_eldar_combat_drugs_prisoner", 20 },
+	{ "dark_eldar_combat_drugs_wrack", 20 }
+
+}

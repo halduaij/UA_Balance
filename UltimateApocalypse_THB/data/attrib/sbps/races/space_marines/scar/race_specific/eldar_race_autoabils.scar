@@ -1,0 +1,32 @@
+-- Abilities must be placed in descending order by range (the second parameter)
+
+-- AbilsThem are abilities used against enemy targets
+AutoAbilsSettings.AbilsThem["eldar_race"] =
+{
+	{ "eldar_nightwing_strike", 65 },
+	{ "eldar_bombard", 50 },
+	{ "eldar_psychic_storm", 35 },
+	{ "eldar_entanglement", 30 },
+	{ "eldar_entanglement_advance_sp", 30 },
+	{ "eldar_entanglement_farseer", 30 },
+	{ "eldar_mind_war", 30 },
+	{ "eldar_blind", 30 },
+	{ "eldar_plasma_grenades_2", 30 },
+	{ "eldar_plasma_grenades", 25 },
+	{ "eldar_wailing_doom", 25 },
+	{ "eldar_plasma_grenades_autarch", 25 },
+	{ "eldar_plasma_grenades_prisoner", 25 },
+	{ "eldar_haywire_bombs", 15 },
+	{ "eldar_haywire_bombs_2", 15 },
+	{ "eldar_haywire_bombs_advance_sp", 18 },
+	{ "eldar_mandiblaster_autarch", 10 },
+	{ "eldar_warshout", 10 },
+	{ "eldar_liquefy", 10 }
+}
+
+-- AbilsUs are abilities used on self
+AutoAbilsSettings.AbilsUs["eldar_race"] =
+{
+	{ "eldar_guide", 40 },
+	{ "eldar_avatar_wrath", 5 },
+}

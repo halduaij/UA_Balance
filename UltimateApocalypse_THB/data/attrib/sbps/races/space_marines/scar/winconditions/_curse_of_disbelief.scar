@@ -1,0 +1,516 @@
+-- THE CURSE OF DISBELIEF.scar
+-- Code created by Lord Cylarne @ 2021
+-- 
+-- Also known as the zombie apocalypse, survive for unlimited amount of days on the map of your choosing.
+-- Each day that passes gets tougher and tougher.
+
+-------------------------------------------------
+--[[ IMPORTS ]]
+-------------------------------------------------
+import("ScarUtil.scar")
+import("WXPScarUtil.scar")
+import("UA_SCARCore/K_04/AnnihilateExceptions.scar"); -- Code used from the annihilate.scar function.
+import("UA_SCARCore/UA_Survival/Survival_Blueprints.scar"); -- Import blueprints of the units used and structures
+import("UA_SCARCore/UA_CurseOfDisbelief/CoD_Day_Night_Cycle.scar"); -- Keeps track of the days and assigns misc properties to the game per day increment
+import("UA_SCARCore/UA_CurseOfDisbelief/CoD_Zombies.scar"); -- Imports Zombie properties
+import("UA_SCARCore/UA_CurseOfDisbelief/CoD_Civilians.scar"); -- Imports Civilian properties
+import("UA_SCARCore/UA_CurseOfDisbelief/CoD_Cities.scar"); -- Imports City properties
+import("UA_SCARCore/UA_CurseOfDisbelief/CoD_Objectives.scar"); -- Imports Objectives and World Events
+
+-------------------------------------------------
+--[[ ULTIMATE SURVIVAL ]]
+-------------------------------------------------
+
+--[[ TODO LIST:
+~~~~~~~~~~~~~~~~~~~~~~
+
+	-- Assign primary objective on screen. 
+		-- Capture a Strategic Point
+		-- Construct a Base
+		-- Defend your builder units
+		-- The Great Clump = CHECK
+	-- Assign secondary objectives day by day.
+	-- Kill count = CHECK
+	-- Setup beginning = CHECK
+	-- Setup defenders = CHECK
+		-- Resources = CHECK
+		-- No HQ = CHECK
+		-- Squads = CHECK
+		-- Starting units = CHECK
+		-- Starting zombies/civilians = CHECK
+	-- Setup difficulty = CHECK
+	-- Setup invaders = CHECK
+		-- Disable AI = CHECK
+	-- Day counter = CHECK
+		-- Day/Night Cycle
+	-- Code in the zombie = CHECK
+		-- Basic (npc_zombie, "chaos_plaguebearer_plaguesword") = CHECK
+		-- Plague Bearer (chaos_plague_bearer, "chaos_plaguebearer_plaguesword") = CHECK
+		-- Nurglings (daemon_nurgling, "daemons_nurgling_melee") = CHECK
+		-- Great Unclean One (chaos_guo, "chaos_guosword") = CHECK
+	-- Code in the cities = CHECK
+		-- With addons, building height = CHECK
+		-- Civilians can enter them, civilian groups from civilian slaughter = CHECK
+	-- Code in the civilian = CHECK
+		-- Civilians moving around the map randomly = CHECK
+		-- Uncontrollable = CHECK
+		-- Check bitten, convert to zombie = CHECK
+	-- Zombie tactics
+		-- Hunt civilians = CHECK
+		-- Move to attack in range on damaged/attack = CHECK
+		-- Horde of Zombies = CHECK
+		-- Reinforce zombies daily = CHECK
+		-- Repopulate daily = CHECK
+		-- Zombie Apocalypse = CHECK
+			-- With at end apocalypse zombie sound = CHECK
+		-- Zombies spawning = CHECK
+		-- Roam around = CHECK
+		-- Day by day modifiers = CHECK
+			-- Applied to plague bearers, guo as well = CHECK
+	-- Get Zombie Apocalypse.scar from my old, old mod. PORT IT OVER! = CHECK
+	-- Miscellaneous
+		-- Building convert on 20% health (survivor) = CHECK
+			-- Building covered in zombie muck = CHECK
+		-- Survivor death by zombie bite, convert to zombie
+		-- World gore = CHECK
+			-- World goop FX after day x = CHECK
+		-- Nurgling group up to build GUO = CHECK
+			-- Spawned after day 8 = CHECK
+			-- Warp Storm of world end = CHECK
+		-- Music = CHECK
+		-- Ambience = CHECK
+		-- Zombie Apocalypse horde start sound = CHECK
+		-- Curse Of Disbelief logo on screen
+	
+~~~~~~~~~~~~~~~~~~~~~~
+NOTES:
+~~~~~~~~~~~~~~~~~~~~~~
+	- LAG. Set an entity count limit for the zombies. If over, despawn and respawn when there are available entities to spawn at.
+	- LAG. Do not reinforce if entity count limit is reached. Set a number of times did not reinforce so the zombies can reinforce again until the limit is less than max.
+	- On respawn, if seen by player, jump unit to a new zombie group. ESPECIALLY with massive hordes.
+	- Too many fast zombies.
+	- Have the zombie hordes attack survivors outright on day 4 or difficulty 4+.
+	- Reinforce on day 3
+	- Fix the empty squad move to for civilian move
+	- "npc_squad_zombie" no unit strength
+	
+
+~~~~~~~~~~~~~~~~~~~~~~
+
+	Welcome to "Curse Of Disbelief". This is a scenario, it will be an exclusive wincondition with the main goal: Survive for unlimited days!
+	
+	Start from beginning. The player will start with only 100 requisition and 0 power. The player's resources will also be set to scarce volumes of income.
+The player will start with no HQ, a transport, two builder units, and two squads of basic infantry combatants. The player must capture and secure Strategic 
+Points to reinforce and build their base. But be warned, the zombies are everywhere! 
+
+	The first player found on the map will be by default set as the survivor. Any allies who are teamed up with the survivor will be fighting alongside the
+player against the horde of zombies. Any other team not with the survivor will be the zombies, The Curse Of Disbelief.
+
+	Primary Objectives will be assigned on screen so the player will know what to do. Extermination. Survive. Secondary objectives will also be assigned
+over time. The first secondary objective will be to capture all Strategic Points. Others will be assigned over time, like "rescue these civilians", 
+"escort this convoy", "secure this structure", "kill these zombies", etcetera. Completing these secondary objectives will supply awards.
+
+	Civilians are scattered about running away from all the zombies on the map. They're of course uncontrollable by the player. Civilian Cities will also be
+spawned throughout the map. The Civilians will slowly get eaten alive and turn into the zombies. As for the cities themselves, any captured will be claimed
+by the zombies for a spawn point.
+	
+	Each day that passes, the zombies will receive random buffs. Including: Health, speed, damage, immunity to poison (x1), immunity to health degeneration (x1),
+health regeneration, armor penetration, morale damage, sight increase, keen sight increase, etcetera. Each difficulty will allow the time to move forward faster,
+even onto night, where all vision is decreased and the zombies within the scenario will be harder to kill. There will be a random chance after day 3 that a 
+zombie horde will spawn to attack the survivors an announcement will be heard. 
+
+	Each day that passes as well, random "infected" unit(s) you have will turn into a zombie. Infected eg. damaged. That unit will be turned to the other side, 
+and transform themselves into the zombie. SO, make sure your units are all healed up! Each zombie on the map will reinforce their squad by amount depending on
+difficulty per day up to squad size of 30.
+
+	Zombies will mainly be stupid and idle. They will attack anything that engages them from 50 meters away. The distance increases as the days pass. From 50 to
+infinite. Zombies will casually spawn at any building they own if within range of the survivors. The buildings will be turned to them if the health of a structure
+falls below 50%. The structure turns to their side and will be given a plague effect. Buildings will be turned back again to your ownership once its health falls
+below 25%. As time goes on, eventually there will be even bigger zombies as well. Great Unclean Ones will be within the mix as a boss like unit. 
+Their damage will be effective only against infantry at first, but as time goes on, they can pierce any vehicle. And then... 30 days after the survival period, 
+there will be a random chance that a massively large zombie horde, the horde the size of a zombie apocalypse will spawn. This announcement will be HUGE and 
+there should be little chance to survive each.
+
+	Miscellaneous! Gas Clouds. Gas clouds will be randomly placed on the map and disappear for x amount of time. Units caught in gas clouds will at a chance 
+turn into zombies. Gas Clouds will also be permanently placed at all starting positions on the map. As for structures, zombies can capture 
+
+]]
+
+-------------------------------------------------
+--[[ GAME SETUP ]]
+-------------------------------------------------
+if (g_zombieapocalypse_doonce == nil) then
+	-- Global Variables
+
+	zombieapocalypse_g_day = 0; -- Tracks what day the player is on.
+	zombieapocalypse_g_daytimer = 400; -- Used for generic day timer.
+	zombieapocalypse_i_daytimer = 35; -- Used for ticking down the time; the current time of day.
+	zombieapocalypse_g_difficulty = 1; -- Used to set the difficulty of survival
+
+	-- Survival Variables
+
+	zombieapocalypse_g_defendingteam = nil; -- The defending team.
+	zombieapocalypse_g_invadingteam = nil; -- The invading team.
+	zombieapocalypse_g_hordecount = 30; -- The amount of units MAXIMUM invading the surviving player.
+	zombieapocalypse_m_assault = World_Pos(0,0,0) -- The position where the main invasion force are ordered to engage!
+	zombieapocalypse_alertradius = 50 -- The alert radius of a zombie
+	zombieapocalypse_hordephase = 0 -- The phase of the horde
+	
+	
+	-- Objective Variables
+	zombieapocalypse_m_clumpspawn = World_Pos(0,0,0) -- The position where the Great Unclean One will spawn
+	zombieapocalypse_g_clumprequired = 120 -- The amount of clumps required to spawn a Great Unclean One
+	zombieapocalypse_i_clumps = 0 -- The amount of clumps successfully forged together to make a Great Unclean One
+	
+	g_zombieapocalypse_doonce = 1; 
+	
+end
+
+-------------------------------------------------
+--[[ ON INITIALIZATION ]]
+-------------------------------------------------
+
+-- "Scar_AddInit(OnInit)" found at the bottom of the .scar script, initializing "function OnInit()"
+
+function CurseOfDisbelief()
+	
+	Rule_AddOneShot(ZombieApocalypse_BeginIntervalChecks, 10) -- Begin in 10 seconds
+	
+	-- Setup spawns
+	ZombieApocalypse_SetupPlayers() -- Setup the defenders and the attackers (primary level attackers)
+	--ZombieApocalypse_SetupCivilians() -- Setup Civilians onspawn
+	--ZombieApocalypse_SetupCities() -- Setup Cities onspawn
+	--ZombieApocalypse_SetupZombies() -- Setup Zombies onspawn
+	Rule_AddInterval(ZombieApocalypse_World_Taint, 1) -- Add a world environment
+	
+	Rule_AddOneShot(ZombieApocalypse_SetDifficulty, 1) -- Set difficulty
+	Rule_AddInterval(ZombieApocalypse_DayTracker, 1) -- Keep track of day progress
+	Rule_AddOneShot(ZombieApocalypse_Message1, 2) -- Spawn onscreen messages for player
+	Rule_AddOneShot(ZombieApocalypse_Objective_Killratio, 30) -- Set a kill count
+	
+	--Rule_AddOneShot(Test, 8)
+	--Rule_SetupMusicPlaylist()
+	--FOW_RevealAll()
+	
+	-- Fade
+	Fade_Start( 0, false )
+	W40k_Letterbox( true, 0 )
+	
+	-- Play starting sounds and soundtrack
+	Sound_Play("curseofdisbelief/we_are_the_apocalypse")
+	Sound_PlaylistClear(PC_Music)
+	Sound_PlaylistAddTrack(PC_Music, "music_chant_variant")
+	Sound_PlaylistAddTrack(PC_Music, "music_chant")
+	Sound_PlaylistAddTrack(PC_Music, "music_survival")
+	--Sound_PlaylistAddTrack(PC_Music, "music_survival_final")
+	Sound_PlaylistPlayNow(PC_Music, "music_chant_variant")
+end
+
+Scar_AddInit(CurseOfDisbelief)
+
+function ZombieApocalypse_BeginIntervalChecks()
+
+	Rule_AddInterval(ZombieApocalypse_StructureCheck, 6) -- Structure properties
+	Rule_AddInterval(ZombieApocalypse_ZombieTactics, 5) -- Do zombie tactics
+	Rule_AddInterval(ZombieApocalypse_ZombieNoiseAmbience, 597) -- Add zombie noise ambience
+	Rule_AddInterval(ZombieApocalypse_Move_Civilians, 7) -- Civilians move around 
+	Rule_AddInterval(ZombieApocalypse_CheckBitten_Civilians, 15) -- Civilians are bitten
+	
+end
+
+
+-------------------------------------------------
+--[[ Player Setup ]]
+-------------------------------------------------
+
+function ZombieApocalypse_SetupPlayers()
+	
+	--zombieapocalypse_g_defendingteam = nil; -- The defending team.
+	--zombieapocalypse_g_invadingteam = nil; -- The invading team.
+	
+	zombieapocalypse_g_defendingplayers = {
+		
+	}
+	zombieapocalypse_g_invadingplayers = {
+		
+	}
+		
+	-- Find the first player, assign as defending team
+	local count = World_GetPlayerCount()
+	for j = 0, count-1 do
+		local Player = World_GetPlayerAt(j);
+	
+		-- Add player to team list
+		if (zombieapocalypse_g_defendingteam == nil) then
+			if (ZombieApocalypse_CheckIsPlayer(Player)) then
+				ZombieApocalypse_SetAsPlayer(Player)
+				zombieapocalypse_m_assault = Player_GetStartPosition(Player) -- Initiate this here as we need a way to attack yet
+				zombieapocalypse_g_defendingteam = Player_GetTeam(Player)
+			end
+		end 
+	end
+		
+	-- Add player to defender list and invaders to invader list + Level tracker
+	local count = World_GetPlayerCount();
+	for j = 0, count-1 do
+		local player = World_GetPlayerAt(j);
+		
+		-- Setup on screen level counter for player
+		if not WinWarning_Exists("Game_Day") then
+			WinWarning_Add("Game_Day", player, "", "", "");
+			--Rule_AddInterval(ZombieApocalypse_DayTracker, 1)
+		end
+		
+		-- Add AI as invader
+		if (not ZombieApocalypse_IsDefender(player)) then
+			ZombieApocalypse_SetAsInvader(player)
+			ZombieApocalypse_SetupZombies(player) -- Setup Zombies onspawn
+			ZombieApocalypse_SetupCities(player) -- Setup Cities onspawn
+			
+		else
+			ZombieApocalypse_SetAsDefender(player)
+			ZombieApocalypse_SetupCivilians(player) -- Setup Civilians onspawn
+			--ZombieApocalypse_SetupCities(player) -- Setup Cities onspawn
+		end
+	end
+	
+end
+
+function ZombieApocalypse_SetAsPlayer(f_player)
+
+	-- Set defending team as player's team
+	
+	zombieapocalypse_g_defendingplayer = f_player
+	
+	--ZombieApocalypse_SetupPlayerStart(f_player)
+	
+	
+end
+
+function ZombieApocalypse_SetAsDefender(f_player)
+
+	-- Sets this player as a defender
+	--zombieapocalypse_g_defendingteam = Player_GetTeam(Player) -- Player is called as defending team before this is initiated!
+	zombieapocalypse_g_defendingplayers[table.getn(zombieapocalypse_g_defendingplayers)] = f_player
+	
+	-- Setup resources for player
+	if (Player_GetRaceName(f_player) == "necron_race") then
+		Player_SetResource(f_player, RT_Power, 200)
+	else
+		Player_SetResource(f_player, RT_Power, 0)
+		Player_SetResource(f_player, RT_Requisition, 200)
+	end
+	
+	-- And its rates
+	local iRates = (6 - zombieapocalypse_g_difficulty) / 6
+	local oModPower = Modifier_Create(MAT_Player, "income_power_player_modifier", MUT_Multiplication, false, iRates, "")
+	local oModRequisition = Modifier_Create(MAT_Player, "income_requisition_player_modifier", MUT_Multiplication, false, iRates, "")
+	Modifier_ApplyToPlayer(oModPower, f_player)
+	Modifier_ApplyToPlayer(oModRequisition, f_player)
+	
+	ZombieApocalypse_SetupPlayerStart(f_player)
+end
+
+function ZombieApocalypse_SetAsInvader(f_player)
+
+	-- Sets this player as an invader (the zombie)
+	zombieapocalypse_g_invadingteam = Player_GetTeam(f_player)
+	zombieapocalypse_g_invadingplayers[table.getn(zombieapocalypse_g_invadingplayers)] = f_player
+	
+	-- Initiate starting units for invader
+	ZombieApocalypse_SetupInvaderStart(f_player)
+	
+	Player_SetResource(f_player, RT_Power, 10000)
+	Player_SetResource(f_player, RT_Requisition, 10000)
+	
+	Cpu_Enable(f_player, false) -- Always disable Attacker ai. The ai will be enabled for them during the final level.
+end
+
+function ZombieApocalypse_GetDefender(f_slot)
+	-- Returns a defender from the defending player slots
+	if (zombieapocalypse_g_defendingplayers[f_slot-1] ~= nil) then
+		return zombieapocalypse_g_defendingplayers[f_slot-1]
+	end
+	
+	return zombieapocalypse_g_defendingplayers[0]
+end
+
+function ZombieApocalypse_GetInvader(f_slot)
+	-- Returns an invader from the invading player slots
+	if (zombieapocalypse_g_invadingplayers[f_slot-1] ~= nil) then
+		return zombieapocalypse_g_invadingplayers[f_slot-1]
+	end
+	
+	return zombieapocalypse_g_invadingplayers[0]
+end
+
+
+function ZombieApocalypse_CheckIsPlayer( player )
+	local name = Player_GetDisplayName(player)[1]
+	if string.len(name) < 3 then return true end
+	name = string.sub(name, -2)
+	if( name == " 1" or name == " 2" or name == " 3" or name == " 4" or name == " 5" or name == " 6" or name == " 7" or name == " 8") then
+		return false
+	else
+		return true
+	end
+end
+
+function ZombieApocalypse_IsDefender( player )
+	
+	-- Check to see if "player" is a defender or not
+	if (zombieapocalypse_g_defendingteam >= 0 and Player_GetTeam(player) == zombieapocalypse_g_defendingteam) then
+		return true
+	end
+	
+	return false
+end 
+
+-------------------------------------------------
+--[[ Difficulty Settings ]] -- Used for Curse Of Disbelief
+-------------------------------------------------
+
+function ZombieApocalypse_SetDifficulty()
+	
+	-- Scenario timers, higher the difficulty, decreased time.
+	if (Cpu_GetDifficulty(ZombieApocalypse_GetInvader(1)) == AD_Easy)then
+		-- f_difficulty, f_daytimer, f_hordecount
+		ZombieApocalypse_SetDifficulty_Execute(1, 300, 10, 500)
+	elseif (Cpu_GetDifficulty(ZombieApocalypse_GetInvader(1)) == AD_Standard)then
+		-- f_difficulty, f_daytimer, f_hordecount
+		ZombieApocalypse_SetDifficulty_Execute(2, 300, 20, 300)
+	elseif (Cpu_GetDifficulty(ZombieApocalypse_GetInvader(1)) == AD_Hard)then
+		-- f_difficulty, f_daytimer, f_hordecount
+		ZombieApocalypse_SetDifficulty_Execute(3, 280, 25, 300)
+	elseif (Cpu_GetDifficulty(ZombieApocalypse_GetInvader(1)) == AD_Advanced)then
+		-- f_difficulty, f_daytimer, f_hordecount
+		ZombieApocalypse_SetDifficulty_Execute(4, 270, 25, 200)
+	elseif (Cpu_GetDifficulty(ZombieApocalypse_GetInvader(1)) == AD_Insane)then
+		-- f_difficulty, f_daytimer, f_hordecount
+		ZombieApocalypse_SetDifficulty_Execute(5, 180, 40, 100)
+	end
+	
+	-- Quickstart	
+	--if (Player_GetResource(ZombieApocalypse_GetInvader(1), RT_Power) >= 1000) then
+		
+	--end
+end
+
+function ZombieApocalypse_SetDifficulty_Execute(f_difficulty, f_daytimer, f_hordecount, f_clumps)
+
+	-- Refer to comments on what each variable does above. ^^
+	zombieapocalypse_g_difficulty = f_difficulty;
+	zombieapocalypse_g_daytimer = f_daytimer;
+	zombieapocalypse_g_hordecount = f_hordecount;
+	zombieapocalypse_g_clumprequired = f_clumps
+end
+
+
+-------------------------------------------------
+--[[ Misc ]]
+-------------------------------------------------
+
+function ZombieApocalypse_Message1()
+
+	Util_MissionTitle("Ultimate Apocalypse: Curse Of Disbelief")
+	Rule_AddOneShot(ZombieApocalypse_Message2, 8)
+	
+end
+
+function ZombieApocalypse_Message2()
+
+	Util_MissionTitle("SCAR code created by Lord Cylarne.")
+	Rule_AddOneShot(ZombieApocalypse_Message3, 7)
+end
+
+function ZombieApocalypse_Message3()
+
+	Sound_Play("curseofdisbelief/Zombie_Sound_Effects_Humming")
+	Fade_Start( 11, true )
+	W40k_Letterbox( false, 11 )
+end
+
+function ZombieApocalypse_ZombieNoiseAmbience()
+
+	-- Play our ambience!
+	Sound_Play("curseofdisbelief/Zombie_Sound_Effects_Humming")
+	
+end
+
+function ZombieApocalypse_SetupPlayerStart(f_player)
+
+	-- Setup player, despawn hq and spawn starting squads + builders!
+	Player_GetAllEntitiesNearPos(f_player, "eg_destroy_player_entities", Player_GetStartPosition(f_player), 10) -- entities near start position
+	Player_GetAllSquadsNearPos(f_player, "sg_destroy_player_squad", Player_GetStartPosition(f_player), 10) -- squads near start position
+	EGroup_DeSpawn("eg_destroy_player_entities") -- despawn entities
+	SGroup_DeSpawn("sg_destroy_player_squad") -- despawn squads
+		
+	EGroup_DestroyAllEntities("eg_destroy_player_entities", true) -- destroy entities
+	SGroup_DestroyAllSquads("sg_destroy_player_squad", true) -- destroy squads
+	
+	-- Spawn builder units
+	local cominginpos = Player_GetStartPosition(f_player)
+	cominginpos = World_Pos(cominginpos.x + 5, cominginpos.y, cominginpos.z + 5)
+	Survival_SetPlayerBlueprints(f_player)
+	ZombieApocalypse_SpawnUnit(f_player, survival_squadunits_builder, 2, cominginpos, "sg_startingbuilders")
+	
+	-- Spawn squads to defend
+	ZombieApocalypse_SpawnUnit(f_player, survival_squadunits[1], 2, cominginpos, "sg_startingarmy1")
+	ZombieApocalypse_SpawnUnit(f_player, survival_squadunits[5], 1, cominginpos, "sg_startingarmy1")
+	--Cmd_AttackMovePos("sg_startingarmy1", World_Pos(Player_GetStartPosition(f_player).x + 5, Player_GetStartPosition(f_player).y, Player_GetStartPosition(f_player).z + 45))
+	
+end
+
+function ZombieApocalypse_SetupInvaderStart(f_player)
+
+	-- Setup player, despawn hq and spawn starting squads + builders!
+	Player_GetAllEntitiesNearPos(f_player, "eg_destroy_player_entities", Player_GetStartPosition(f_player), 10) -- entities near start position
+	Player_GetAllSquadsNearPos(f_player, "sg_destroy_player_squad", Player_GetStartPosition(f_player), 10) -- squads near start position
+	EGroup_DeSpawn("eg_destroy_player_entities") -- despawn entities
+	SGroup_DeSpawn("sg_destroy_player_squad") -- despawn squads
+		
+	EGroup_DestroyAllEntities("eg_destroy_player_entities", true) -- destroy entities
+	SGroup_DestroyAllSquads("sg_destroy_player_squad", true) -- destroy squads
+
+end
+
+-------------------------------------------------
+--[[ Grant Researches ]]
+-------------------------------------------------
+
+function ZombieApocalypse_GrantResearches()
+
+	-- Not used yet.
+	
+end
+
+function ZombieApocalypse_GetDistance(f_pos1, f_pos2)
+
+	-- Return the distance from our new setup values
+	local returndistance = 9999;
+	local returnx = f_pos1.x - f_pos2.x
+	local returnz = f_pos1.z - f_pos2.z
+	
+	-- If these values are negative, reverse the negative
+	if returnx < 0 then
+		returnx = returnx * -1
+	end
+	if returnz < 0 then
+		returnz = returnz * -1
+	end
+	
+	-- Return our distance value
+	returndistance = returnx + returnz
+	return returndistance
+end
+
+
+
+-------------------------------------------------
+--[[ TESTING STUFF ]] -- Used for testing the XP3 games for immediate results.
+-------------------------------------------------
+function Test()
+
+	print("Initiating tests")
+	
+end

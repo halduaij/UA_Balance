@@ -1,0 +1,230 @@
+-- Race-Specific Themes script
+-- Created by Kasrkin84 and Titlams
+-- Slightly Edited and tested by Gambit
+
+import("ScarUtil.scar")
+import("WXPScarUtil.scar")
+
+-- We add this global variable as a switch, so that other
+-- SCaR code (like the Change Players wincondition), to
+-- optionally integrate the Race-Specific Themes code.
+-- Once Race-Specific Themes is used, it takes the value
+-- of 1, else it has the nil value (as an undefined var).
+
+RaceSpecificAudioEnabledSwitch = 1
+	
+-----------------------------------------------
+-- 1] Put Race-specific Audio Tables here !! --
+-----------------------------------------------
+
+-------------- Vanilla Races --------------
+
+-- Chaos Marines
+t_music_chaos_marine_race = {
+	"music_coming_of_chaos",
+	"music_chant",
+	"mu_ig_vic_chaos",
+	"mu_ig_str_chaos_perc_voice",
+	"music_theme_chaos_01"
+	}
+
+-- Dark Eldar
+t_music_dark_eldar_race = {
+	"mu_ig_vic_darkeldar",
+	"mu_ig_str_darkeldar",
+	"MU_IG_RAC_darkeldar"
+	}
+
+-- Eldar
+t_music_eldar_race = {
+	"mu_ig_vic_eldar",
+	"MU_IG_STR_eldar",
+	"music_EldarTheme"
+	}
+
+-- Imperial Guard
+t_music_guard_race = {
+	"mu_ig_vic_guard",
+	"mu_ig_str_impgd",
+	"music_tank_march_edit",
+	"music_tank_march",
+	"music_imperial_guard_theme"
+	}
+
+-- Necrons
+t_music_necron_race = {
+	"mu_ig_vic_necron",
+	"music_necron_theme",
+	"mu_ig_str_necron",
+	"MU_IG_RAC_Necron",
+	"mu_ig_theme_nightbringer",
+	"music_necron_theme",
+	"music_necron_theme_perc",
+	"music_necron_theme_remix"
+	}
+
+-- Orks
+t_music_ork_race = {
+	"daorks",
+	"mu_ig_vic_ork",
+	"MU_IG_STR_Ork",
+	"music_ork_theme"
+	}
+
+-- Sisters of Battle
+t_music_sisters_race = {
+	"mu_ig_vic_sisters",
+	"mu_ig_str_sisters",
+	"MU_IG_RAC_sisters"
+	}
+	
+-- Space Marines
+t_music_space_marine_race = {
+	"mu_ig_vic_space_marine",
+	"mu_ig_str_spacemarine",
+	"music_theme_spacemarines_01"
+	}
+	
+-- Tau Empire
+t_music_tau_race = {
+	"mu_ig_vic_tau",
+	"mu_ig_str_tau",
+	"MU_IG_RAC_Tau",
+	"music_acid"
+	}
+
+-------------- Custom Races --------------
+
+-- Chaos Daemons
+t_music_daemons_race = {
+	"music_coming_of_chaos",
+	"music_chant",
+	"EpicScore",
+	"music_apocalypse_main",
+	"music_apocalypse_main_skirmish",
+	"music_coming_of_chaos",
+	"music_daemons_main",
+	"music_evil_armies",
+	"uamod_music6",
+	"music_daemons_main",
+	"music_daemons_main",
+	"Dark_Continent",
+	"Invasion of Chaos"
+	}
+
+-- Chaos Renegades
+t_music_renegade_guard_race = {
+	"music_coming_of_chaos",
+	"music_chant",
+	"Invasion of Chaos",
+	"Dark_Continent",
+	"Marshes of Untill_Traitor General ost",
+	"Lords_Of_Darkness"
+	}
+
+-- Inquisition Daemonhunters
+t_music_inquisition_daemonhunt_race = {
+	"idh_domus_astra_telepatica",
+	"ad_arma",
+	"Into_The_Shadows",
+	"music_coming_of_chaos",
+	"music_evil_isador_theme",
+	"music_invasion_theme",
+	"music_tank_march",
+	"music_urban_wasteland",
+	"music_warhammer40ktheme"
+	}
+
+-- Tyranids
+t_music_tyranids_race = {
+	"music_apocalypse_ambient",
+	"dow2_xeno_presence",
+	"dow2_xeno_scum",
+	"dow2_tyranids",
+	"uamod_music_2",
+	"uamod_music_3",
+	"uamod_music_6",
+	"uamod_music1",
+	}
+
+
+-------------------------------------------------------------------------------------------------
+
+-- This is the function that enables Race-Specific Audio.
+function RaceSpecificAudio()
+
+	local PlayerRaceName =  Player_GetRaceName(World_GetPlayerAt(Tut_GetLocalPlayerIndex()))
+
+	------------------------------------------
+	-- 2] These are the minimum and maximum --
+	-- silence times between themes (secs). --
+	------------------------------------------
+	local Min_Silence = 10
+	local Max_Silence = 30
+
+	-----------------------------------------
+	-- 3] Use common sense to insert a new --
+	-- race, copying the "elseifs" below.  --
+	-----------------------------------------
+	if PlayerRaceName == "chaos_marine_race" then
+		Sound_PlaylistClear( PC_Music )
+		print('Chaos Marines Audio Themes')
+		Playlist_Manager( PC_Music, t_music_chaos_marine_race, false, true, {Min_Silence, Max_Silence} )
+	elseif PlayerRaceName == "dark_eldar_race" then
+		Sound_PlaylistClear( PC_Music )
+		print('Dark Eldar Audio Themes')
+		Playlist_Manager( PC_Music, t_music_dark_eldar_race, false, true, {Min_Silence, Max_Silence} )
+	elseif PlayerRaceName == "eldar_race" then
+		Sound_PlaylistClear( PC_Music )
+		print('Eldar Audio Themes')
+		Playlist_Manager( PC_Music, t_music_eldar_race, false, true, {Min_Silence, Max_Silence} )
+	elseif PlayerRaceName == "guard_race" then
+		Sound_PlaylistClear( PC_Music )
+		print('Imperial Guard Audio Themes')
+		Playlist_Manager( PC_Music, t_music_guard_race, false, true, {Min_Silence, Max_Silence} )
+	elseif PlayerRaceName == "necron_race" then
+		Sound_PlaylistClear( PC_Music )
+		print('Necrons Audio Themes')
+		Playlist_Manager( PC_Music, t_music_necron_race, false, true, {Min_Silence, Max_Silence} )
+	elseif PlayerRaceName == "ork_race" then
+		Sound_PlaylistClear( PC_Music )
+		print('Orks Audio Themes')
+		Playlist_Manager( PC_Music, t_music_ork_race, false, true, {Min_Silence, Max_Silence} )
+	elseif PlayerRaceName == "sisters_race" then
+		Sound_PlaylistClear( PC_Music )
+		print('Sisters of Battle Audio Themes')
+		Playlist_Manager( PC_Music, t_music_sisters_race, false, true, {Min_Silence, Max_Silence} )
+	elseif PlayerRaceName == "space_marine_race" then
+		Sound_PlaylistClear( PC_Music )
+		print('Space Marines Audio Themes')
+		Playlist_Manager( PC_Music, t_music_space_marine_race, false, true, {Min_Silence, Max_Silence} )
+	elseif PlayerRaceName == "tau_race" then
+		Sound_PlaylistClear( PC_Music )
+		print('Tau Empire Audio Themes')
+		Playlist_Manager( PC_Music, t_music_tau_race, false, true, {Min_Silence, Max_Silence} )
+
+
+	elseif PlayerRaceName == "deamons_race" then
+		Sound_PlaylistClear( PC_Music )
+		print('Chaos Daemons Audio Themes')
+		Playlist_Manager( PC_Music, t_music_daemons_race, false, true, {Min_Silence, Max_Silence} )
+	elseif PlayerRaceName == "inquisition_daemonhunt_race" then
+		Sound_PlaylistClear( PC_Music )
+		print('Inquisition Daemonhunters Audio Themes')
+		Playlist_Manager( PC_Music, t_music_inquisition_daemonhunt_race, false, true, {10,30} )
+	elseif PlayerRaceName == "tyranids_race" or PlayerRaceName == "tyranid_race" then
+		Sound_PlaylistClear( PC_Music )
+		print('Tyranids Audio Themes')
+		Playlist_Manager( PC_Music, t_music_tyranids_race, false, true, {Min_Silence, Max_Silence} )
+	elseif PlayerRaceName == "renegade_guard_race" then
+		Sound_PlaylistClear( PC_Music )
+		print('Chaos Renegades Audio Themes')
+		Playlist_Manager( PC_Music, t_music_renegade_guard_race, false, true, {Min_Silence, Max_Silence} )
+	
+	end
+
+end
+
+
+Scar_AddInit(RaceSpecificAudio)
+Scar_AddLoad(RaceSpecificAudio)

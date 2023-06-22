@@ -1,0 +1,86 @@
+----------------------------------------------------------------------------------------------------------------
+-- Convoy Win Condtition (for all mod factions)
+-- Created by Lord Cylarne @ 2021
+--
+--	Reach a destination with a slow moving convoy to win.
+
+import("ScarUtil.scar");
+
+function ConvoyEscortInit()
+
+	-- create global table
+	_ConvoyTransports = { }
+	
+	SetupPlayerConvoys()
+	Rule_AddInterval(CheckConvoyEscort, 2)
+	
+	obj_table_convoy = { title_id = 15777719, short_desc_id = 15777720, help_tip_id = 15777721 }
+	
+	Objective_Add( obj_table_convoy, 1 )
+
+end
+
+-- iterates through all players and gets their convoy units
+function SetupPlayerConvoys()
+	
+	-- Create a table of convoy positions to travel to.
+	--_ConvoyPosTable = {
+	
+	--}
+	-- get the commander squad for all players and place them in the commanders table.
+	local j = World_GetPlayerCount()
+	for i = 1, j
+	do
+		-- this player
+		local player = World_GetPlayerAt(i-1)
+		local playerRace = Player_GetRaceName(player)
+		local pos = Player_GetStartPosition( player )
+		
+		Util_CreateSquadsAtPosition(player, "sg_wincondition_convoy"..i, "npc_squad_convoy_transport", pos, 3)
+		--local modifier = Modifier_Create(MAT_Squad, "health_maximum_modifier", MUT_Multiplication, false, 3, "")
+		
+		--ModifierUtil_ApplyToSGroup("sg_wincondition_convoy"..i, modifier, true)
+		
+		--table.insert(_ConvoyPosTable, World_Pos(0,0,0)) -- Update, 10/14/21, Travel to center!
+	end
+	
+	-- Ping the center on the map
+	Ping_Position(World_Pos(0,0,0), true, "default")
+end
+
+function CheckConvoyEscort()
+
+	-- total number of players
+	local j = World_GetPlayerCount();	
+	
+	--check for annihilated convoys
+	for i = 1, j
+	do
+		-- check if player has been annihilated
+		local player = World_GetPlayerAt(i-1);
+	
+		--if the convoy is dead so are you
+		if( Player_IsAlive(player) ) then
+			local playerRace = Player_GetRaceName( player )
+			local entityfind = Player_GetAllSquadsNearPos(player, "_centerconvoywin", World_Pos(0,0,0), 25)
+			local bptable = Util_MakeBlueprintTable( "npc_squad_convoy_transport" )
+			
+			-- check that the convoy group contains a transport
+			if( SGroup_Count( "sg_wincondition_convoy"..i) < 1 ) then
+				Player_Kill( player )
+				
+			-- check that the convoy group reached the center, all of them.
+			elseif (SGroup_Exists("_centerconvoywin") and 
+				SGroup_ContainsBlueprints("_centerconvoywin", bptable, false) == true) then
+				World_SetTeamWin( player, "convoyescort")
+				World_SetGameOver()
+			end
+			
+		end
+	end
+		
+	-- check if only one team left -- if only one team left, they win and everybody else loses
+	Util_CheckOneTeamLeft("convoyescort");
+end
+
+Scar_AddInit(ConvoyEscortInit)

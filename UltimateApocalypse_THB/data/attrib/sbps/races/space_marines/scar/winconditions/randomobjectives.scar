@@ -1,0 +1,79 @@
+----------------------------------------------------------------------------------------------------------------
+-- Random Objectives Win Condtition
+--
+-- Player wins after achieving one of the following victories:
+--
+-- Assassinate
+-- Annihilate
+-- Exterminate
+-- Civilian Slaughter
+-- Sudden Death
+-- Take and Hold
+-- Control Area
+-- Economic
+-- Convoy Escort
+-- Killcount
+-- Destroy HQ
+-- 
+--
+-- (c) 2003 Relic Entertainment Inc.
+
+import("ScarUtil.scar")
+import("WCUtil.scar")
+
+function RandomObjectives()
+
+	-- Initiate the global random objectives variable across all winconditions
+	allobjectivesrandom = true
+	
+	-- Assign a random objective number to each player
+	local w = World_GetPlayerCount();	-- Get player count
+	
+	-- Go through and assign!!!
+	for p = 1, w do
+		local objectives_random = World_GetRand(1,11)
+		
+		-- 1 = Annihilate
+		if (objectives_random == 1) then
+			import("winconditions/annihilate.scar")
+		-- 2 = Exterminate
+		elseif (objectives_random == 2) then
+			import("winconditions/exterminate.scar")
+		-- 3 = DestroyHQ
+		elseif (objectives_random == 3) then
+			import("winconditions/destroyhq.scar")
+		-- 4 = Assassinate
+		elseif (objectives_random == 4) then
+			import("winconditions/assassinate.scar")
+		-- 5 = Civilian Slaughter -- Wait, where did this wincondition go??? I thought it existed at one point?
+		elseif (objectives_random == 5) then
+			import("winconditions/annihilate.scar")
+		-- 6 = Convoy Escort
+		elseif (objectives_random == 6) then
+			import("winconditions/convoyescort.scar")
+		-- 7 = Economic Victory
+		elseif (objectives_random == 7) then
+			import("winconditions/economicvictory.scar")
+		-- 8 = Kill count -- NOT YET IMPLEMENTED
+		elseif (objectives_random == 8) then
+			import("winconditions/annihilate.scar")
+		-- 9 = Control Area
+		elseif (objectives_random == 9) then
+			import("winconditions/controlarea.scar")
+		-- 10 = Take And Hold
+		elseif (objectives_random == 10) then
+			import("winconditions/strategicobjective.scar")
+		-- 11 = Sudden Death
+		elseif (objectives_random == 11) then
+			import("winconditions/suddendeath.scar")
+		end
+	end
+	
+end
+
+Scar_AddInit(RandomObjectives)
+
+
+
+--------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------

@@ -1,0 +1,20 @@
+-- Abilities must be placed in descending order by range (the second parameter)
+
+-- AbilsThem are abilities used against enemy targets
+AutoAbilsSettings.AbilsThem["sisters_race"] =
+{
+	{ "sisters_phosphor_grenades", 30},
+	{ "sisters_krak_grenades", 30 },
+	{ "sisters_ardent_flame", 25 },
+	{ "sisters_ardent_flame_arch_angel", 25 },
+	{ "sisters_ardent_flame_nunciate", 25 },
+	{ "sisters_holy_rage", 10 }
+}
+
+-- AbilsUs are abilities used on self
+AutoAbilsSettings.AbilsUs["sisters_race"] =
+{
+	{ "sisters_angelic_visage", 20 },
+	{ "sisters_holy_murder", 15 },
+	{ "sisters_conflagration", 15 },
+}

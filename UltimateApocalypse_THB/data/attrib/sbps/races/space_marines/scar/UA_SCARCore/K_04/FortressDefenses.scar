@@ -1,0 +1,158 @@
+-- List of all defenses and fortifications throughout all 1-oo races.
+t_fortress_list =
+{
+	Turrets =
+	{
+		--"chaos_listening_post",
+		"chaos_turret_bolter",
+		--"chaos_mine_field",
+		"chaos_shrine_khorne",
+		
+		--"dark_eldar_listening_post",
+		"dark_eldar_turret",
+		--"dark_eldar_mine_field",
+		
+		--"eldar_listening_post",
+		"eldar_support_platform_scatterlaser",
+		"eldar_support_platform_cannon_sp",
+		"eldar_support_platform_uberturret_sp_dxp3",
+		--"eldar_mine_field",
+		
+		--"guard_listening_post",
+		"guard_basilisk_magnus",
+		"guard_turret_heavy_bolter",
+		"guard_turret_antitank",
+		"guard_turret_missile_launcher_sp",
+		--"guard_mines",
+		
+		--"necron_listening_post",
+		"necron_turret",
+		"necron_turret_ai",
+		"necron_turret_battery",
+		"necron_turret_missile_sp",
+		--"necron_resurrection_beacon",
+		
+		"ork_boomy_platform",
+		--"ork_gork_totem",
+		"ork_waagh_banner_turret_sp",
+		"ork_waagh_banner_missile_sp",
+		"ork_burna_bomm",
+		--"ork_mine_field",
+		
+		--"sisters_listening_post",
+		"sisters_turret_flamer",
+		"sisters_turret_heavy_flamer",
+		--"sisters_mines",
+		
+		
+		--"space_marine_listening_post",
+		"space_marine_turret_bolter",
+		"space_marine_turret_missile_sp",
+		--"space_marine_mine_field",
+		
+		--"tau_listening_post",
+		"tau_turret",
+		"tau_turret_sp",
+		--"tau_mines",
+		--"tau_shield_generator",
+		
+		"tyranids_turret",
+		"tyranids_turret_bioacid",
+		--"tyranids_mines",
+		
+		--"inquisition_mines",
+		"inquisition_purification_decree",
+		"inquisition_turret_heavy_bolter",
+		"inquisition_infantry_bunker",
+		
+		--"daemon_listening_post",
+		"daemon_turret",
+		"daemon_turret_ai",
+		
+	},
+	
+	Walls =
+	{
+		"chaos_wall",
+		"dark_eldar_wall",
+		"guard_wall",
+		"guard_wall_fortified",
+		"ork_wall",
+		"necron_wall",
+		"sisters_wall",
+		"space_marine_wall",
+		"tau_wall",
+		"inquisition_wall",
+		
+		"space_marine_tanktrap",
+		"inquisition_tanktrap",
+		"sisters_tanktrap",
+		"ork_tanktrap",
+		"guard_tanktrap",
+		"chaos_tanktrap",
+	},
+	Turret_Weapons =
+	{
+		"chaos_heavy_bolter_turret",
+		"chaos_missile_turret",
+		"chaos_shrine_turret",
+		
+		"daemons_doombolt_turret",
+		"daemons_firebolt_turret",
+		
+		"dark_eldar_splinter_cannon_turret",
+		"dark_eldar_dark_lance_turret",
+		
+		"eldar_scatter_laser_support_platform",
+		"eldar_dcannon_support_platform",
+		"eldar_scatter_laser_support_platform_uber_sp_dxp3",
+		"eldar_dcannon_support_platform_uber",
+		"eldar_dcannon",
+		"eldar_shadow_weaver_support",
+		"eldar_vibrocannon_platform",
+		
+		"guard_heavy_bolter_turret",
+		"guard_punisher_cannon_turret",
+		"guard_missile_turret",
+		"guard_battle_cannon_turret",
+		"guard_plasma_cannon_turret",
+		"guard_earthshaker_cannon_turret",
+		"guard_volcano_cannon_turret",
+		"guard_emp_shot_turret",
+		
+		"inquisition_heavy_bolter_turret",
+		"inquisition_missile_turret",
+		"inquisition_missile_turret_improved",
+		
+		"necron_warrior_gauss_flayer_turret",
+		"necron_warrior_gauss_flayer_turret_2",
+		"necron_warrior_gauss_flayer_turret_3",
+		"necron_particle_whip_turret",
+		"necron_particle_accelerator_turret_structure",
+		
+		"ork_lobba_boomy_platform",
+		"ork_lobba_boomy_platform_improved",
+		"ork_lobba_boomy_platform_kaboom",
+		"ork_grot_bomb_turret",
+		"ork_shokk_cannon_turret",
+		"ork_zzzap_gun_turret",
+		
+		"sisters_inferno_cannon_turret",
+		"sisters_multi_melta_turret",
+		"sisters_inferno_cannon_conflagration",
+		"sisters_multi_melta_conflagration",
+		
+		"space_marine_heavy_bolter_turret",
+		"space_marine_missile_turret",
+		"space_marine_assault_cannon_listening_post",
+		"space_marine_lascannon_twin_turret",
+		
+		"tau_burst_cannon_tau_turret",
+		"tau_missile_pod_turret",
+		"tau_plasma_rifle_turret",
+		
+		"tyranids_turret_mine_launcher",
+		"tyranids_turret_mine_launcher_bioacid",
+		
+	},
+}

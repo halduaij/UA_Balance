@@ -1,0 +1,23 @@
+-- Abilities must be placed in descending order by range (the second parameter)
+
+-- AbilsThem are abilities used against enemy targets
+AutoAbilsSettings.AbilsThem["ork_race"] =
+{
+	{ "ork_wierdboy_zzzap_blast", 45 },
+	{ "ork_wierdboy_zzzap", 45 },
+	{ "ork_stikkbombs", 30 },
+	{ "ork_tankbusta_bomb", 30 },
+	{ "ork_wierdboy_frazzle", 25 },
+	{ "ork_stikkbombs_krak", 20 },
+	{ "ork_stikkbombs_kommandoz", 20 },
+	{ "ork_superstick_bomb", 15 },
+	{ "ork_superstick_bomb_mekboy", 15 }
+}
+
+AutoAbilsSettings.AbilsUs["ork_race"] =
+{
+	{ "ork_power_surge", 15 },
+	{ "ork_power_of_waagh", 15 },
+	{ "ork_waagh_charge", 15 },
+	{ "ork_fightin_juice", 14 }
+}

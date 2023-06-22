@@ -1,0 +1,592 @@
+-- Code created by Krronus 2011
+-- Edited by Cylarne_04 2011, 2012, 2021
+
+-------------------------------------------------
+--[[ IMPORTS ]]
+-------------------------------------------------
+import("ScarUtil.scar")
+import("WXPScarUtil.scar")
+import("UA_SCARCore/K_04/AnnihilateExceptions.scar"); -- Code used from the annihilate.scar function.
+import("UA_SCARCore/UA_Survival/Survival_Blueprints.scar"); -- Import blueprints of the units used and structures
+import("UA_SCARCore/UA_Survival/Survival_Bosses.scar"); -- Import bosses to kill
+--import("UA_SCARCore/UA_Survival/Survival_Objectives.scar"); -- Import objectives
+import("UA_SCARCore/UA_Survival/Survival_SGroup1.scar"); -- Main attackers charging allies
+import("UA_SCARCore/UA_Survival/Survival_SGroup2.scar"); -- Scout group
+import("UA_SCARCore/UA_Survival/Survival_SGroup3.scar"); -- Harrassment Group
+import("UA_SCARCore/UA_Survival/Survival_SGroup4.scar"); -- Forward Base army forces
+--import("winconditions/restrict_tieriii.scar");
+--import("winconditions/restrict_tieriv.scar");
+--import("winconditions/restrict_tierv.scar");
+
+-------------------------------------------------
+--[[ ULTIMATE SURVIVAL ]]
+-------------------------------------------------
+
+--[[ TODO LIST:
+~~~~~~~~~~~~~~~~~~~~~~
+
+	-- FIX WHY MY STUFF ISNT SPAWNING
+	- Invader location to defender location determination function
+	- Invader move army formation to defender location
+	- Invaders move forward function
+	- Set spawning units (defender) moving towards the starting invaders. Randomize start positions.
+	- Fix stuck squads
+	- Add fade and fade out
+	- Play war horn sound
+	- Setup squad 4, forces
+		- Defending forces spawning and moving into position
+		- Defending forces attacking
+	- Setup objectives
+		- Main
+		- Second main
+		- Third main
+		- Secondary
+		- Bosses
+	- Setup final
+	- Print logs
+
+~~~~~~~~~~~~~~~~~~~~~~
+
+	Welcome to "Ultimate Survival". This is a scenario, it will be an exclusive wincondition with the main goal: Survive for x duration!
+	
+	
+	Start from beginning. The player will be assigned the main objective, survive for x levels, x levels is determined by the difficulty. Difficulty also determines multiple other
+variables, like amount of levels, amount and scale of enemy frontline forces, amounts of units charging the player per level, use of artillery, amount of primary winconditions
+to survive, etcetera. 
+
+	On game start, the player will spawn with various amounts of basic ranged units and two vehicles to protect against the first assault of enemies. The first assault
+size of enemy squads is determined by difficulty. They will charge the player. The player also starts with no HQ and builder units building the HQ. Protect the builder units at all 
+costs! Allies will spawn as normal, unassaulted. All resource rates will be greatly reduced for all players! Tier 5 and nukes will be restricted.
+
+	Level 1 begins. Waves and waves of basic enemy units charges at the player and allies PER ENEMY PLAYER. Begins level enemy force spawning...
+	
+	Squad group 1 is the main wave. Squad group 2 is the scouts. They will actively patrol the map and mark any points on the map deemed unclaimed so squad group 4+ (groups of army
+forces) can setup their forward bases and begin frontline defenses. Scouts (Squad 2) will also uncapture and capture any valid Strategic Point, Relic, or Crit. Scouts will consist of 
+starting units and bikes. Scouts will also mark defender territory used for squad 4 to move in and take out if large enough. Minefields will be setup at these positions.
+
+	Squad group 3 will spawn later at level 4+ and will consist of transports that will also be created with units inside to be transported to random points of the map or directly to 
+the player base. They will attack move at random points of the map when idle long enough. On higher difficulties, minefields are constructed by enemy builder units at random parts of 
+the map. They will be accompanied by squads of units. Builder units that don't exist will respawn at starting point. They will build more minefields at rates depended on difficulty.
+	
+	After some time, squad group 4 comes into play. They will be occupied by x number of forces determined by difficulty. These forces will group together at a part of the map 
+fortifying themselves over time with squads (determined by level), forward bases, and even artillery! Builder units will travel to their position and construct an HQ and other defenses.
+They can become large in number and will attack once large enough determined by x amount of random squad size NOT DETERMINED BY DIFFICULTY. If left alone, they
+will become extremely dangerous! This will make players go out to attack occasionally instead of being idle. These forces will attack any opposition coming in close and uncapture/capture
+strategic points in their area. Finally, they will travel between safe zones and forward base territories until large enough to attack terrirotires with threats.
+Destroy them to complete a secondary objective and earn resources. Note: their army formations will be in a straight line forward from player start position guarding the base and 
+artillery.
+	
+
+	New random primary objectives are assigned in game time. Destroy HQ, do not lose your HQ! Annihilate, do not lose your production capabilities! Sudden Death, do not lose a 
+Strategic Point! Assassinate, do not lose your commander! Civilian Slaughter, do not lose your Civilians! Killcount, do not lose more than x units! Secondary objectives are also
+randomly assigned and if completed, will award resources or perhaps more! Convoy, escort the convoy to destination point! Killcount, kill x amount of units! Destroy relic unit! Destroy
+titan! Assassinate enemy Commander!
+
+	More primary and secondary objectives will be assigned over time, amount determined by difficulty.
+
+	Early stages of units, basic tier infantry will come at levels 1. Vehicles will spawn at level 3+. Heavy Elite infantry will spawn at level 6+. Relic units will spawn at levels 10+.
+Titans will spawn at levels 15+. Each level increase will spawn more units at greater sizes and with much tougher units on the battlefield. Each level increase might assign new primary
+objectives!
+
+	End stages. Nukes. Nuclear Missile Weapon Centers will become constructed as the final secondary objective. Destroy them. Mass amounts of titans will also spawn, and sometimes 
+ONLY titans! All enemy AI will activate. At the final wave, wave after wave of units will cease to hault and the player can finally win the game by surviving the final level. Tier 5 and
+nukes will be unlocked!
+
+]]
+
+-------------------------------------------------
+--[[ GAME SETUP ]]
+-------------------------------------------------
+if (survival_g_survival_doonce == nil) then
+	-- Global Variables
+
+	survival_g_level = 0; -- Tracks what level the player is on. Then reveals it in the right side of the screen for the player to see.
+	survival_g_level_max = 30; -- Maximum level for survival. Survive all levels to win the game!!!
+	survival_g_leveltimer = 120; -- Used for generic Survival timer.
+	survival_i_leveltimer = 0; -- Used for ticking down the time; the next level will begin when at 0, then reset to g_leveltimer.
+	survival_g_difficulty = 1; -- Used to set the difficulty of survival
+	survival_g_bossphase = 0; -- Counter used to keep track of how many bosses spawned!
+
+	-- Survival Variables
+
+	--survival_g_defendingplayers[World_GetPlayerCount()]; -- The defending team.
+	--survival_g_invadingplayers[World_GetPlayerCount()]; -- The invading team.
+	survival_g_defendingteam = nil; -- The defending team.
+	survival_g_invadingteam = nil; -- The invading team.
+	survival_g_armylevelcount = 30; -- The amount of units MAXIMUM invading the defending player.
+	survival_g_loadout = 15; -- Squad loadout, for Survival.
+	survival_g_reinforce = 999; -- Always reinforce.
+	survival_g_nuketimer = 425; -- Used for the nuke launch phase, approximate time to launch depending on difficulty.
+	survival_m_assault = World_Pos(0,0,0) -- The position where the main invasion force are ordered to engage!
+	
+	survival_invader_zones = 
+	{ 
+		pos_safepoints = { }, -- Backbase points used for the faction. May contain barracks, generators, and other special structures.
+		pos_threatareas = { }, -- DANGER ZONE! Defenders lurk here.
+		pos_forwardbase = { }, -- Forward base points used for squad 4. 
+	} 
+	
+	survival_g_survival_doonce = 1; 
+	
+end
+
+-------------------------------------------------
+--[[ ON INITIALIZATION ]]
+-------------------------------------------------
+
+-- "Scar_AddInit(OnInit)" found at the bottom of the .scar script, initializing "function OnInit()"
+
+function UltimateSurvival()
+	
+	--Rule_AddOneShot(Survival_Begin, 59) -- Begin survival in 59 seconds
+	Survival_SetupPlayers() -- Setup the defenders and the attackers (primary level attackers)
+	Rule_AddOneShot(Survival_SetDifficulty, 1) -- Set Survival difficulty
+	
+	Rule_AddOneShot(Test, 8)
+	--Rule_SetupMusicPlaylist()
+	
+	-- Fade
+	--Fade_Start( 0, false )
+	--W40k_Letterbox( true, 0 )
+	
+	Rule_AddOneShot(Survival_Message1, 2) -- Spawn onscreen messages for player
+	
+end
+
+function Survival_Begin()
+
+	Rule_AddInterval(Survival_StartAttacks, 3) -- Spawn wave after wave of enemy invaders
+	Rule_AddInterval(Survival_Bosses, 9) -- Spawn boss waves
+	--Rule_AddInterval(Survival_Scouts_Main, 7) -- Spawn scouts
+	--Rule_AddInterval(Survival_Harrassers_Main, 90) -- Spawn harrassers
+	--Rule_AddInterval(Survival_Forces_Main, 30) -- Spawn forces
+	Rule_AddInterval(Survival_CheckAttackersStuck, 90) -- Check if attackers are unable to move
+	Rule_AddInterval(Survival_DetermineAttackCoordinate, 60) -- Determine where attackers (invaders) are able to attack
+	Rule_AddInterval(Survival_LoopAttack, 10) -- Loop attack move every 10 seconds
+	Rule_AddInterval(Survival_LevelTracker, 1) -- Keep track of level progress
+	---Rule_AddInterval(KillRatio, 6)
+	---Rule_AddOneShot(Survival_ApplyObjectives, 0.2)
+	
+end
+
+
+-------------------------------------------------
+--[[ Player Setup ]]
+-------------------------------------------------
+
+function Survival_SetupPlayers()
+	
+	--survival_g_defendingteam = nil; -- The defending team.
+	--survival_g_invadingteam = nil; -- The invading team.
+	
+	survival_g_defendingplayers = {
+		
+	}
+	survival_g_invadingplayers = {
+		
+	}
+		
+	-- Find the first player, assign as defending team
+	local count = World_GetPlayerCount()
+	for j = 0, count-1 do
+		local Player = World_GetPlayerAt(j);
+	
+		-- Add player to team list
+		if (survival_g_defendingteam == nil) then
+			if (Survival_CheckIsPlayer(Player)) then
+				Survival_SetAsPlayer(Player)
+				survival_m_assault = Player_GetStartPosition(Player) -- Initiate this here as we need a way to attack yet
+				survival_g_defendingteam = Player_GetTeam(Player)
+			end
+		end 
+	end
+		
+	-- Add player to defender list and invaders to invader list + Level tracker
+	local count = World_GetPlayerCount();
+	for j = 0, count-1 do
+		local player = World_GetPlayerAt(j);
+		
+		-- Setup on screen level counter for player
+		if not WinWarning_Exists("Game_Level") then
+			WinWarning_Add("Game_Level", player, "", "", "");
+			--Rule_AddInterval(Survival_LevelTracker, 1)
+		end
+		
+		-- Add AI as invader
+		if (not Survival_IsDefender(player)) then
+			Survival_SetAsInvader(player)
+		else
+			Survival_SetAsDefender(player)
+		end
+	end
+	
+end
+
+function Survival_SetAsPlayer(f_player)
+
+	-- Set defending team as player's team
+	
+	survival_g_defendingplayer = f_player
+	
+	Survival_SetupPlayerStart(f_player)
+	
+	
+end
+
+function Survival_SetAsDefender(f_player)
+
+	-- Sets this player as a defender
+	--survival_g_defendingteam = Player_GetTeam(Player) -- Player is called as defending team before this is initiated!
+	survival_g_defendingplayers[table.getn(survival_g_defendingplayers)] = f_player
+	--print()
+end
+
+function Survival_SetAsInvader(f_player)
+
+	-- Sets this player as an invader
+	survival_g_invadingteam = Player_GetTeam(f_player)
+	survival_g_invadingplayers[table.getn(survival_g_invadingplayers)] = f_player
+	
+	-- Initiate starting units for invader
+	Survival_SetupInvaderStart(f_player)
+	
+	Player_SetResource(f_player, RT_Power, 10000)
+	Player_SetResource(f_player, RT_Requisition, 10000)
+	
+	Cpu_Enable(f_player, false) -- Always disable Attacker ai. The ai will be enabled for them during the final level.
+end
+
+function Survival_GetDefender(f_slot)
+	-- Returns a defender from the defending player slots
+	if (survival_g_defendingplayers[f_slot-1] ~= nil) then
+		return survival_g_defendingplayers[f_slot-1]
+	end
+	
+	return survival_g_defendingplayers[0]
+end
+
+function Survival_GetInvader(f_slot)
+	-- Returns an invader from the invading player slots
+	if (survival_g_invadingplayers[f_slot-1] ~= nil) then
+		return survival_g_invadingplayers[f_slot-1]
+	end
+	
+	return survival_g_invadingplayers[0]
+end
+
+
+function Survival_CheckIsPlayer( player )
+	local name = Player_GetDisplayName(player)[1]
+	if string.len(name) < 3 then return true end
+	name = string.sub(name, -2)
+	if( name == " 1" or name == " 2" or name == " 3" or name == " 4" or name == " 5" or name == " 6" or name == " 7" or name == " 8") then
+		return false
+	else
+		return true
+	end
+	-- Function thanks to Gambit!
+end
+
+function Survival_IsDefender( player )
+	
+	-- Check to see if "player" is a defender or not
+	if (survival_g_defendingteam >= 0 and Player_GetTeam(player) == survival_g_defendingteam) then
+		return true
+	end
+	
+	return false
+end 
+
+-------------------------------------------------
+--[[ Difficulty Settings ]] -- Used for Survival
+-------------------------------------------------
+
+function Survival_SetDifficulty()
+	
+	-- Scenario timers, higher the difficulty, decreased time.
+	if (Cpu_GetDifficulty(Survival_GetInvader(1)) == AD_Easy)then
+		-- f_difficulty, f_maxlevels, f_leveltimer, f_armycount, f_armyloadout, f_nuketimer
+		Survival_SetDifficulty_Execute(1, 20, 180, 5, 4, 600) -- 1 hour
+	elseif (Cpu_GetDifficulty(Survival_GetInvader(1)) == AD_Standard)then
+		-- f_difficulty, f_maxlevels, f_leveltimer, f_armycount, f_armyloadout, f_nuketimer
+		Survival_SetDifficulty_Execute(2, 30, 180, 10, 5, 300) -- 1.5 hours
+	elseif (Cpu_GetDifficulty(Survival_GetInvader(1)) == AD_Hard)then
+		-- f_difficulty, f_maxlevels, f_leveltimer, f_armycount, f_armyloadout, f_nuketimer
+		Survival_SetDifficulty_Execute(3, 45, 120, 12, 8, 300) -- 1.5 hours
+		--Survival_LoopReinforceRule() -- Allow enemy reinforcements
+	elseif (Cpu_GetDifficulty(Survival_GetInvader(1)) == AD_Advanced)then
+		-- f_difficulty, f_maxlevels, f_leveltimer, f_armycount, f_armyloadout, f_nuketimer
+		Survival_SetDifficulty_Execute(4, 60, 90, 12, 30, 240) -- 1.5 hours
+		Survival_LoopReinforceRule() -- Allow enemy reinforcements
+	elseif (Cpu_GetDifficulty(Survival_GetInvader(1)) == AD_Insane)then
+		-- f_difficulty, f_maxlevels, f_leveltimer, f_armycount, f_armyloadout, f_nuketimer
+		Survival_SetDifficulty_Execute(5, 300, 60, 30, 30, 120) -- 5 hours
+		Survival_LoopReinforceRule() -- Allow enemy reinforcements
+	end
+	
+	-- Quickstart	
+	if (Player_GetResource(Survival_GetInvader(1), RT_Power) >= 1000) then
+		survival_g_leveltimer = survival_g_leveltimer / 2.0;
+		survival_g_armylevelcount = survival_g_armylevelcount * 2.0
+		survival_g_nuketimer = survival_g_nuketimer;
+	end
+end
+
+function Survival_SetDifficulty_Execute(f_difficulty, f_maxlevels, f_leveltimer, f_armycount, f_armyloadout, f_nuketimer)
+
+	-- Refer to comments on what each variable does above. ^^
+	survival_g_difficulty = f_difficulty;
+	survival_g_level_max = f_maxlevels; 
+	survival_g_leveltimer = f_leveltimer;
+	survival_g_armylevelcount = f_armycount;
+	survival_g_loadout = f_armyloadout;
+	survival_g_nuketimer = f_nuketimer;
+end
+
+
+-------------------------------------------------
+--[[ Misc ]]
+-------------------------------------------------
+
+function Survival_LevelTracker()
+	
+	-- Tick down the clock.
+	if (survival_i_leveltimer > 0) then
+		survival_i_leveltimer = survival_i_leveltimer - 1; 
+	else
+		Survival_LevelBegin(survival_g_level + 1)
+		if (survival_g_armylevelcount < 20 * survival_g_difficulty) then
+			survival_g_armylevelcount = survival_g_armylevelcount + 1
+		end
+	end
+	
+	-- Loops, keep tracks of the level progress in text on screen for players.
+	WinWarning_SetText( "Game_Level", "Level: "..survival_g_level.."/"..survival_g_level_max )
+end
+
+function Survival_LevelBegin(f_levelnumber)
+	
+	-- Begins and sets survival to THIS level.
+	survival_g_level = f_levelnumber;
+	survival_i_leveltimer = survival_g_leveltimer
+	
+	-- Display text on screen that the next level progresses!
+	if (f_levelnumber > 1) then
+		Util_MissionTitle("The next level begins...")
+		--Sound_PlayStinger("stinger_pressure_stinger")
+		
+	elseif (f_levelnumber == 1) then
+		Util_MissionTitle("Ultimate Survival... begins!")
+		Sound_PlayStinger("stinger_mso5i_thetitan")
+	end
+
+end
+
+function Survival_Message1()
+
+	Util_MissionTitle("Ultimate Apocalypse: Survival")
+	Rule_AddOneShot(Survival_Message2, 12)
+	--Fade_Start( 19, true )
+	--W40k_Letterbox( false, 19 )
+end
+
+function Survival_Message2()
+
+	Util_MissionTitle("Primary Objective: Survive! Beat all levels which progress in greater difficulty...")
+	Rule_AddOneShot(Survival_Message3, 6)
+	---
+end
+
+function Survival_Message3()
+
+	if (SGroup_Exists("sg_invadingarmy") and SGroup_Count("sg_invadingarmy") > 0) then
+		Ping_Position(SGroup_GetPosition("sg_invadingarmy"), false, "default")
+	end
+	--Util_MissionTitle("Survive each level for a duration. Each level progressively increases in difficulty.")
+	Rule_AddOneShot(Survival_Message4, 6)
+end
+
+function Survival_Message4()
+
+	--Util_MissionTitle("Nukes and endgame abilities will be available during the final level.")
+	Rule_AddOneShot(Survival_Message5, 6)
+end
+
+function Survival_Message5()
+
+	Util_MissionTitle("SCAR code created by Lord Cylarne.")
+	Rule_AddOneShot(Survival_Message6, 8)
+end
+
+function Survival_Message6()
+
+	Util_MissionTitle("The first level will begin soon...")
+	
+end
+
+function Survival_Message7()
+
+	Util_MissionTitle("Apocalypse abilities are now available, quickly, annihilate the enemy!")
+	if (g_differentending == false) then
+		Rule_AddOneShot(Survival_ApplyObjectives, 6)
+	end
+	
+	-- Unrestrict Tier V
+	Rule_UnRestrictSupers()
+	
+end
+
+function Survival_Message8()
+
+	Util_MissionTitle("Boos Level...")
+	
+end
+
+function Survival_SetupPlayerStart(f_player)
+
+	-- Setup player, despawn hq and spawn starting squads + builders!
+	Player_GetAllEntitiesNearPos(f_player, "eg_destroy_player_entities", Player_GetStartPosition(f_player), 10) -- entities near start position
+	Player_GetAllSquadsNearPos(f_player, "sg_destroy_player_squad", Player_GetStartPosition(f_player), 10) -- squads near start position
+	EGroup_DeSpawn("eg_destroy_player_entities") -- despawn entities
+	SGroup_DeSpawn("sg_destroy_player_squad") -- despawn squads
+		
+	EGroup_DestroyAllEntities("eg_destroy_player_entities", true) -- destroy entities
+	SGroup_DestroyAllSquads("sg_destroy_player_squad", true) -- destroy squads
+	
+	-- Spawn builder unit, build hq
+	local cominginpos = Player_GetStartPosition(f_player)
+	cominginpos = World_Pos(cominginpos.x + 20, cominginpos.y, cominginpos.z - 20)
+	Survival_SetPlayerBlueprints(f_player)
+	Survival_SpawnUnit(f_player, survival_squadunits_builder, 2, cominginpos, "sg_startingbuilders")
+	Cmd_ConstructBlueprintPos("sg_startingbuilders", survival_structure_hq, Player_GetStartPosition(f_player))
+	
+	-- Spawn squads to defend
+	Survival_SpawnUnit(f_player, survival_squadunits[2], 1, cominginpos, "sg_startingarmy1")
+	Survival_SpawnUnit(f_player, survival_squadunits[3], 1, cominginpos, "sg_startingarmy1")
+	Survival_SpawnUnit(f_player, survival_squadunits[4], 1, cominginpos, "sg_startingarmy1")
+	Survival_SpawnUnit(f_player, survival_squadunits[5], 1, cominginpos, "sg_startingarmy2")
+	--Survival_SpawnUnit(f_player, survival_squadunits[41], 4, cominginpos, "sg_startingarmy2")
+	Survival_SpawnUnit(f_player, survival_squadunits_transport, 1, cominginpos, "sg_startingarmy3")
+	Cmd_AttackMovePos("sg_startingarmy1", World_Pos(Player_GetStartPosition(f_player).x -35, Player_GetStartPosition(f_player).y, Player_GetStartPosition(f_player).z + 30))
+	Cmd_AttackMovePos("sg_startingarmy2", World_Pos(Player_GetStartPosition(f_player).x +35, Player_GetStartPosition(f_player).y, Player_GetStartPosition(f_player).z + 8))
+	Cmd_AttackMovePos("sg_startingarmy3", World_Pos(Player_GetStartPosition(f_player).x, Player_GetStartPosition(f_player).y, Player_GetStartPosition(f_player).z + 20))
+	
+end
+
+function Survival_SetupInvaderStart(f_player)
+
+	-- Setup player, despawn hq and spawn starting squads + builders!
+	Player_GetAllEntitiesNearPos(f_player, "eg_destroy_player_entities", Player_GetStartPosition(f_player), 10) -- entities near start position
+	Player_GetAllSquadsNearPos(f_player, "sg_destroy_player_squad", Player_GetStartPosition(f_player), 10) -- squads near start position
+	EGroup_DeSpawn("eg_destroy_player_entities") -- despawn entities
+	SGroup_DeSpawn("sg_destroy_player_squad") -- despawn squads
+		
+	EGroup_DestroyAllEntities("eg_destroy_player_entities", true) -- destroy entities
+	SGroup_DestroyAllSquads("sg_destroy_player_squad", true) -- destroy squads
+	
+	-- Spawn squads to attack
+	local cominginpos = World_Pos(0, 10, 0)
+	Survival_SetPlayerBlueprints(f_player)
+	
+	
+	Survival_SpawnUnit(f_player, survival_squadunits[0], 3, cominginpos, "sg_invadingarmy")
+	Survival_SpawnUnit(f_player, survival_squadunits[2], 1, cominginpos, "sg_invadingarmy")
+	Survival_SpawnUnit(f_player, survival_squadunits[3], 1, cominginpos, "sg_invadingarmy")
+	Survival_SpawnUnit(f_player, survival_squadunits[4], 1, cominginpos, "sg_invadingarmy")
+	Survival_SpawnUnit(f_player, survival_squadunits[5], 1, cominginpos, "sg_invadingarmy")
+	Cmd_AttackMovePos("sg_invadingarmy", Player_GetStartPosition(World_GetPlayerAt(0)))
+
+end
+
+-------------------------------------------------
+--[[ Grant Researches ]]
+-------------------------------------------------
+
+function Survival_GrantResearches()
+
+	-- Not used yet.
+	
+end
+
+function Survival_GetDistance(f_pos1, f_pos2)
+
+	-- Return the distance from our new setup values
+	local returndistance = 9999;
+	local returnx = f_pos1.x - f_pos2.x
+	local returnz = f_pos1.z - f_pos2.z
+	
+	-- If these values are negative, reverse the negative
+	if returnx < 0 then
+		returnx = returnx * -1
+	end
+	if returnz < 0 then
+		returnz = returnz * -1
+	end
+	
+	-- Return our distance value
+	returndistance = returnx + returnz
+	return returndistance
+end
+
+function Rule_PlayerKill()
+
+	Fade_Start(0, true)
+	World_SetTeamWin(g_Defender, "_survival")
+	World_SetGameOver()
+
+end
+
+-------------------------------------------------
+--[[ START .scar script ]]
+-------------------------------------------------
+
+Scar_AddInit(UltimateSurvival)
+
+-------------------------------------------------
+--[[ TESTING STUFF ]] -- Used for testing the XP3 games for immediate results.
+-------------------------------------------------
+function Test()
+
+	print("Initiating tests")
+	
+	Rule_AddInterval(Test2, 1)
+	Survival_SetPlayerBlueprints(Survival_GetInvader(1))
+	local rand_pos = Player_GetStartPosition(Survival_GetInvader(1))
+	rand_pos = World_Pos(rand_pos.x + World_GetRand(-10, 10), rand_pos.y, rand_pos.z + World_GetRand(-10, 10))
+	Survival_SpawnUnit(invader, survival_squadunits[0], World_GetRand(1,3), rand_pos, "sg_invadingsquad2")
+	
+end
+
+function Test2()
+
+	if (SGroup_Count("sg_invadingsquad2") > 0) then
+		DecideWhatToDo = function( scout_count, itemindex, sg_squadID )
+			-- Have scout look for a capturable SP
+			if (Squad_GetActiveCommand(sg_squadID) == SQUADSTATEID_Idle) then
+				Survival_Scouts_CaptureAStrategicPoint(sg_squadID)
+			end
+		end
+		-- Loop through each squad scout
+		SGroup_ForEach("sg_invadingsquad2", DecideWhatToDo)
+	end
+	
+end
+
+-------------------------------------------------
+--[[ Quick Notes ]]
+-------------------------------------------------
+
+-- This would probably not be used for the XP3 campaign. If anything this would be called off by the gametype integer.
+-- Other than that...
+
+-- FUN FACTS:
+--		2 hours = 7200 seconds.
+--		1 1/2 hours = 6400 seconds.
+--		1 hour = 3600 seconds.
+--		45 minutes = 2700 seconds.
+--		30 minutes = 1800 seconds.
+--		15 minutes = 900 seconds.
+--		10 minutes = 600 seconds.
+--		5 minutes = 300 seconds.
+--		1 minute = 60 seconds.
+--		1 second = 100 miliseconds.

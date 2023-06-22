@@ -1,0 +1,11 @@
+GameData = Inherit([[]])
+GameData["entity_blueprint_ext"] = Reference([[ebpextensions\entity_blueprint_ext.lua]])
+GameData["entity_blueprint_ext"]["animator"] = [[Environment\Gameplay\tyranids_synaptic_grip]]
+GameData["entity_blueprint_ext"]["minimum_update_radius"] = 1
+GameData["entity_blueprint_ext"]["scale_x"] = 0.1000000015
+GameData["entity_blueprint_ext"]["scale_y"] = 0.1000000015
+GameData["entity_blueprint_ext"]["scale_z"] = 0.1000000015
+GameData["sim_entity_ext"] = Reference([[ebpextensions\sim_entity_ext.lua]])
+GameData["sim_entity_ext"]["is_in_spatial_bucket"] = false
+GameData["suicide_ext"] = Reference([[ebpextensions\suicide_ext.lua]])
+GameData["suicide_ext"]["lifetime"] = 15
