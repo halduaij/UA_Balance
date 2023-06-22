@@ -1,4 +1,4 @@
-*
+
 /UltimateApocalypse_THB/data/ai/
 /UltimateApocalypse_THB/data/art/
 /UltimateApocalypse_THB/data/cosmos_custom_sounds/
@@ -7,7 +7,7 @@
 /UltimateApocalypse_THB/data/scar/
 /UltimateApocalypse_THB/data/sound/
 /UltimateApocalypse_THB/data/scenarios/
-!UltimateApocalypse.module
 !/UltimateApocalypse_THB/data/attrib/
 !/UltimateApocalypse_THB/data/attrib/**
 /UltimateApocalypse_THB/data/
+!UltimateApocalypse.module
