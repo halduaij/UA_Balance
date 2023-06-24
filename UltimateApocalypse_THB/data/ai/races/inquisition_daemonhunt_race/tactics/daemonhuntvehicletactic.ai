@@ -1,0 +1,77 @@
+----------------------------------------
+-- File: 'daemonhuntvehicletactic.ai'
+-- Edited by Thudmeizer         @ 20.06.2016
+
+class 'DaemonhuntVehicleTactic' (VehicleTactic)
+
+function DaemonhuntVehicleTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Daemonhunt Vehicle Tactic")
+	
+	-- Set vehicle options
+	local sSquadName = squad_ai:GetSquadName()
+	if (sSquadName == "inquisition_squad_damocles" or
+	    sSquadName == "inquisition_squad_predator" or
+	    sSquadName == "inquisition_squad_thunderfire_cannon" or
+	    sSquadName == "inquisition_squad_whirlwind") then 
+
+		-- Vehicles are transportable
+		self.m_iTransportable = 1	-- Valkyrie
+
+	elseif (sSquadName == "inquisition_squad_dreadknight_titan" or
+		sSquadName == "inquisition_squad_dreadnought" or
+		sSquadName == "inquisition_squad_dreadnought_assault" or
+		sSquadName == "inquisition_squad_dreadnought_support" or
+		sSquadName == "inquisition_squad_dreadnought_venerable") then
+
+		-- Vehicles can deepstrike and are transportable
+		self.m_iTransportable = 1	-- Valkyrie
+		self.m_iDeepStrikeBlueprintID = cpu_manager.stats:GetBuildingID( "inquisition_grey_knights_teleporter" )
+
+	elseif (sSquadName == "inquisition_squad_land_raider" or
+		sSquadName == "inquisition_squad_land_raider_crusader" or
+		sSquadName == "inquisition_squad_land_raider_daemonhunter" or
+		sSquadName == "inquisition_squad_land_raider_redeemer") then
+
+		-- Vehicles are transportable
+		self.m_iDeepStrikeBlueprintID = cpu_manager.stats:GetBuildingID( "inquisition_watch" )
+	end
+end
+
+-- Check if the vehicle should dance away in melee
+function DaemonhuntVehicleTactic:CheckVehicleDance(sName)
+
+	if (sName == "inquisition_squad_rhino" or
+		sName == "inquisition_squad_damocles" or
+		sName == "inquisition_squad_razorback" or
+		sName == "inquisition_squad_chimera_transport" or
+		sName == "inquisition_squad_dreadnought" or
+		sName == "inquisition_squad_dreadnought_assault" or
+		sName == "inquisition_squad_dreadnought_support" or
+		sName == "inquisition_squad_dreadnought_venerable" or
+		sName == "inquisition_squad_predator" or
+		sName == "inquisition_squad_whirlwind" or
+		sName == "inquisition_squad_land_raider" or
+		sName == "inquisition_squad_land_raider_crusader" or
+		sName == "inquisition_squad_land_raider_redeemer" or
+		sName == "inquisition_squad_land_raider_daemonhunter" or
+		sName == "inquisition_squad_dreadknight_titan") then
+		return true
+	end
+	return false
+end
+
+function DaemonhuntVehicleTactic:DoAbilities()
+--[[
+	-- RAM!!! - The vehicle will sacrifice combat accuracy in exchange for extra speed and the ability to knock down infantry wherever the vehicle goes.
+	-- Vehicle gains a 60% movement speed increase and will knock down infantry continuously on contact.
+	local rammingspeed_id = cpu_manager.stats:GetAbilityID( "all_bumpertank" )
+	if (self.squad_ai:IsInCombat() and self.squad_ai:IsInStateMove()) then
+		if (self.squad_ai:CanDoAbility( rammingspeed_id )) then
+			self.squad_ai:DoSpecialAbility( rammingspeed_id )
+		end
+	end
+]]
+	-- Call standard method
+	VehicleTactic.DoAbilities(self)
+end

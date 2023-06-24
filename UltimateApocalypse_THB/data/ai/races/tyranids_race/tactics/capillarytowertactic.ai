@@ -1,0 +1,65 @@
+----------------------------------------
+-- File: 'capillarytowertactic.ai'
+-- Edited by Cylarne		@ 10/12/15
+-- Edited by Thudmeizer		@ 25.04.2016
+
+class 'CapillaryTowerTactic' (BaseTactic)
+
+CapillaryTower = {}
+
+function CapillaryTowerTactic:__init( base_ai ) super( base_ai )
+
+	self:SetName("Capillary Tower Tactic")
+
+	self.delayedTimer = g_iGMT
+	self.abilitySelection = math.random ( 1,100 )
+end
+
+function CapillaryTowerTactic:InitAbilities()
+
+	if (CapillaryTower.bombardment_id == nil) then
+		CapillaryTower.bombardment_id = cpu_manager.stats:GetAbilityID( "tyranids_planetary_bombardment" )
+	end
+
+	if (CapillaryTower.summonfleet_id == nil) then
+		CapillaryTower.summonfleet_id = cpu_manager.stats:GetAbilityID( "tyranids_summon_hive_fleet" )
+	end
+	
+	if (CapillaryTower.errect_id == nil) then
+		CapillaryTower.errect_id = cpu_manager.stats:GetAbilityID( "tyranids_summon_vein" )
+	end
+end
+
+function CapillaryTowerTactic:DoAbilities()
+
+	local iPower = resource_manager:GetResourceAmount():Get( ResourceAmount.RT_Power )
+
+	-- Planetary Bombardment: Unleash hundreds of Tyranid infested meteors at the designated target.
+	-- The entire planet side is covered in meteors and scarred surfaces all over, eventually affecting the battlefield with toxic miasma and summoning critical Tyranid hardpoints.
+	-- Within 200m of the designated target, meteors strike at random dealing moderate to severe damage to most objects, and then the critical points (Capillary Towers) are summoned from the ground, ripping apart structures in their path.
+	-- Finally, one more massive meteor is unleashed, destroying most objects in a 35m radius.
+	if (self.base_ai:CanDoAbility(CapillaryTower.bombardment_id) and iPower >= 7000) then
+		-- Activate the Meteor Strike.
+		Ability.DoAbilityTargetEntity(self.base_ai, CapillaryTower.bombardment_id, Ability.EntityFilters.CloseBaseEntityEnemy, 1)	
+	end
+
+	-- Spawn the Hive Fleet: Call down the essence of the Hive Fleet at the designated target.
+	-- All structures and heavily armored vehicles immediately get enveloped upon the arrival of the Hive Fleet, knocking back infantry in its path.
+	-- The Hive Fleet will last on the battlefield until it dies (unable to be fed), enveloping everything slowly in a 60m radius while also summoning forth all Tyranid units.
+	if (self.base_ai:CanDoAbility(CapillaryTower.summonfleet_id) and iPower >= 20000) then
+		-- Activate the Hive Fleet.
+		Ability.DoAbilityTargetEntity(self.base_ai, CapillaryTower.summonfleet_id, Ability.EntityFilters.CloseBaseEntityEnemy, 1)
+	end
+	
+	if g_iGMT > self.delayedTimer + 60 then
+        	self.abilitySelection = math.random ( 1,100 )
+        	self.delayedTimer = g_iGMT
+    	end
+
+	-- Errect Ground: Allows the tyranoforming of the ground nearby a capillary tower, creating Capillary Veins.
+	if (self.base_ai:CanDoAbility(CapillaryTower.errect_id) and iPower >= 10000 and self.abilitySelection <= 25) then
+		-- Activate the Errect Ground ability.
+		self.base_ai:DoSpecialAbility(CapillaryTower.errect_id)	
+	end
+end
+

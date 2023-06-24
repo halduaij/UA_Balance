@@ -1,0 +1,176 @@
+----------------------------------------
+-- File: 'restoredmonolithtactic.ai'
+-- Created by Arkhan @ 31.10.2006
+-- Edited by Cylarne_04 2011
+-- Edited by Thudmeizer	@ 02.07.2016
+
+class 'RestoredMonolithTactic' (NecronVehicleTactic)
+
+RestoredMonolith = {}
+
+function RestoredMonolithTactic:__init( squad_ai ) super( squad_ai )
+	
+	self:SetName("Restored Monolith Tactic")
+	
+	-- Vehicle is an intermediate transport
+	self.m_iTransportVehicle = 2
+	self.m_iTransportSlots = 5
+end
+
+-- Restored Monolith is allowed to retreat even directly after a jump
+function RestoredMonolithTactic:SetTarget( target, variant_type )
+
+	self.variant_type = variant_type
+	self.variant_type = variant_type
+       if self.variant_type==Tactic.Variant.Vector then
+    self.target = Vector3f(target)
+       elseif self.variant_type==Tactic.Variant.SquadAI then
+    self.target = target
+       elseif self.variant_type==Tactic.Variant.BaseAI then
+    self.target = target
+       end
+	self.m_iMoveDelay = 0
+	self.last_jump = 0
+end
+
+function RestoredMonolithTactic:InitAbilities()
+
+	-- Init ability ID's
+	if (RestoredMonolith.production_id == nil) then
+		RestoredMonolith.production_id = cpu_manager.stats:GetAbilityID( "necron_mass_production" )
+	end
+	if (RestoredMonolith.truegauss_id == nil) then
+		RestoredMonolith.truegauss_id = cpu_manager.stats:GetAbilityID( "necron_truegauss" )
+	end
+end
+
+function RestoredMonolithTactic:DoAbilities()
+
+	if (self.squad_ai:CanDoAbility(RestoredMonolith.production_id )) then
+		if (not self.squad_ai:IsUsingAbility(RestoredMonolith.production_id)) then
+			if ((self.squad_ai:IsInCombat() and self.squad_ai:GetHealthPercentage() > 0.9) or (not self.squad_ai:IsInCombat() and self.squad_ai:GetHealthPercentage() < 0.5)) then
+				self.squad_ai:DoSpecialAbility(RestoredMonolith.production_id )
+			else
+			end
+		else
+			if (not self.squad_ai:IsInCombat() and self.squad_ai:GetHealthPercentage() >= 0.5) then
+				self.squad_ai:DoSpecialAbility(RestoredMonolith.production_id )
+			end
+		end
+	end
+
+	-- Gauss Weapon Overcharge: the squad will receive a boost in maximum damage, but a critical reduction in movement speed for a duration.
+	if (self.squad_ai:IsInCombat() and self.squad_ai:GetHealthPercentage() > 0.5) then
+		if self.squad_ai:CanDoAbility( RestoredMonolith.truegauss_id ) then
+			Ability.DoAbilityArea( self.squad_ai, RestoredMonolith.truegauss_id, Ability.Filters.CloseEnemy, 20, 5 )
+		end
+	end
+
+	-- Call standard method
+	NecronVehicleTactic.DoAbilities(self)
+end
+
+function RestoredMonolithTactic:JumpAttackRanged()
+
+	-- Call standard method
+	if (Tactic.JumpAttackRanged(self)) then
+		return true
+	end
+	
+	-- Get position and jump range
+	local vMonolithPosition = self.squad_ai:GetPosition()
+	local iJumpRange = sqr(self.squad_ai:GetJumpDistance())
+	
+	-- Check if we can jump directly to the target
+	local iClosestDistance = distance_sqr(vMonolithPosition, self:GetTarget())
+	local vTargetPos = nil
+	if (iClosestDistance < iJumpRange) then
+		vTargetPos = self:GetTarget()
+	else
+	
+		-- Get closest squad to target position
+		for oSquad in military_manager:GetSquads() do
+	
+			-- Check if squad is valid
+			if (oSquad:IsValid()) then
+			
+				-- Check distance
+				local vPosition = oSquad:GetPosition()
+				local iDistanceToMonolith = distance_sqr(vPosition, vMonolithPosition)
+				local iDistanceToTarget = distance_sqr(vPosition, self:GetTarget())
+				if (iDistanceToMonolith < iJumpRange and iDistanceToTarget < iClosestDistance) then
+					iClosestDistance = iDistanceToTarget
+					vTargetPos = vPosition
+				end
+			end
+		end
+		
+		-- Get closest building to target position
+		for oBuilding in military_manager:GetBases() do
+		
+			-- Check if building is valid
+			if (oBuilding:IsValid()) then
+			
+				-- Check distance
+				local vPosition = oBuilding:GetPosition()
+				local iDistanceToMonolith = distance_sqr(vPosition, vMonolithPosition)
+				local iDistanceToTarget = distance_sqr(vPosition, self:GetTarget())
+				if (iDistanceToMonolith < iJumpRange and iDistanceToTarget < iClosestDistance) then
+					iClosestDistance = iDistanceToTarget
+					vTargetPos = vPosition
+				end
+			end
+		end
+	end
+	
+	-- Don't jump if we didn't find a target
+	if (vTargetPos == nil or distance_sqr(vMonolithPosition, vTargetPos) < sqr(50)) then
+		return false
+	end
+	
+	-- Try to jump to target
+	for iLoop1 = 1, 5 do
+	
+		-- Create a jump position
+		local vJumpPosition = vTargetPos
+		vJumpPosition.x = vJumpPosition.x + math.random(-15, 15)
+		vJumpPosition.z = vJumpPosition.z + math.random(-15, 15)
+			
+		-- Check if target position is in range and if unit is able to jump to target position
+		local iDistance = distance_sqr(vJumpPosition, vMonolithPosition)
+		if (iDistance <= iJumpRange and self.squad_ai:GetHealthPercentage() > 0.8 and self.squad_ai:CanJumpToPosition(vJumpPosition)) then
+							
+			-- Jump to position
+			self.squad_ai:DoJump(vJumpPosition)
+			self.last_jump = g_iGMT
+			self.m_iLastGatherMove = self.last_jump - 10
+			return true
+		end
+	end
+	return false
+end
+
+function RestoredMonolithTactic:UnloadTroops()
+
+	local vSquadPos = self.squad_ai:GetPosition()
+	if (cpu_manager.terrain_analyzer:HasThreat(vSquadPos, 100) and self.squad_ai:CanUnload()) then
+
+		-- Unload all troops when enemy is in the distance
+		self.squad_ai:DoUnload()
+	end
+end
+
+function RestoredMonolithTactic:Update()
+
+	if (self:IsComplete()) then
+		return
+	end
+	
+	-- State machine
+	if (not VehicleTactic.Update(self)) then
+		return
+	end
+
+	-- Check if we are in serious trouble
+	self:EmergencyRetreat()
+end

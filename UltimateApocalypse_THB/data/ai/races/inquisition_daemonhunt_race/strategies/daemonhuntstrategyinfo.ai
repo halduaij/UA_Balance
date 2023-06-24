@@ -1,0 +1,205 @@
+----------------------------------------
+-- File: 'daemonhuntstrategyinfo.ai'
+-- Edited by Thudmeizer    @ 14.11.2016
+-- Edited by Lord Cylarne @ 8.11.19
+
+BuildBaseStrategyInfo = 
+{
+	inquisition_daemonhunt_race =
+	{
+		post_builder = 2,
+		flag_capture = 3,
+
+		--reserve this amount for building units/buildings (not for use in upgrading/ reinforcing)
+		req_reserve = 200,
+		
+		--need at least this at all times
+		squad_cap_threshold = 3,
+
+		--need at least this at all times
+		support_cap_threshold = 3,
+		
+		--used to calculate wants for engineers
+		Engineers =
+		{
+			--number of engineers we're aiming for
+			want = 4,
+		},
+		
+		-- Is used to modify the army strength in the build programs (Allows faster balancing adjustments)
+		ArmyStrengthModifier = 1.0,
+				
+		-- Item-Syntax: Min. Tier, Min. Requisition, Min. Power, Min. ArmyStrength, Object-Count, Object-Type, Object-Name
+		BuildPrograms =
+		{
+			-- Allround strategy
+			{
+			        { 1, 125, 0, 100, 3,	"Unit",		"inquisition_squad_stormtroopers" },
+			        { 1, 150, 0, 0, 1,	"Unit",		"inquisition_squad_scholars" },
+				{ 1, 450, 0, 0, 1,	"Building",	"inquisition_tower_hq" },
+				{ 1, 270, 180, 0, 1,	"Building",	"inquisition_watch" },
+				{ 1, 115, 0, 0, 2,	"Building",	"inquisition_warp_generator" },
+				{ 1, 175, 50, 200, 1,	"Building",	"inquisition_librarium" },
+				{ 1, 140, 0, 0, 1,	"Building",	"inquisition_purification_decree" },
+				{ 1, 245, 40, 150, 1,	"Unit",		"inquisition_squad_bodyguard" },
+				{ 1, 275, 105, 100, 1,	"Addon",	"inquisition_tower_addon" },
+				{ 1, 100, 40, 0, 1,	"Building",	"inquisition_civilian_bunker" },
+				{ 1, 140, 0, 0, 2,	"Building",	"inquisition_purification_decree" },
+				{ 1, 110, 110, 0, 1,	"Unit",		"inquisition_squad_chimera_transport" },
+				{ 1, 90, 80, 500, 100,	"TurretAddon",	"inquisition_imperial_icon_addon_1" },
+				{ 1, 135, 0, 500, 4,	"Building",	"inquisition_warp_generator" },
+			
+				
+				{ 2, 245, 40, 0, 1,	"Unit",		"inquisition_squad_inquisitor_lord" },
+				{ 2, 320, 60, 0, 1,	"Unit",		"inquisition_squad_inquisitor_ordo_malleus" },
+				{ 2, 25, 90, 500, 70,	"TurretAddon",	"inquisition_turret_addon" },
+				{ 2, 135, 0, 400, 5,	"Building",	"inquisition_warp_generator" },
+				{ 2, 190, 70, 1000, 1,	"Building",	"inquisition_astra_telepathica" },
+				{ 2, 200, 70, 100, 2,	"Unit",		"inquisition_squad_servitor_weapon" },
+				{ 2, 260, 160, 750, 50, "TurretAddon",	"inquisition_imperial_icon_addon_2" },
+				{ 2, 135, 0, 400, 6,	"Building",	"inquisition_warp_generator" },
+				{ 2, 350, 350, 500, 1,"Research",	"inquisition_temporal_power" },
+				{ 2, 15, 450, 650, 80,	"TurretAddon",	"inquisition_extremis_diabolus" },
+				
+				{ 3, 170, 140, 0, 1,	"Unit",		"inquisition_squad_razorback" },
+				{ 3, 245, 40, 0, 1,	"Unit",		"inquisition_squad_inquisitor_lord" },
+				{ 3, 320, 60, 0, 1,	"Unit",		"inquisition_squad_inquisitor_ordo_malleus" },
+				{ 3, 30, 150, 0, 50,	"TurretAddon",	"inquisition_extremis_diabolus_2" },
+				{ 3, 400, 130, 600, 1,	"Building",	"inquisition_grey_knights_teleporter" },
+				{ 3, 25, 90, 0, 50,	"Addon",	"inquisition_mass_teleporter" },
+				{ 3, 400, 310, 800, 80,	"TurretAddon",	"inquisition_turret_improved_addon" },
+				{ 3, 260, 160, 1000, 100,"TurretAddon",	"inquisition_imperial_icon_addon_2" },
+				{ 3, 650, 650, 900, 1,"Research",	"inquisition_ultimate_forces" },
+				{ 3, 700, 150, 900, 2,	"Building",	"inquisition_tower_hq" },
+				
+				{ 4, 245, 40, 0, 1,	"Unit",		"inquisition_squad_inquisitor_lord" },
+				{ 4, 320, 60, 0, 1,	"Unit",		"inquisition_squad_inquisitor_ordo_malleus" },
+				{ 4, 1200, 1200, 900, 1,"Research",	"inquisition_begin_purification" },
+							
+				{ 5, 245, 40, 0, 1,	"Unit",		"inquisition_squad_inquisitor_lord" },
+				{ 5, 320, 60, 0, 1,	"Unit",		"inquisition_squad_inquisitor_ordo_malleus" },	
+				{ 5, 1330, 600, 1500, 1,"Building",	"inquisition_tower_mechanicum" },
+				{ 5, 2250, 1500, 500, 1,"Building",	"inquisition_shrine_to_the_emperor" },
+				{ 5, 2500, 2500, 1000, 1,"Building",	"inquisition_nuclear_facility" },
+				{ 5, 0, 0, 0, 100,	"Addon",	"addon_superweapon" },
+				{ 5, 4000, 4000, 2000, 1,"Research",	"inquisition_absolute_purification" },
+				
+				{ 6, 8000, 3000, 0, 1,	"Unit",		"inquisition_squad_grey_knight_hero" },	
+				{ 6, 8000, 8000, 4000, 3,"Building",	"inquisition_nuclear_facility" }
+				
+				
+			}
+		},
+				
+		SquadLimits = 
+		{
+			standard =
+			{
+              			inquisition_squad_trade_requisition = 0,
+               			inquisition_squad_trade_power = 0,
+				inquisition_squad_servo_skull = 3,
+				inquisition_squad_thunderfire_cannon = 3,
+				inquisition_squad_servitor_maintenance = 4,
+				inquisition_squad_servitor_melee = 2,
+				inquisition_squad_servitor_weapon = 2,
+				inquisition_squad_bodyguard = 1,
+				inquisition_squad_stormtroopers = 4,
+				inquisition_squad_scholars = 3,
+				inquisition_squad_scholar_astropath = 2,
+				inquisition_squad_scholar_exorcist = 2,
+				inquisition_squad_scholar_calculus_logi = 1,
+				inquisition_squad_grenaider_troops = 3,
+				inquisition_squad_death_cultist = 3,
+				inquisition_squad_grey_knights = 3,
+				inquisition_squad_grey_knights_purgator = 3,
+				inquisition_squad_grey_knights_purifier = 3,
+				inquisition_squad_grey_knights_interceptor = 3,
+				inquisition_squad_grey_knights_terminator = 3,
+				inquisition_squad_grey_knights_terminator_paladin = 3,
+				inquisition_squad_rhino = 2,
+				inquisition_squad_damocles = 2,
+				inquisition_squad_razorback = 2,
+				inquisition_squad_chimera_transport = 2,
+				inquisition_squad_tempest = 2,
+				inquisition_squad_dreadnought = 2,
+				inquisition_squad_dreadnought_assault = 2,
+				inquisition_squad_dreadnought_support = 2,
+				inquisition_squad_dreadnought_venerable = 2,
+				inquisition_squad_predator = 2,
+				inquisition_squad_whirlwind = 2,
+				inquisition_squad_valkyrie_uamod = 1,
+				inquisition_squad_vulture = 2,
+				inquisition_squad_land_raider = 1,
+				inquisition_squad_land_raider_crusader = 1,
+				inquisition_squad_land_raider_redeemer = 1,
+				inquisition_squad_land_raider_daemonhunter = 1,
+				inquisition_squad_stormraven_fury = 1,
+				inquisition_squad_dreadknight_titan = 1,
+				inquisition_squad_warhound_titan = 1,
+				inquisition_squad_warhound_vengence_titan = 1,
+				inquisition_squad_imperator_titan = 1,
+			}
+		},
+	},
+}
+
+BuildOrderStrategyInfo = 
+{
+	inquisition_daemonhunt_race =
+	{
+		Basic =
+		{
+			{ "flag_capture" }, { "post_builder" },
+			{ "flag_capture" }, { "flag_capture" },
+			{ "squad", "inquisition_squad_stormtroopers" },
+			{ "squad", "inquisition_squad_archivist" },
+			{ "squad", "inquisition_squad_archivist" },
+			{ "squad", "inquisition_squad_archivist" },
+			{ "squad", "inquisition_squad_stormtroopers" },
+			{ "squad", "inquisition_squad_stormtroopers" },
+			{ "building", "inquisition_watch", true },
+			{ "building", "inquisition_warp_generator" }
+		},
+		
+		QuickStart =
+		{
+			{ "flag_capture" }, { "post_builder" },
+			{ "flag_capture" }, { "flag_capture" },
+			{ "squad", "inquisition_squad_stormtroopers" },
+			{ "squad", "inquisition_squad_archivist" },
+			{ "squad", "inquisition_squad_archivist" },
+			{ "squad", "inquisition_squad_archivist" },
+			{ "squad", "inquisition_squad_archivist" },
+			{ "squad", "inquisition_squad_stormtroopers" },
+			{ "post_builder" },
+			{ "building", "inquisition_watch", true },
+			{ "building", "inquisition_watch", true },
+			{ "building", "inquisition_warp_generator" }
+		},
+		
+		LargeMap =
+		{
+			{ "flag_capture" }, { "post_builder" },
+			{ "flag_capture" }, { "flag_capture" },
+			{ "post_builder" }, { "flag_capture" },
+			{ "squad", "inquisition_squad_archivist" },
+			{ "squad", "inquisition_squad_archivist" },
+			{ "squad", "inquisition_squad_archivist" },
+			{ "squad", "inquisition_squad_stormtroopers" },
+			{ "squad", "inquisition_squad_stormtroopers" },
+			{ "squad", "inquisition_squad_stormtroopers" },
+			{ "squad", "inquisition_squad_stormtroopers" },
+			{ "building", "inquisition_warp_generator", true },
+			{ "building", "inquisition_watch", true },
+			{ "building", "inquisition_warp_generator" }	
+		}
+	}
+}
+
+AttackStrategyInfo = 
+{	
+	inquisition_daemonhunt_race =
+	{
+		MinArmyStrength = 750,
+	},
+}

@@ -1,0 +1,31 @@
+----------------------------------------
+-- File: 'annihilationbargetactic.ai'
+-- Edited by Thudmeizer @ 11.11.2016
+
+class 'AnnihilationBargeTactic' (NecronVehicleTactic)
+
+AnnihilationBarge = {}
+
+function AnnihilationBargeTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Annihilation Barge Tactic")
+end
+
+function AnnihilationBargeTactic:InitAbilities()
+	
+	-- Init ability ID's
+	if (AnnihilationBarge.truegauss_id == nil) then
+		AnnihilationBarge.truegauss_id = cpu_manager.stats:GetAbilityID( "necron_truegauss" )
+	end
+end
+
+function AnnihilationBargeTactic:DoAbilities()
+
+	-- Gauss Weapon Overcharge: the squad will receive a boost in maximum damage, but a critical reduction in movement speed for a duration.
+	if (self.squad_ai:IsInCombat() and self.squad_ai:GetHealthPercentage() > 0.5) then
+		Ability.DoAbilityArea( self.squad_ai, AnnihilationBarge.truegauss_id, Ability.Filters.CloseEnemy, 20, 5 )
+	end
+
+	-- Call standard method
+	NecronVehicleTactic.DoAbilities(self)
+end

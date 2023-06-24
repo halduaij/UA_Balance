@@ -1,0 +1,255 @@
+----------------------------------------
+-- File: 'chaosloader.ai'
+-- Edited by Arkhan	@ 23.10.2006
+-- Edited by Thudmeizer @ 12.03.2016
+-- Renamed by Corsix    @ 13.02.2006
+-- Edited by Cylarne_04 2011
+
+class 'chaos_marine_race'
+
+-- Constructor
+function chaos_marine_race:__init()
+
+end
+
+-- Returns the name of the race
+function chaos_marine_race:GetRaceName()
+	return "chaos_marine_race"
+end
+
+-- This function is called if chaos are the race being played
+function chaos_marine_race:LoadRace( eDifficulty )
+	
+	-- Import strategies
+	import( 'Races/chaos_marine_race/Strategies/ChaosBuildBaseStrategy.ai' )
+	
+	-- Import strategy info
+	import( "Races/chaos_marine_race/Strategies/ChaosStrategyInfo.ai" )
+	
+	-- Import tactics
+	import( 'Races/chaos_marine_race/Tactics/ChaosMarineInfantryTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/ChaosMarineVehicleTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/SlaveTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/CultistTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/ChaosAttackbikeTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/ChaosMarineSquadTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/ChaosPlagueSquadTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/ChaosNoiseSquadTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/ChaosRubricSquadTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/IconBearerTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/ChaosLordTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/ChaosLordTerminatorTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/ChaosLordAdvancedTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/ChaosLordsTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/HellSmithTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/ChaosPsykerTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/SorcererTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/SorcererAdvancedTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/DaemonPrinceTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/DaemonPrinceAdvancedTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/BloodThirsterTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/GUOTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/KOSTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/LocTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/HeldrakeTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/ChaosThunderhawkTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/ChaosRhinoTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/AssaultPodTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/HellTalonTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/DeathWheelTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/BrassScorpionTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/ChaosLandRaiderTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/TitanTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/ChaosHQTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/ChaosHQSuperTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/ChaosDeepstrikeTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/ChaosBuildingTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/ChaosBombTactic.ai' )
+	import( 'Races/chaos_marine_race/Tactics/ChaosBigGeneratorTactic.ai' )
+	return true
+end
+
+-- This function is called even if this is not the race being played
+function chaos_marine_race:LoadGlobalInfo()
+		
+	-- Import info files
+	import( 'Races/chaos_marine_race/Info/chaosunitstats.ai' )
+	
+	-- Add chaos unit stats
+	table.insert(UnitStats, ChaosMarineUnitStats)
+	return true
+end
+
+-- Creates build base strategy
+function chaos_marine_race:CreateBuildBaseStrategy()
+	return ChaosBuildBaseStrategy(BuildBaseStrategyInfo)
+end
+
+-- Creates a special tactic for a chaos marine unit
+function chaos_marine_race:CreateTactic(oSquadAI)
+
+	-- Get unit name and class
+	local sUnitName = oSquadAI:GetSquadName()
+	local eClass = oSquadAI:GetStats():GetClass()
+	
+	-- Check if there is a special tactic for the unit available
+	if (sUnitName == "chaos_squad_slave") then
+		return SlaveTactic(oSquadAI)
+	elseif (sUnitName == "chaos_squad_cultist") then
+		return CultistTactic(oSquadAI)
+	elseif (sUnitName == "chaos_marine_bike_squad") then
+		return ChaosAttackbikeTactic(oSquadAI)
+	elseif (sUnitName == "chaos_marine_squad") or (sUnitName == "chaos_havoc_marine_squad") then
+		return ChaosMarineSquadTactic(oSquadAI)
+	elseif (sUnitName == "chaos_plague_marine_squad") then
+		return ChaosPlagueSquadTactic(oSquadAI)
+	elseif (sUnitName == "chaos_noise_marine_squad") then
+		return ChaosNoiseSquadTactic(oSquadAI)
+	elseif (sUnitName == "chaos_rubric_marine_squad") then
+		return ChaosRubricSquadTactic(oSquadAI)
+	elseif (sUnitName == "chaos_marine_icon_bearer_squad") then
+		return IconBearerTactic(oSquadAI)
+	elseif (sUnitName == "chaos_squad_daemon_prince") then
+		return DaemonPrinceTactic(oSquadAI)
+	elseif (sUnitName == "chaos_squad_daemon_prince_advance_sp") then
+		return DaemonPrinceAdvancedTactic(oSquadAI)
+	elseif (sUnitName == "chaos_squad_lord") then
+		return ChaosLordTactic(oSquadAI)
+	elseif (sUnitName == "chaos_squad_lord_terminator") then
+		return ChaosLordTerminatorTactic(oSquadAI)
+	elseif (sUnitName == "chaos_squad_lord_khorne") or (sUnitName == "chaos_squad_lord_nurgle") or (sUnitName == "chaos_squad_lord_slaanesh") then
+		return ChaosLordsTactic(oSquadAI)
+	elseif (sUnitName == "chaos_squad_lord_advance_sp") then
+		return ChaosLordAdvancedTactic(oSquadAI)
+	elseif (sUnitName == "chaos_squad_lord_undivided") then
+		return HellSmithTactic(oSquadAI)
+	elseif (sUnitName == "chaos_squad_psyker") then
+		return ChaosPsykerTactic(oSquadAI)
+	elseif (sUnitName == "chaos_squad_sorcerer") then
+		return SorcererTactic(oSquadAI)
+	elseif (sUnitName == "chaos_squad_sorcerer_advance_sp") then
+		return SorcererAdvancedTactic(oSquadAI)
+	elseif (sUnitName == "chaos_squad_bloodthirster") then
+		return BloodThirsterTactic(oSquadAI)
+	elseif (sUnitName == "chaos_squad_guo") then
+		return GUOTactic(oSquadAI)
+	elseif (sUnitName == "chaos_squad_keeper_of_secrets") then
+		return KOSTactic(oSquadAI)
+	elseif (sUnitName == "chaos_squad_lord_of_change") then
+		return LocTactic(oSquadAI)
+	elseif (sUnitName == "chaos_squad_heldrake") then
+		return HeldrakeTactic(oSquadAI)
+	elseif (sUnitName == "chaos_squad_rhino") then
+		return ChaosRhinoTactic(oSquadAI)
+	elseif (sUnitName == "chaos_squad_thunderhawk") then
+		return ChaosThunderhawkTactic(oSquadAI)
+	elseif (sUnitName == "chaos_squad_assaultpod") then
+		return AssaultPodTactic(oSquadAI)
+	elseif (sUnitName == "chaos_squad_hell_talon") then
+		return HellTalonTactic(oSquadAI)
+	elseif (sUnitName == "chaos_squad_deathwheel") then
+		return DeathWheelTactic(oSquadAI)
+	elseif (sUnitName == "chaos_squad_brass_scorpion") or (sUnitName == "chaos_squad_defiler") then
+		return BrassScorpionTactic(oSquadAI)
+	elseif (sUnitName == "chaos_squad_landraider") then
+		return ChaosLandRaiderTactic(oSquadAI)
+	elseif (sUnitName == "chaos_squad_warhound_titan") or  (sUnitName == "chaos_squad_reaver_titan") then
+		return TitanTactic(oSquadAI)
+	elseif (eClass == UnitStatsAI.UC_VehicleLow or eClass == UnitStatsAI.UC_VehicleMed or eClass == UnitStatsAI.UC_VehicleHigh) or
+	       (eClass == UnitStatsAI.UC_AirLow or eClass == UnitStatsAI.UC_AirMed or eClass == UnitStatsAI.UC_AirHigh) then
+		return ChaosMarineVehicleTactic(oSquadAI)
+	end
+	return ChaosMarineInfantryTactic(oSquadAI)
+end
+
+-- Creates a base tactic
+function chaos_marine_race:CreateBaseTactic(oBuilding)
+
+	-- Get building name
+	local sBuildingName = oBuilding:GetBaseName()
+	
+	-- Check if their is a special tactic for the building available
+	if (sBuildingName == "chaos_sacrificial_circle") or 
+		(sBuildingName == "chaos_machine_pit") or 
+		(sBuildingName == "chaos_greater_sacrificial_circle") or 
+		(sBuildingName == "chaos_temple") or 
+		(sBuildingName == "chaos_warpforge") or 
+		(sBuildingName == "chaos_warpgate") then
+		return ChaosDeepstrikeTactic(oBuilding)
+	elseif (sBuildingName == "chaos_armoury") or 
+		(sBuildingName == "chaos_listening_post") or 
+		(sBuildingName == "chaos_plasma_generator") or 
+		(sBuildingName == "chaos_shrine_khorne") or 
+		(sBuildingName == "chaos_turret_bolter") or 
+		(sBuildingName == "chaos_wall") then
+		return ChaosBuildingTactic(oBuilding)
+	elseif (sBuildingName == "chaos_hq") then
+		return ChaosHQTactic(oBuilding)
+	elseif (sBuildingName == "chaos_hq_super") then
+		return ChaosHQSuperTactic(oBuilding)
+	elseif (sBuildingName == "chaos_commander_bomb") then
+		return ChaosBombTactic(oBuilding)
+	elseif (sBuildingName == "chaos_thermo_plasma_generator") then
+		return ChaosBigGeneratorTactic(oBuilding)
+	end
+	return nil
+end
+
+-- Returns a specific information
+function chaos_marine_race:GetInfo(sType)
+
+	-- Check info type
+	if (sType == "TurretPower") then
+		return 400
+	elseif (sType == "SupportAllyFactor") then
+		return 8 / 4
+	elseif (sType == "AttackModifier") then
+		return 10
+	elseif (sType == "CriticalRangeIncreasePerTier") then
+		return 10
+	elseif (sType == "MinArmyStrengthPerTier") then
+		return 750
+	elseif (sType == "AttackRatio") then
+		return 4 / 5
+	elseif (sType == "RetreatRatio") then
+		return 3 / 5
+	elseif (sType == "InvisibleBuildings") then
+		return false
+	elseif (sType == "HarassingLeader") then
+		return "chaos_squad_lord"
+	elseif (sType == "AutoConstructBuildings") then
+		return false
+	end
+	return nil
+end
+
+-- Returns the building type and threat
+function chaos_marine_race:GetBuildingType(sBuildingName)
+
+	-- Return race specific object string
+	if (sBuildingName == "chaos_hq") then
+		return "HQ", 0
+		
+	elseif (sBuildingName == "chaos_plasma_generator") then
+		return "Generator", 0
+		
+	elseif (sBuildingName == "chaos_thermo_plasma_generator") then
+		return "BiggerGenerator", 0
+		
+	elseif (sBuildingName == "chaos_machine_pit") then
+		return "VehicleBuilding", 0
+
+	elseif (sBuildingName == "chaos_armoury") then
+		return "Armoury", 0
+		
+	elseif (sBuildingName == "chaos_listening_post") then
+		return "ListeningPost", 0
+		
+	elseif (sBuildingName == "chaos_turret_bolter") then
+		return "Turret", 50
+		
+	elseif (sBuildingName == "chaos_mine_field") then
+		return "Mine", 25
+	end
+	return nil, 0
+end

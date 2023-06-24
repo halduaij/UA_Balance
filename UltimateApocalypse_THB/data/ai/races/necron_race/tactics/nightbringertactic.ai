@@ -1,0 +1,31 @@
+----------------------------------------
+-- File: 'nightbringertactic.ai'
+-- Edited by Thudmeizer @ 09.03.2016
+
+class 'NightBringerTactic' (NecronInfantryTactic)
+
+NightBringer = {}
+
+function NightBringerTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Night Bringer Tactic")
+end
+
+function NightBringerTactic:AlwaysAttack()
+	return true
+end
+
+-- Don't return to Necron Lord
+function NightBringerTactic:InitAbilities()
+
+	-- Invulnerability
+	if (NightBringer.invulnerability_id == nil) then
+		NightBringer.invulnerability_id = cpu_manager.stats:GetAbilityID( "necron_invulnerability" )
+	end
+end
+
+function NightBringerTactic:DoAbilities()
+	
+	-- Try abilities
+	Ability.DoAbility(self.squad_ai, NightBringer.invulnerability_id, Ability.PredicateFilters.IsInCombat)
+end

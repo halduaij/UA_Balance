@@ -1,0 +1,848 @@
+----------------------------------------
+-- File: 'eldarbuildbasestrategy.ai'
+-- Edited by Thudmeizer @ 16.11.2016
+-- Edited by Cylarne_04 2011
+
+class 'EldarBuildBaseStrategy' (BuildBaseStrategy)
+
+function EldarBuildBaseStrategy:__init( baseinfo ) super( baseinfo )
+
+	-- Add detector units (Best first, worst last)
+	self:AddDetectorUnit("eldar_squad_seer_council")
+	self:AddDetectorUnit("eldar_guardian_squad")
+	self:AddDetectorUnit("eldar_harlequin_squad")
+
+	-- Phases of attacks. If army is decreased substantially, or build only titans: modify.
+	self.m_iArmyBuild = math.random(0, 4) -- 4 phases total. If 4 armies was defeated, stop creating armies as it is pointless. Build titans and focus on build order strategy.
+	self.m_iArmyHighestStrength = 0 -- Maximum possible army strength I ever had.
+
+	-- Build first HQ at start pos
+	self.m_iNumHQAtStartPos = 1
+
+	-- dark40k - set items that need bypass for CpuPrerequisites
+	CpuPrerequisites2.AddSpecialItem("eldar_support_platform_addon_probe", CpuPrerequisites.BT_AddOn)
+end
+
+function EldarBuildBaseStrategy:ChooseBuildProgram()
+
+	-- Check build program count
+	if (table.getn(self.info.BuildPrograms) ~= 4) then
+		return BuildBaseStrategy.ChooseBuildProgram(self)
+	end
+	-- Set probabilities of the strategies according to the map size
+	local iBuildProgram1	-- Normal
+	return 1
+end
+
+function EldarBuildBaseStrategy:EvaluateSquadCap()
+
+	-- Check if any webway gates are in production
+	local iBuildingID = cpu_manager.stats:GetBuildingID( "eldar_webway_gate" )
+	if (self:PlanExists("Build Building Plan", iBuildingID)) then
+		return
+	end
+
+	-- Check squad and support cap
+	if (self:CheckSquadCap(300, 0) or self:CheckSupportCap(150, 300)) then
+		
+		-- Build a barracks
+		local tBuildType = CpuBuildType()
+		tBuildType.btype = CpuPrerequisites.BT_Building
+		tBuildType.name = "eldar_webway_gate"
+		if (self:TryBuild( tBuildType )) then
+			aitrace("BuildController: Dynamic build of "..tBuildType.name)
+		end
+		return
+	end
+end
+
+function EldarBuildBaseStrategy:GetBuildingName( sType )
+
+	-- Return race specific object string
+	if (sType == "HQ") then
+		return "eldar_hq"
+		
+	elseif (sType == "Generator") then
+		return "eldar_warp_generator"
+		
+	elseif (sType == "BiggerGenerator") then
+		return "eldar_advanced_warp_generator"
+		
+	elseif (sType == "VehicleBuilding") then
+		return "eldar_support_portal"
+		
+	elseif (sType == "ListeningPost") then
+		return "eldar_listening_post"
+		
+	elseif (sType == "Turret") then
+		return "eldar_support_platform_scatterlaser"
+		
+	elseif (sType == "Mine") then
+		return "eldar_mine_field"
+	end
+	return nil
+end
+
+function EldarBuildBaseStrategy:GetAddonBuilding( sType )
+
+	if (sType == "eldar_support_platform_addon") then
+		return "eldar_support_platform_scatterlaser"
+		
+	elseif (sType == "eldar_support_platform_addon_probe") then
+		return "eldar_support_platform_scatterlaser"
+
+	elseif (sType == "eldar_support_platform_addon_vibrocannon") then
+		return "eldar_support_platform_cannon_sp"
+		
+	elseif (sType == "eldar_support_platform_addon_shadow_weaver") then
+		return "eldar_support_platform_cannon_sp"
+		
+	elseif (sType == "eldar_support_platform_addon_uber") then
+		return "eldar_support_platform_uberturret_sp_dxp3"
+		
+	elseif (sType == "eldar_list_post_addon_1") then
+		return "eldar_listening_post"
+		
+	elseif (sType == "eldar_list_post_addon_2") then
+		return "eldar_listening_post"
+		
+	elseif (sType == "eldar_aspect_stone_direavengers") then
+		return "eldar_aspect_portal"
+		
+	elseif (sType == "eldar_aspect_stone_banshees") then
+		return "eldar_aspect_portal"
+		
+	elseif (sType == "eldar_aspect_stone_dark_reapers") then
+		return "eldar_aspect_portal"
+		
+	elseif (sType == "eldar_aspect_stone_swooping_hawk") then
+		return "eldar_aspect_portal"
+		
+	elseif (sType == "eldar_aspect_stone_fire_dragon") then
+		return "eldar_aspect_portal"
+		
+	elseif (sType == "eldar_aspect_stone_harlequin") then
+		return "eldar_aspect_portal"
+		
+	elseif (sType == "eldar_aspect_stone_scorpions") then
+		return "eldar_aspect_portal"
+		
+	elseif (sType == "eldar_aspect_stone_warp_spider") then
+		return "eldar_aspect_portal"
+		
+	elseif (sType == "eldar_aspect_stone_wraithguard") then
+		return "eldar_aspect_portal"
+		
+	elseif (sType == "eldar_aspect_stone_wraithguard_ancient") then
+		return "eldar_aspect_portal"
+		
+	elseif (sType == "eldar_aspect_stone_vyper") then
+		return "eldar_support_portal"
+		
+	elseif (sType == "eldar_aspect_stone_nightspinner") then
+		return "eldar_support_portal"
+
+	elseif (sType == "eldar_aspect_stone_nightwing") then
+		return "eldar_support_portal"
+		
+	elseif (sType == "eldar_aspect_stone_war_walker") then
+		return "eldar_support_portal"
+		
+	elseif (sType == "eldar_aspect_stone_wraithlord") then
+		return "eldar_support_portal"
+		
+	elseif (sType == "eldar_aspect_stone_prism") then
+		return "eldar_support_portal"
+		
+	elseif (sType == "eldar_aspect_stone_wraithwalker") then
+		return "eldar_support_portal"
+
+	elseif (sType == "eldar_aspect_stone_hornet") then
+		return "eldar_support_portal"
+
+	elseif (sType == "eldar_aspect_stone_wraithking") then
+		return "eldar_support_portal_super"
+
+	elseif (sType == "eldar_spire_stone_destruction") then
+		return "eldar_hq_super"
+
+	elseif (sType == "eldar_spire_stone_infinity_resource") then
+		return "eldar_hq_super"
+
+	elseif (sType == "eldar_spire_stone_infinity_shroud") then
+		return "eldar_hq_super"
+	end
+	return nil
+end
+
+function EldarBuildBaseStrategy:UpdateTierLevel() 
+
+	-- Reset tier level
+	self.tierLevel = 1
+	
+	-- Check if we have the proper researches or buildings
+	if cpu_manager.cpu_player:IsResearchComplete("eldar_apocalypse_research") then
+		self.tierLevel = 6
+		return
+	elseif cpu_manager.cpu_player:IsResearchComplete("eldar_farseer_ability_research_3") then
+		self.tierLevel = 5
+		return
+	elseif cpu_manager.cpu_player:IsResearchComplete("eldar_annihilate_the_enemy") then
+		self.tierLevel = 4
+		return
+	elseif cpu_manager.cpu_player:IsResearchComplete("eldar_tier2_research") then
+		self.tierLevel = 3
+		return
+	elseif self:GetBuildingCountByName("eldar_soul_shrine") > 0 then
+		self.tierLevel = 2
+		return
+	end
+end
+
+-- Arkhan 11.2005: Returns the squad cap and support cap of the given squad
+function EldarBuildBaseStrategy:GetUnitStats(sSquadName)
+
+	if (sSquadName == "eldar_guardian_squad") then
+		return 2, 0
+	elseif (sSquadName == "eldar_storm_guardian_squad") then
+		return 2, 0
+	elseif (sSquadName == "eldar_squad_rangers") then
+		return 3, 0
+	elseif (sSquadName == "eldar_squad_corsairs") then
+		return 2, 0
+	elseif (sSquadName == "eldar_dire_avenger_squad") then
+		return 2, 0
+	elseif (sSquadName == "eldar_squad_banshees") then
+		return 2, 0
+	elseif (sSquadName == "eldar_squad_dark_reapers") then
+		return 2, 0
+	elseif (sSquadName == "eldar_squad_striking_scorpions") then
+		return 2, 0
+	elseif (sSquadName == "eldar_squad_swooping_hawk") then
+		return 2, 0
+	elseif (sSquadName == "eldar_harlequin_squad") then
+		return 3, 0
+	elseif (sSquadName == "eldar_squad_fire_dragon") then
+		return 4, 0
+	elseif (sSquadName == "eldar_squad_warp_spider") then
+		return 4, 0
+	elseif (sSquadName == "eldar_squad_shining_spears") then
+		return 2, 1
+	elseif (sSquadName == "eldar_squad_wraithguard_ancient") then
+		return 12, 0
+	elseif (sSquadName == "eldar_squad_wraithguard") then
+		return 6, 0
+	elseif (sSquadName == "eldar_squad_grav_platform") then
+		return 0, 1
+	elseif (sSquadName == "eldar_squad_grav_platform_brightlance") then
+		return 0, 1
+	elseif (sSquadName == "eldar_squad_jetbikes") then
+		return 1, 1
+	elseif (sSquadName == "eldar_squad_wave_serpent") then
+		return 0, 2
+	elseif (sSquadName == "eldar_squad_falcon_grav_tank") then
+		return 0, 2
+	elseif (sSquadName == "eldar_squad_vypers") then
+		return 0, 2
+	elseif (sSquadName == "eldar_squad_war_walker") then
+		return 0, 2
+	elseif (sSquadName == "eldar_squad_wraithlord") then
+		return 0, 2
+	elseif (sSquadName == "eldar_squad_nightwing") then
+		return 0, 2
+	elseif (sSquadName == "eldar_squad_nightwing_elite_sp_dxp3") then
+		return 0, 2
+	elseif (sSquadName == "eldar_squad_hornet") then
+		return 0, 3
+	elseif (sSquadName == "eldar_squad_nightspinner") then
+		return 0, 3
+	elseif (sSquadName == "eldar_squad_fire_prism") then
+		return 0, 4
+	elseif (sSquadName == "eldar_squad_wraithwalker") then
+		return 0, 4
+	end
+	return 0, 0
+end
+
+function EldarBuildBaseStrategy:BuildFlexible()
+
+	-- Locales
+	local iArmyStrength = cpu_manager:GetArmyStrength()
+	local iRequisition = resource_manager:GetResourceAmount():Get( ResourceAmount.RT_Requisition )
+	local iPower = resource_manager:GetResourceAmount():Get( ResourceAmount.RT_Power )
+	
+	if (iArmyStrength >= 1000 or (iPower >= 800 and iRequisition >= 900)) then
+			
+		-- Dynamic research item syntax: ResearchName, MinTier, RequisitionCost, PowerCost, MinSquadCap, MinSupportCap, SquadName, SquadMinCount
+		local iCommanderSquads	= self:CountSquads("eldar_squad_farseer") + self:CountSquads("eldar_squad_autarch") + self:CountSquads("eldar_squad_shadowseer") + self:CountSquads("eldar_warlock_attachable_squad")
+		local iInfantrySquads	= self:CountSquads("eldar_guardian_squad") + self:CountSquads("eldar_squad_banshees") + self:CountSquads("eldar_squad_dark_reapers") +
+								  self:CountSquads("eldar_squad_warp_spider") + self:CountSquads("eldar_squad_fire_dragon") + self:CountSquads("eldar_dire_avenger_squad") + self:CountSquads("eldar_harlequin_squad") + self:CountSquads("eldar_squad_striking_scorpions")
+		local iVehicleSquads	= self:CountSquads("eldar_squad_falcon_grav_tank") + self:CountSquads("eldar_squad_vypers") + self:CountSquads("eldar_squad_wraithlord") + self:CountSquads("eldar_squad_wraithking") +
+								  self:CountSquads("eldar_squad_fire_prism") + self:CountSquads("eldar_squad_nightwing") + self:CountSquads("eldar_squad_nightspinner")
+		local iEliteVehicleSquads	= self:CountSquads("eldar_squad_scorpion") + self:CountSquads("eldar_squad_storm_serpent") + self:CountSquads("eldar_squad_voidspinner") + self:CountSquads("eldar_squad_cobra")
+
+		-- Compute tier 1 researches
+		if (self.tierLevel >= 1) then
+			
+			if (iArmyStrength >= 750) then
+				-- Compute Webway Gate researches
+				self:DynamicResearch("eldar_fleet_of_foot_research", 1, 50, 50, 0, 0, nil, 0)
+				self:DynamicResearch("eldar_webway_gate_healing_research", 1, 50, 25, 0, 0, nil, 0)
+			end
+
+			-- Compute rangers infiltration research
+			if (self:CountSquads("eldar_squad_rangers") >= 1) then
+				self:DynamicResearch("eldar_ranger_infiltration_research", 2, 100, 100, 0, 0, nil, 0)
+			end
+
+			-- Compute secondary researches
+			if (iInfantrySquads >= 3) then
+				self:DynamicResearch("eldar_plasma_grenade_research", 1, 25, 75, 0, 0, nil, 0)
+			end
+
+			-- Compute Aspect Portal Addons
+			if (self:GetBuildingCountByName("eldar_aspect_portal") > 0 and iRequisition >= 500) then
+				self:DynamicAddon("eldar_aspect_stone_direavengers", 100, 1, 50, 0, 0, 0, nil, nil, false)
+				self:DynamicAddon("eldar_aspect_stone_banshees", 100, 1, 50, 0, 0, 0, nil, nil, false)
+			end
+		end
+
+		-- Compute tier 2 researches
+		if (self.tierLevel >= 2) then
+		
+			-- Compute resource researches
+			self:DynamicResearch("eldar_power_research_1", 2, 200, 20, 0, 0, nil, 0)
+			self:DynamicResearch("eldar_requisition_research_1", 2, 75, 250, 0, 0, nil, 0)
+
+			-- Compute Aspect Portal Addons
+			if (self:GetBuildingCountByName("eldar_aspect_portal") > 0 and iRequisition >= 500) then
+				self:DynamicAddon("eldar_aspect_stone_dark_reapers", 100, 2, 50, 0, 0, 0, nil, nil, false)
+				self:DynamicAddon("eldar_aspect_stone_scorpions", 100, 2, 50, 0, 0, 0, nil, nil, false)
+				self:DynamicAddon("eldar_aspect_stone_swooping_hawk", 100, 2, 50, 0, 0, 0, nil, nil, false)
+			end
+
+			-- Compute Support Portal Addons
+			if (self:GetBuildingCountByName("eldar_support_portal") > 0 and iRequisition >= 500) then
+				self:DynamicAddon("eldar_aspect_stone_vyper", 100, 2, 50, 0, 0, 0, nil, nil, false)
+				self:DynamicAddon("eldar_aspect_stone_wraithlord", 100, 2, 50, 0, 0, 0, nil, nil, false)
+				self:DynamicAddon("eldar_aspect_stone_nightwing", 100, 2, 50, 0, 0, 0, nil, nil, false)
+				self:DynamicAddon("eldar_aspect_stone_war_walker", 100, 2, 50, 0, 0, 0, nil, nil, false)
+			end
+
+			-- Bonesinger researches
+			self:DynamicResearch("eldar_bonesinger_ability_research_2", 1, 60, 30, 0, 0, nil, 0)	-- Bonesong
+			self:DynamicResearch("eldar_bonesinger_ability_research_3", 1, 50, 25, 0, 0, nil, 0)	-- Wraithbone
+			
+			-- Compute Call of War "Warshout" research
+			if (self:CountSquads("eldar_squad_banshees") >= 1) then
+				self:DynamicResearch("eldar_exarch_ability_research", 2, 100, 100, 0, 0, nil, 0)
+			end
+
+			-- Compute Death Omen research
+			if (self:CountSquads("eldar_squad_dark_reapers") >= 1) then
+				self:DynamicResearch("eldar_exarch_ability_research_1", 2, 100, 100, 0, 0, nil, 0)
+			end
+
+			-- Compute Vengeful Persistance research
+			if (self:CountSquads("eldar_dire_avenger_squad") >= 1) then
+				self:DynamicResearch("eldar_exarch_ability_research_2", 2, 100, 100, 0, 0, nil, 0)
+			end
+
+			-- Compute infantry researches
+			if (iInfantrySquads >= 3) then
+				self:DynamicResearch("eldar_research_infantryhealth_1", 2, 100, 50, 0, 0, nil, 0)
+				self:DynamicResearch("eldar_research_infantryaccuracy_1", 2, 100, 50, 0, 0, nil, 0)
+			end
+
+			-- Compute vehicle researches
+			if (iVehicleSquads >= 3) then
+				self:DynamicResearch("eldar_vehicle_ability_research", 2, 150, 125, 0, 0, nil, 0)
+			end
+			
+			-- Compute Webway Gate researches
+			self:DynamicResearch("eldar_webway_gate_healing_research_2", 2, 125, 75, 0, 0, nil, 0)
+
+			-- Compute Nightwing research
+			if (self:CountSquads("eldar_squad_nightwing") >= 1) then
+				self:DynamicResearch("eldar_research_nightwing_regen", 2, 125, 75, 0, 0, nil, 0)
+			end	
+
+			-- Compute secondary researches
+			if (iArmyStrength >= 1250) then
+			
+				-- Compute Webway Gate researches
+				self:DynamicResearch("eldar_shroud_ability_research", 2, 100, 100, 0, 0, nil, 0)
+				
+				-- Compute infantry researches
+				if (iInfantrySquads >= 3) then
+					self:DynamicResearch("eldar_blind_grenade_research", 2, 50, 50, 0, 0, nil, 0)
+					self:DynamicResearch("eldar_haywire_bomb_research", 2, 100, 100, 0, 0, nil, 0)
+				end
+					
+				-- Compute infantry or commander researches
+				if (iInfantrySquads >= 3) or (iCommanderSquads >= 1) then
+					self:DynamicResearch("eldar_farseer_ability_research", 2, 75, 35, 0, 0, nil, 0)	-- Fortune
+				end
+
+				-- Compute turret upgrades research
+				self:DynamicResearch("eldar_turret_upgrade1", 2, 150, 150, 0, 0, nil, 0)
+				self:DynamicResearch("eldar_turret_upgrade2", 3, 390, 390, 0, 0, nil, 0)
+				self:DynamicResearch("eldar_listening_post_upgrade", 3, 600, 240, 0, 0, nil, 0)
+			end
+
+			-- Compute bonus researches
+			if (iArmyStrength >= 1750) then
+				
+				-- Compute infantry researches
+				if (iInfantrySquads >= 3) then
+					self:DynamicResearch("eldar_warlock_ability_research", 2, 125, 65, 0, 0, nil, 0) -- Mysticism
+				end
+
+				-- Compute Probe Addon for scatter Laser turrets if enemy has infiltrators
+				if (cpu_manager:EnemyHasUnitInfiltrators() or cpu_manager:EnemyHasBaseInfiltrators()) then
+					self:DynamicAddon("eldar_support_platform_addon_probe", 5, 2, 10, 85, 0, 0, nil, nil, false)
+				end
+
+				-- Bonesinger researches
+				self:DynamicResearch("eldar_bonesinger_ability_research_1", 2, 390, 210, 0, 0, nil, 0)	-- Song of Peace
+			end
+		end
+
+		-- Compute tier 3 researches
+		if (self.tierLevel >= 3) then
+		
+			-- Compute resource researches
+			self:DynamicResearch("eldar_power_research_2", 3, 350, 40, 0, 0, nil, 0)
+			self:DynamicResearch("eldar_requisition_research_2", 3, 100, 350, 0, 0, nil, 0)
+
+			-- Compute Aspect Portal Addons
+			if (self:GetBuildingCountByName("eldar_aspect_portal") > 0 and iRequisition >= 500) then
+				self:DynamicAddon("eldar_aspect_stone_harlequin", 100, 3, 50, 0, 0, 0, nil, nil, false)
+				self:DynamicAddon("eldar_aspect_stone_fire_dragon", 100, 3, 50, 0, 0, 0, nil, nil, false)
+				self:DynamicAddon("eldar_aspect_stone_warp_spider", 100, 3, 50, 0, 0, 0, nil, nil, false)
+			end
+
+			-- Compute Support Portal Addons
+			if (self:GetBuildingCountByName("eldar_support_portal") > 0 and iRequisition >= 500) then
+				self:DynamicAddon("eldar_aspect_stone_nightspinner", 100, 3, 50, 0, 0, 0, nil, nil, false)
+				self:DynamicAddon("eldar_aspect_stone_hornet", 100, 3, 50, 0, 0, 0, nil, nil, false)
+			end
+
+			-- Compute infantry researches
+			if (iInfantrySquads >= 3) then
+				self:DynamicResearch("eldar_gravitic_booster_research", 3, 75, 50, 0, 0, nil, 0)
+				self:DynamicResearch("eldar_fleet_of_foot_research_2", 3, 100, 100, 0, 0, nil, 0)
+				self:DynamicResearch("eldar_research_infantryhealth_2", 3, 150, 100, 0, 0, nil, 0)
+				self:DynamicResearch("eldar_research_infantryaccuracy_2", 3, 150, 100, 0, 0, nil, 0)
+			end
+
+			-- Compute Laughing God Stealth researches
+			if (self:CountSquads("eldar_harlequin_squad") >= 1) then
+				self:DynamicResearch("eldar_research_stealth_stone_harlequin", 3, 150, 150, 0, 0, nil, 0)
+			end
+	
+			-- Compute Webway Gate researches
+			self:DynamicResearch("eldar_webway_gate_disruption_ability_research", 3, 150, 150, 0, 0, nil, 0)
+			self:DynamicResearch("eldar_shroud_ability_research_2", 3, 200, 200, 0, 0, nil, 0)
+
+			-- Compute bonus Webway research if we have lots of extra resources to burn
+			if (iPower >= 4000 and iRequisition >= 4000) then
+				self:DynamicResearch("eldar_webway_gate_resource_allocation_research", 3, 550, 550, 0, 0, nil, 0)
+			end
+
+			-- Compute Shining Spear researches
+			if (self:CountSquads("eldar_squad_shining_spears") >= 1) then
+				self:DynamicResearch("eldar_research_shining_spear_squadsize", 3, 250, 60, 0, 0, nil, 0)
+			end
+
+			-- Compute Executioner Blade research
+			if (self:CountSquads("eldar_dire_avenger_squad") >= 1) then
+				self:DynamicResearch("eldar_exarch_ability_research_3", 3, 75, 15, 0, 0, nil, 0)
+			end
+
+			-- Compute Biting Blades research
+			if (self:CountSquads("eldar_squad_striking_scorpions") >= 1) then
+				self:DynamicResearch("eldar_exarch_ability_research_4", 3, 100, 70, 0, 0, nil, 0)
+			end
+
+			-- Compute secondary researches
+			if (iArmyStrength >= 1750) then
+				
+				-- Compute heavy armour researches
+				if (iEliteVehicleSquads >= 1) then
+					self:DynamicResearch("eldar_super_heavy_research", 3, 200, 200, 0, 0, nil, 0)
+				end
+
+				-- Compute infantry researches
+				if (iInfantrySquads >= 3) then
+					self:DynamicResearch("eldar_gravity_grenade_research", 3, 100, 100, 0, 0, nil, 0)
+					self:DynamicResearch("eldar_warlock_ability_research_3", 3, 140, 90, 0, 0, nil, 0)
+				end
+
+				-- Compute Webway Gate researches
+				self:DynamicResearch("eldar_shroud_ability_research_3", 3, 450, 450, 0, 0, nil, 0)	
+			end
+
+			-- Compute Tier III
+			self:DynamicResearch("eldar_annihilate_the_enemy", 3, 900, 900, 0, 0, nil, 0)
+		end
+		
+		-- Compute tier 4 researches
+		if (self.tierLevel >= 4) then
+			
+			-- Compute resource researches
+			self:DynamicResearch("eldar_power_research_3", 4, 500, 60, 0, 0, nil, 0)
+			self:DynamicResearch("eldar_requisition_research_3", 4, 125, 450, 0, 0, nil, 0)
+
+			-- Compute Aspect Portal Addons
+			if (self:GetBuildingCountByName("eldar_aspect_portal") > 0 and iRequisition >= 500) then
+				self:DynamicAddon("eldar_aspect_stone_wraithguard", 100, 4, 50, 0, 0, 0, nil, nil, false)
+			end
+
+			-- Compute Support Portal Addons
+			if (self:GetBuildingCountByName("eldar_support_portal") > 0 and iRequisition >= 500) then
+				self:DynamicAddon("eldar_aspect_stone_prism", 100, 4, 50, 0, 0, 0, nil, nil, false)
+				self:DynamicAddon("eldar_aspect_stone_wraithwalker", 100, 4, 50, 0, 0, 0, nil, nil, false)
+			end
+
+			-- Compute Structure Relocation if we have extra resources to burn
+			if (iPower >= 2000 and iRequisition >= 2000) then
+				self:DynamicResearch("eldar_webway_gate_relocation_research", 4, 100, 100, 0, 0, nil, 0)
+			end
+
+			-- Compute Heart of Khaine researches
+			self:DynamicResearch("eldar_khaine_research_1", 4, 100, 100, 0, 0, nil, 0)
+
+			-- Compute Shining Spear researches
+			if (self:CountSquads("eldar_squad_shining_spears") >= 1) then
+				self:DynamicResearch("eldar_research_stealth_stone_shining_spears", 4, 300, 300, 0, 0, nil, 0)
+			end
+
+			-- Compute Support Portal Addons
+			if (self:GetBuildingCountByName("eldar_support_portal_super") > 0 and iRequisition >= 500) then
+				self:DynamicAddon("eldar_aspect_stone_wraithking", 100, 4, 50, 0, 0, 0, nil, nil, false)
+			end
+
+			-- Compute Aspect Portal Addons
+			if (self:GetBuildingCountByName("eldar_aspect_portal") > 0 and iRequisition >= 500) then
+				self:DynamicAddon("eldar_aspect_stone_wraithguard_ancient", 100, 4, 50, 0, 0, 0, nil, nil, false)
+			end
+		
+			-- Compute Relic researches
+			self:DynamicResearch("eldar_relic_research_1", 4, 1000, 1000, 0, 0, nil, 0)
+
+			-- Compute Tier IV
+			self:DynamicResearch("eldar_farseer_ability_research_3", 4, 1350, 1350, 0, 0, nil, 0)
+		end
+
+		-- Compute tier 5 researches
+		if (self.tierLevel >= 5) then
+
+			-- Compute resource researches
+			self:DynamicResearch("eldar_power_research_4", 5, 650, 80, 0, 0, nil, 0)
+			self:DynamicResearch("eldar_requisition_research_4", 5, 150, 550, 0, 0, nil, 0)
+
+			-- Compute Large Webway researches
+			if (self:GetBuildingCountByName("eldar_webway_sail") >= 1) then
+		        	self:DynamicResearch("eldar_great_webway_healing_research", 5, 65, 125, 0, 0, nil, 0)
+		       		self:DynamicResearch("eldar_great_webway_sight_research", 5, 85, 125, 0, 0, nil, 0)
+		        	self:DynamicResearch("eldar_great_webway_building_research", 5, 125, 125, 0, 0, nil, 0)
+		        	self:DynamicResearch("eldar_great_webway_shroud_research", 5, 150, 150, 0, 0, nil, 0)
+			end
+
+			-- Compute Autarch Stealth researches
+			if (self:CountSquads("eldar_squad_autarch") >= 1) then
+				self:DynamicResearch("eldar_research_stealth_stone_autarch", 5, 150, 150, 0, 0, nil, 0)
+			end
+
+			-- Compute Shadowseer Stealth researches
+			if (self:CountSquads("eldar_squad_shadowseer") >= 1) then
+				self:DynamicResearch("eldar_research_stealth_stone_shadowseer", 5, 150, 150, 0, 0, nil, 0)
+			end
+
+			-- Compute Khaine's Champion research
+			self:DynamicResearch("eldar_khaine_research_2", 5, 2400, 2400, 0, 0, nil, 0)
+
+			-- Compute Laughing God research
+			self:DynamicResearch("eldar_laughing_god_research", 5, 1000, 1000, 0, 0, nil, 0)
+
+			-- Compute Relic researches
+			self:DynamicResearch("eldar_relic_research_2", 5, 2000, 2000, 0, 0, nil, 0)
+
+			-- Compute Apocalypse
+			if self:HasCriticalLocation() then
+				self:DynamicResearch("eldar_apocalypse_research", 5, 4000, 4000, 0, 0, nil, 0)
+			end
+		end
+
+		-- Compute tier 6 researches
+		if (self.tierLevel >= 6) then
+
+			-- Compute resource researches
+			self:DynamicResearch("eldar_requisition_research_5", 6, 300, 1100, 0, 0, nil, 0)
+			self:DynamicResearch("eldar_power_research_5", 6, 800, 100, 0, 0, nil, 0)
+			
+			-- Compute Revenant Titan research
+			if (self:CountSquads("eldar_squad_titan_revenant") >= 1) then
+				self:DynamicResearch("eldar_titan_revenant_research", 6, 1000, 1000, 0, 0, nil, 0)
+			end
+
+			-- Compute Phoenix research
+			if (self:CountSquads("eldar_squad_phoenix") >= 1) then
+				self:DynamicResearch("eldar_titan_phoenix_research", 6, 1000, 1000, 0, 0, nil, 0)
+			end
+
+			-- Compute Phantom Titan research
+			if (self:CountSquads("eldar_squad_titan_phantom") >= 1) then
+				self:DynamicResearch("eldar_titan_phantom_research", 6, 1500, 1500, 0, 0, nil, 0)
+			end
+
+			-- Compute Vampire Raider research
+			if (self:CountSquads("eldar_squad_vampire_raider") >= 1) then
+				self:DynamicResearch("eldar_titan_raider_research", 6, 1500, 1500, 0, 0, nil, 0)
+			end
+
+			-- Compute Eldritch Cataclysm research
+			self:DynamicResearch("eldar_eldritch_cataclysm_research", 6, 10000, 10000, 0, 0, nil, 0)
+		end
+	end
+
+	-- Restrict dynamic builds to hard difficulty or higher
+	if (CpuManager.AISettings.bMultiBuildings) then
+	
+		-- Dynamic buildings
+		-- Item-Syntax: BuildingName, BuildingCount, MinTier, MinRequisition, MinPower, MinSquadCap, MinSupportCap
+		self:DynamicBuild("eldar_hq", 2, 1, 700, 0, 0, 0)
+		self:DynamicBuild("eldar_warp_generator", 6 * self:GetBuildingCountByName("eldar_hq"), 3, 500, 0, 0, 0)
+
+		-- Dynamically regulate quantity of defensive buildings based on how many strats/crits/relics we have through the tiers so we avoid cluttering/bottlenecking on maps with limited points
+		if (self.tierLevel >= 2 and (iRequisition >= 1500 and iPower >= 1500)) then
+    			if (resource_manager:GetNumOwnedStrategicPoints() < 4) or (resource_manager:GetNumOwnedStrategicPoints() < 3 and self:HasCriticalLocation()) or (resource_manager:GetNumOwnedStrategicPoints() < 3 and self:HasRelic()) then
+				self:DynamicBuild("eldar_support_platform_scatterlaser", 2, 2, 200, 100, 0, 0)
+				--self:DynamicBuild("eldar_support_platform_cannon_sp", 2 * self:GetBuildingCountByName("eldar_hq"), 2, 300, 200, 0, 0)
+				self:DynamicBuild("eldar_support_platform_cannon_sp", 2, 2, 300, 200, 0, 0)
+				self:DynamicBuild("eldar_mine_field", 2, 2, 600, 300, 0, 0)
+				self:DynamicBuild("eldar_support_platform_scatterlaser", 4, 3, 200, 100, 0, 0)
+				self:DynamicBuild("eldar_support_platform_cannon_sp", 4, 3, 300, 200, 0, 0)
+				self:DynamicBuild("eldar_mine_field", 4, 3, 600, 300, 0, 0)
+   			end
+		else
+   			if (resource_manager:GetNumOwnedStrategicPoints() > 3) or (resource_manager:GetNumOwnedStrategicPoints() > 2 and self:HasCriticalLocation()) or (resource_manager:GetNumOwnedStrategicPoints() > 2 and self:HasRelic()) then
+				self:DynamicBuild("eldar_support_platform_scatterlaser", 3, 2, 200, 100, 0, 0)
+				self:DynamicBuild("eldar_support_platform_cannon_sp", 3, 2, 300, 200, 0, 0)
+				self:DynamicBuild("eldar_mine_field", 3, 2, 600, 300, 0, 0)
+				self:DynamicBuild("eldar_support_platform_scatterlaser", 6, 3, 200, 100, 0, 0)
+				self:DynamicBuild("eldar_support_platform_cannon_sp", 6, 3, 300, 200, 0, 0)
+				self:DynamicBuild("eldar_mine_field", 6, 3, 600, 300, 0, 0)
+			end
+		end
+
+		if (self.tierLevel >= 4 and (iRequisition >= 2500 and iPower >= 2500)) then
+    			if (resource_manager:GetNumOwnedStrategicPoints() > 4) or (resource_manager:GetNumOwnedStrategicPoints() > 3 and self:HasCriticalLocation()) or (resource_manager:GetNumOwnedStrategicPoints() > 3 and self:HasRelic()) then
+				self:DynamicBuild("eldar_support_platform_uberturret_sp_dxp3", 1, 4, 1000, 400, 0, 0)
+				self:DynamicBuild("eldar_support_platform_scatterlaser", 8, 4, 200, 100, 0, 0)
+				self:DynamicBuild("eldar_support_platform_cannon_sp", 8, 4, 300, 200, 0, 0)
+				self:DynamicBuild("eldar_mine_field", 8, 4, 600, 300, 0, 0)
+				self:DynamicBuild("eldar_support_platform_uberturret_sp_dxp3", 2, 5, 2000, 600, 0, 0)
+				self:DynamicBuild("eldar_support_platform_scatterlaser", 10, 5, 200, 100, 0, 0)
+				self:DynamicBuild("eldar_support_platform_cannon_sp", 10, 5, 300, 200, 0, 0)
+				self:DynamicBuild("eldar_mine_field", 10, 5, 600, 300, 0, 0)
+				self:DynamicBuild("eldar_support_platform_uberturret_sp_dxp3", 3, 5, 2500, 700, 0, 0)
+				self:DynamicBuild("eldar_support_platform_uberturret_sp_dxp3", 4, 6, 3000, 900, 0, 0)
+				self:DynamicBuild("eldar_support_platform_scatterlaser", 12, 6, 200, 100, 0, 0)
+				self:DynamicBuild("eldar_support_platform_cannon_sp", 12, 6, 300, 200, 0, 0)
+				self:DynamicBuild("eldar_mine_field", 12, 6, 600, 300, 0, 0)
+				self:DynamicBuild("eldar_support_platform_uberturret_sp_dxp3", 6, 6, 4000, 2000, 0, 0)
+			end
+		end
+
+		-- Build additional support buildings as tiers progress
+		if (self.tierLevel >= 2) then
+			if (iRequisition >= 2000 and iPower >= 2000) then
+				self:DynamicBuild("eldar_aspect_portal", 2, 2, 1000, 0, 0, 0)
+				self:DynamicBuild("eldar_support_portal", 2, 3, 500, 1000, 0, 0)
+				self:DynamicBuild("eldar_hq", 3, 3, 1000, 500, 0, 0)
+				self:DynamicBuild("eldar_hq", 4, 5, 2000, 1000, 0, 0)
+				self:DynamicBuild("eldar_hq_super", 2, 5, 4000, 4000, 0, 0)
+				self:DynamicBuild("eldar_support_portal_super", 2, 5, 5000, 5000, 0, 0)
+				self:DynamicBuild("eldar_webway_sail", 2, 5, 7000, 6000, 0, 0)
+			end
+		end
+
+		-- Build additional uber buildings in later tiers
+		if (self.tierLevel >= 6) then
+			if (iRequisition >= 3000 and iPower >= 3000) then
+				self:DynamicBuild("eldar_aspect_portal", 3, 6, 1000, 0, 0, 0)
+				self:DynamicBuild("eldar_support_portal", 3, 6, 500, 1000, 0, 0)
+				self:DynamicBuild("eldar_support_portal_super", 3, 6, 3000, 3500, 0, 0)
+				self:DynamicBuild("eldar_hq_super", 3, 6, 4000, 4000, 0, 0)
+				self:DynamicBuild("eldar_khaine_shrine", 2, 6, 5000, 4000, 0, 0)
+				self:DynamicBuild("eldar_laughing_god_shrine", 2, 6, 4000, 5000, 0, 0)
+				self:DynamicBuild("eldar_webway_sail", 3, 6, 8000, 7000, 0, 0)
+				self:DynamicBuild("eldar_vaul_portal", 2, 6, 9000, 8000, 0, 0)
+			end
+		end
+
+		-- Build additional Superweapons if we have excess resources
+		if (iRequisition >= 12000 and iPower >= 12000) then
+			self:DynamicBuild("eldar_hq_super", 4, 6, 7500, 7500, 0, 0)
+			self:DynamicBuild("eldar_hq_super", 5, 6, 10000, 10000, 0, 0)
+			self:DynamicBuild("eldar_hq_super", 6, 6, 12000, 12000, 0, 0)
+		end
+
+		-- Build the Cataclysm 
+		local iRequisition = resource_manager:GetResourceAmount():Get( ResourceAmount.RT_Requisition )
+		local iPower = resource_manager:GetResourceAmount():Get( ResourceAmount.RT_Power )
+			
+			-- Build nuke
+			local tBuildType = CpuBuildType()
+			tBuildType.btype = CpuPrerequisites.BT_Squad
+			
+		if (iRequisition >= 29000 and iPower >= 29000) then
+
+			tBuildType.name = "eldar_squad_unthraith_globalsuperweapon"
+			if (self:TryBuild( tBuildType )) then
+				aitrace("BuildController: Dynamic build of "..tBuildType.name)
+			end
+		end
+	end
+end
+
+-- Arkhan 01.2006: Method to check if force tech should be computed
+function EldarBuildBaseStrategy:ForceTech()
+
+	-- Check time
+	if (g_iGMT < 60 * CpuManager.ForceTech.StartTier1) then
+		return false
+	end
+	
+	-- Check resources
+	local iRequisition = resource_manager:GetResourceAmount():Get( ResourceAmount.RT_Requisition )
+	local iPower = resource_manager:GetResourceAmount():Get( ResourceAmount.RT_Power )
+
+	-- Check tier
+	local iTierLevel = self:GetTierLevel()
+	if (iTierLevel == 1) then
+	
+		-- Check resources
+		if (iRequisition > 600 and iPower > 300) then
+			return false
+		end
+	
+		-- Check for soul shrine
+		if (self:GetBuildingCountByName("eldar_soul_shrine", false) >= 1) then
+			return false
+		end
+		return true
+		
+	elseif (iTierLevel == 2) then
+
+		-- Check for support portal
+		if (self:GetBuildingCountByName("eldar_support_portal", false) < 1) then
+			return true
+		end
+		
+		-- Check time
+		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier2 and (iRequisition < 600 or iPower < 600)) then
+			return true
+		end
+		
+	elseif (iTierLevel == 3) then	
+
+		-- Check time
+		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier3 and (iRequisition < 1100 or iPower < 1100)) then
+			return true
+		end
+	end
+	return false
+end
+
+-- Arkhan 03.2006: Return placement type for buildings
+function EldarBuildBaseStrategy:GetPlacementType(iBuildingID)
+	
+	-- Check building
+	if (iBuildingID == cpu_manager.stats:GetBuildingID("eldar_hq")) then
+        	local count = self:GetBuildingCountByName("eldar_hq", false)
+		local friend = cpu_manager:FindClosestFriendPlayer()
+		if friend == nil then
+			-- Lone Player
+                	if count == 0 and not cpu_manager:HQThreat() then
+                    		return "HQ"
+                	else
+                    		return "Safeplace"
+                	end
+        	else
+        		-- Has allies
+                	if count > 2 or cpu_manager:HQThreat() then
+ 				return "HQ"
+                	else
+				return "Safeplace"
+                	end
+		end
+	elseif (iBuildingID == cpu_manager.stats:GetBuildingID("eldar_aspect_portal") or
+		iBuildingID == cpu_manager.stats:GetBuildingID("eldar_webway_sail") or
+		iBuildingID == cpu_manager.stats:GetBuildingID("eldar_vaul_portal") or
+		iBuildingID == cpu_manager.stats:GetBuildingID("eldar_support_portal") or
+		iBuildingID == cpu_manager.stats:GetBuildingID("eldar_support_portal_super")) then 
+		return "Military"
+	elseif (iBuildingID == cpu_manager.stats:GetBuildingID("eldar_webway_gate")) then
+		return "Front1"	
+	elseif (iBuildingID == cpu_manager.stats:GetBuildingID("eldar_support_platform_scatterlaser") or
+		iBuildingID == cpu_manager.stats:GetBuildingID("eldar_support_platform_cannon_sp") or
+		iBuildingID == cpu_manager.stats:GetBuildingID("eldar_support_platform_uberturret_sp_dxp3")) then
+		return "Front2"
+	elseif (iBuildingID == cpu_manager.stats:GetBuildingID("eldar_mine_field")) then
+		return "Mine"
+	elseif (cpu_manager:IsGenerator(iBuildingID) or
+	        iBuildingID == cpu_manager.stats:GetBuildingID("eldar_hq_super") or
+		iBuildingID == cpu_manager.stats:GetBuildingID("eldar_khaine_shrine") or
+		iBuildingID == cpu_manager.stats:GetBuildingID("eldar_laughing_god_shrine") or
+		iBuildingID == cpu_manager.stats:GetBuildingID("eldar_soul_shrine")) then
+		return "BaseBack"
+	end
+	return "Basic"
+end
+
+function EldarBuildBaseStrategy:HQEmergency()
+
+	-- Check HQ count
+	local iHQCount = self:GetBuildingCountByName("eldar_hq")
+	if (iHQCount >= 2) then
+		return false
+	end
+
+	-- Build a second HQ if first one is severly damaged
+	local bHQDamaged = false
+	for oBuilding in military_manager:GetBases() do
+	
+		-- Check for valid building
+		if (oBuilding:IsValid() and not oBuilding:IsListeningPost() and oBuilding:GetBaseName() == "eldar_hq") then
+	  
+			-- Check health
+			if (oBuilding:GetHealthPercentage() < 0.6) then
+
+				-- Adjust current build program
+				for iLoop1 = 1, table.getn(self.info.BuildPrograms[self.m_iCurrentBuildProgram]) do
+				
+					-- Search HQ entry and set build count to two
+					if (self.info.BuildPrograms[self.m_iCurrentBuildProgram][iLoop1][7] == "eldar_hq") then
+						self.info.BuildPrograms[self.m_iCurrentBuildProgram][iLoop1][5] = 2
+						return true
+					end
+				end
+			end
+		end
+	end
+	return false
+end
+
+-- Arkhan 11.2006: Virtual method for checking out relic units
+function EldarBuildBaseStrategy:RelicRequired(sName)
+
+	-- Check name
+	if ((sName == "eldar_squad_avatar") or
+		(sName == "eldar_squad_laughing_god")) then
+		return true
+	end
+	return false
+end

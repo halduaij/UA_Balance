@@ -1,0 +1,51 @@
+----------------------------------------
+-- File: 'chaoshqtactic.ai'
+-- Edited by Krronus @ 04.06.2010
+-- Edited by Thudmeizer @ 12.03.2016
+-- Edited by Cylarne_04 2011
+
+class 'ChaosHQTactic' (BaseTactic)
+
+ChaosHQ = {}
+
+function ChaosHQTactic:__init( base_ai ) super( base_ai )
+
+	self:SetName("Chaos HQ Tactic")
+end
+
+function ChaosHQTactic:InitAbilities()
+
+	-- Init ability ID's
+	if (ChaosHQ.warp_id == nil) then
+		ChaosHQ.warp_id = cpu_manager.stats:GetAbilityID( "chaos_eye_of_warp" )
+	end
+
+	if (ChaosHQ.repair_id == nil) then
+		ChaosHQ.repair_id = cpu_manager.stats:GetAbilityID( "all_autorepair" )
+	end
+end
+
+function ChaosHQTactic:DoAbilities()
+
+	-- Try to activate detection field
+	if (self.base_ai:CanDoAbility(ChaosHQ.warp_id)) then
+	
+		local iRange = self.base_ai:GetAbilityRange(ChaosHQ.warp_id)
+		local oSquad = Ability.Filters.CloseEnemy(self.base_ai:GetPosition(), iRange, 7)
+		if (oSquad ~= nil) then
+			
+			-- Only try to detect if the infiltrated unit is attacking or capturing
+			if (oSquad:IsAttacking()) then
+				self.base_ai:DoSpecialAbilitySquad(ChaosHQ.warp_id, oSquad:GetSquad())
+			end
+		end
+	end
+
+	-- Base Repair!
+	if (self.base_ai:WasRecentlyHurt() and self.base_ai:GetHealthPercentage() < 0.6) then
+
+		if (self.base_ai:CanDoAbility( ChaosHQ.repair_id )) then
+			self.base_ai:DoSpecialAbility( ChaosHQ.repair_id )
+		end
+	end
+end

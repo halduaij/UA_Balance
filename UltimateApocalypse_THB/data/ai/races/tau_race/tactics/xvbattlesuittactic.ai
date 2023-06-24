@@ -1,0 +1,55 @@
+----------------------------------------
+-- File: 'xvbattlesuittactic.ai'
+-- Created by Cylarne @ 2011
+-- Edited by Thudmeizer	@ 01.07.2016
+
+class 'XVBattleSuitTactic' (TauVehicleTactic)
+
+XVBattleSuit = {}
+
+function XVBattleSuitTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("XVBattleSuit Tactic")
+end
+
+function XVBattleSuitTactic:InitAbilities()
+
+	-- Init ability ID's
+	if (XVBattleSuit.overshield_id == nil) then
+		XVBattleSuit.overshield_id = cpu_manager.stats:GetAbilityID( "tau_overshield_riptide" )
+	end
+
+	if (XVBattleSuit.selfdestruct_id == nil) then
+		XVBattleSuit.selfdestruct_id = cpu_manager.stats:GetAbilityID( "tau_selfdestruct" )
+	end
+
+	if (XVBattleSuit.turret_id == nil) then
+		XVBattleSuit.turret_id = cpu_manager.stats:GetAbilityID( "titan_turret_mode" )	
+	end
+end
+
+function XVBattleSuitTactic:DoAbilities()
+	
+	-- Replenish damaged shields
+	if (self.squad_ai:WasRecentlyHurt() and self.squad_ai:GetHealthPercentage() < 0.4) or (self.squad_ai:GetMoralePercentage() < 0.3) then
+		if (self.squad_ai:CanDoAbility( XVBattleSuit.overshield_id )) then
+			self.squad_ai:DoSpecialAbility( XVBattleSuit.overshield_id )
+		end
+	end
+
+	-- Initiate Self-Destruct!
+	if (self.squad_ai:WasRecentlyHurt() and self.squad_ai:GetHealthPercentage() < 0.3) then
+		if (self.squad_ai:CanDoAbility(XVBattleSuit.selfdestruct_id)) then
+			Ability.DoAbilityArea( self.squad_ai, XVBattleSuit.selfdestruct_id, Ability.Filters.CloseEnemy, 10, 1 )
+		end
+	end
+
+	-- Titan Stomp Mode - The vehicle will sacrifice combat accuracy in exchange for extra speed and the ability to knock down infantry wherever the vehicle goes.
+	-- Vehicle gains a 60% movement speed increase and will knock down infantry continuously on contact.
+	if (self.squad_ai:IsInCombat() and self.squad_ai:IsInStateMove()) then
+		if (self.squad_ai:CanDoAbility( XVBattleSuit.turret_id )) then
+			Ability.DoAbilityArea(self.squad_ai, XVBattleSuit.turret_id, Ability.Filters.CloseSquadEnemy, 10, 4)
+			Ability.DoAbilityArea(self.squad_ai, XVBattleSuit.turret_id, Ability.Filters.CloseMonsterEnemy, 10, 4)
+		end
+	end
+end

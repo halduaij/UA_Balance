@@ -1,0 +1,29 @@
+----------------------------------------
+-- File: 'carnifextactic.ai'
+-- Created by Cylarne @ 2014
+-- Edited by Thudmeizer	@ 25.04.2016
+
+class 'CarnifexTactic' (TyranidVehicleTactic)
+
+Carnifex = {}
+
+function CarnifexTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Carnifex Tactic")
+end
+
+function CarnifexTactic:InitAbilities()
+
+	if (Carnifex.bioplasma_id == nil) then
+		Carnifex.bioplasma_id = cpu_manager.stats:GetAbilityID( "tyranids_bioplasma" )
+	end
+end
+
+function CarnifexTactic:DoAbilities()
+	
+	-- Bio Plasma: Horrific acid, devours through most material and eats away armor. Bio Plasma is very effective against infantry and devours the target's health over time.
+	if (self.squad_ai:CanDoAbility(Carnifex.bioplasma_id)) then
+		Ability.DoAbilityPos( self.squad_ai, Carnifex.bioplasma_id, Ability.Filters.CloseEnemy, 6 ) 
+		Ability.DoAbilityPos( self.squad_ai, Carnifex.bioplasma_id, Ability.EntityFilters.CloseBaseEntityEnemy, 3)
+	end
+end

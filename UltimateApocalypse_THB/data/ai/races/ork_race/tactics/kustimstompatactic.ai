@@ -1,0 +1,67 @@
+----------------------------------------
+-- File: 'kustimstompatactic.ai'
+-- Edited by Thudmeizer		@ 02.07.2016
+
+class 'KustimStompaTactic' (OrkVehicleTactic)
+
+KustimStompa = {}
+
+function KustimStompaTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Kustim Stompa Tactic")
+	
+	self.timedDirectSpawnAbility = Timer( KustimStompaTactic.DoDirectSpawnAbility, self, 5 )
+
+	-- Vehicle is a heavy transport
+	self.m_iTransportVehicle = 1
+	self.m_iTransportSlots = 4
+end
+
+function KustimStompaTactic:AlwaysAttack()
+	return true
+end
+
+function KustimStompaTactic:InitAbilities()
+
+	-- Init ability ID's
+	if (KustimStompa.shield_id == nil) then
+		KustimStompa.shield_id = cpu_manager.stats:GetAbilityID( "ork_super_chargy" )
+	end
+
+	if (KustimStompa.turret_id == nil) then
+		KustimStompa.turret_id = cpu_manager.stats:GetAbilityID( "titan_turret_mode" )	
+	end
+end
+
+function KustimStompaTactic:DoAbilities()
+	
+	if (self.squad_ai:IsInCombat() and self.squad_ai:WasRecentlyHurt()) then
+		if (self.squad_ai:CanDoAbility(KustimStompa.shield_id)) then 
+			self.squad_ai:DoSpecialAbility(KustimStompa.shield_id)
+		end
+	end
+
+	-- Titan Stomp Mode - The vehicle will sacrifice combat accuracy in exchange for extra speed and the ability to knock down infantry wherever the vehicle goes.
+	-- Vehicle gains a 60% movement speed increase and will knock down infantry continuously on contact.
+	if (self.squad_ai:IsInCombat() and self.squad_ai:IsInStateMove()) then
+		if (self.squad_ai:CanDoAbility( KustimStompa.turret_id )) then
+			Ability.DoAbilityArea(self.squad_ai, KustimStompa.turret_id, Ability.Filters.CloseSquadEnemy, 10, 4)
+			Ability.DoAbilityArea(self.squad_ai, KustimStompa.turret_id, Ability.Filters.CloseMonsterEnemy, 10, 4)
+		end
+	end
+
+	-- Try to spawn Slugga Honor Guard
+	if (self.timedDirectSpawnAbility ~= nil) then
+		self.timedDirectSpawnAbility:Call()
+	else
+		KustimStompaTactic.DoDirectSpawnAbility(self)
+	end
+end
+
+function KustimStompaTactic:DoDirectSpawnAbility()
+
+	-- Spawn Slugga Honor Guard in combat
+	if (self.squad_ai:CanDirectSpawn()) then 
+		self.squad_ai:DoDirectSpawn()
+	end
+end

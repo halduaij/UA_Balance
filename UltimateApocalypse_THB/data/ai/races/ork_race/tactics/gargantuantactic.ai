@@ -1,0 +1,67 @@
+----------------------------------------
+-- File: 'gargantuantactic.ai'
+-- Edited by Thudmeizer		@ 02.07.2016
+
+class 'GargantuanTactic' (OrkVehicleTactic)
+
+Gargantuan = {}
+
+function GargantuanTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Gargantuan Tactic")
+	
+	self.timedDirectSpawnAbility = Timer( GargantuanTactic.DoDirectSpawnAbility, self, 5 )
+
+	-- Vehicle is a heavy transport
+	self.m_iTransportVehicle = 1
+	self.m_iTransportSlots = 2
+end
+
+function GargantuanTactic:AlwaysAttack()
+	return true
+end
+
+function GargantuanTactic:InitAbilities()
+
+	-- Init ability ID's
+	if (Gargantuan.shield_id == nil) then
+		Gargantuan.shield_id = cpu_manager.stats:GetAbilityID( "ork_super_chargy" )
+	end
+
+	if (Gargantuan.turret_id == nil) then
+		Gargantuan.turret_id = cpu_manager.stats:GetAbilityID( "titan_turret_mode" )	
+	end
+end
+
+function GargantuanTactic:DoAbilities()
+	
+	if (self.squad_ai:IsInCombat() and self.squad_ai:WasRecentlyHurt()) then
+		if (self.squad_ai:CanDoAbility(Gargantuan.shield_id)) then 
+			self.squad_ai:DoSpecialAbility(Gargantuan.shield_id)
+		end
+	end
+
+	-- Titan Stomp Mode - The vehicle will sacrifice combat accuracy in exchange for extra speed and the ability to knock down infantry wherever the vehicle goes.
+	-- Vehicle gains a 60% movement speed increase and will knock down infantry continuously on contact.
+	if (self.squad_ai:IsInCombat() and self.squad_ai:IsInStateMove()) then
+		if (self.squad_ai:CanDoAbility( Gargantuan.turret_id )) then
+			Ability.DoAbilityArea(self.squad_ai, Gargantuan.turret_id, Ability.Filters.CloseSquadEnemy, 10, 4)
+			Ability.DoAbilityArea(self.squad_ai, Gargantuan.turret_id, Ability.Filters.CloseMonsterEnemy, 10, 4)
+		end
+	end
+
+	-- Try to spawn Slugga Honor Guard
+	if (self.timedDirectSpawnAbility ~= nil) then
+		self.timedDirectSpawnAbility:Call()
+	else
+		GargantuanTactic.DoDirectSpawnAbility(self)
+	end
+end
+
+function GargantuanTactic:DoDirectSpawnAbility()
+
+	-- Spawn Slugga Honor Guard in combat
+	if (self.squad_ai:CanDirectSpawn()) then 
+		self.squad_ai:DoDirectSpawn()
+	end
+end

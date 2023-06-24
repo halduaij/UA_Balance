@@ -1,0 +1,111 @@
+----------------------------------------
+-- File: 'daemonhuntinfantrytactic.ai'
+-- Edited by Thudmeizer		@ 07.06.2016
+-- Edited by Cylarne
+
+class 'DaemonhuntInfantryTactic' (InfantryTactic)
+
+function DaemonhuntInfantryTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Daemonhunt Infantry Tactic")
+	
+	-- Set infantry options
+	local sSquadName = squad_ai:GetSquadName()
+	if (sSquadName == "inquisition_squad_bodyguard" or
+		sSquadName == "inquisition_squad_stormtroopers" or
+		sSquadName == "inquisition_squad_grenaider_troops" or
+		sSquadName == "inquisition_squad_death_cultist" or
+		sSquadName == "inquisition_squad_scholar_astropath" or
+		sSquadName == "inquisition_squad_scholar_calculus_logi" or
+		sSquadName == "inquisition_squad_scholar_exorcist" or
+		sSquadName == "inquisition_squad_scholars" or
+		sSquadName == "inquisition_squad_chaplain" or
+		sSquadName == "inquisition_squad_inquisitor_lord" or
+		sSquadName == "inquisition_squad_inquisitor_ordo_malleus") then
+
+		-- Squads are transportable
+		self.m_iTransportable = 1	-- Rhino // Razorback // Chimera // Valkyrie
+		self.m_iDeepStrikeBlueprintID = cpu_manager.stats:GetBuildingID( "inquisition_astra_telepathica" )
+
+		-- Squad is able to occupy bunkers
+		self.m_bBunkerSquad = true
+
+	elseif (sSquadName == "inquisition_squad_grey_knight_champion" or
+		sSquadName == "inquisition_squad_grey_knight_hero" or
+		sSquadName == "inquisition_squad_grey_knights" or
+		sSquadName == "inquisition_squad_grey_knights_interceptor" or
+		sSquadName == "inquisition_squad_grey_knights_purgator" or
+		sSquadName == "inquisition_squad_grey_knights_purifier" or
+		sSquadName == "inquisition_squad_grey_knights_terminator" or
+		sSquadName == "inquisition_squad_grey_knights_terminator_paladin") then 
+
+		-- Squads are transportable and can deepstrike
+		self.m_iTransportable = 2	-- LandRaider Phobos // LandRaider Crusader // LandRaider Redeemer // Storm Raven
+		self.m_iDeepStrikeBlueprintID = cpu_manager.stats:GetBuildingID( "inquisition_grey_knights_teleporter" )
+	end
+end
+
+function DaemonhuntInfantryTactic:AddTargetAbilities()
+
+end
+
+function DaemonhuntInfantryTactic:AddCommanders()
+	table.insert(self.commander, { "inquisition_squad_inquisitor_lord", true })
+	table.insert(self.commander, { "inquisition_squad_grey_knight_hero", false })
+	table.insert(self.commander, { "inquisition_squad_grey_knight_champion", false })
+	table.insert(self.commander, { "inquisition_squad_inquisitor_ordo_malleus", false })
+end
+
+function DaemonhuntInfantryTactic:DoAbilities()
+--[[
+	-- Run if safe
+	if ((not self.squad_ai:IsInCombat() and self.squad_ai:IsInStateMove()) or self.stateID ~= Tactic.StateID.NoState) then
+
+		-- If I am safe I can run
+		local run_id = cpu_manager.stats:GetAbilityID( "all_run!" )
+		if (self.squad_ai:CanDoAbility( run_id )) then
+			self.squad_ai:DoSpecialAbility( run_id )
+		end
+	end
+]]
+	-- I might have these attached
+	if (self.squad_ai:IsAttached()) then
+	
+		if (self.squad_ai:HasSquadAttached("inquisition_squad_thunderfire_cannon")) then
+			ThunderfireTactic.InitAbilities( self )
+			ThunderfireTactic.DoAbilities( self )
+		elseif (self.squad_ai:HasSquadAttached("inquisition_squad_scholar_exorcist")) then
+			ExorcistTactic.InitAbilities( self )
+			ExorcistTactic.DoAbilities( self )
+		elseif (self.squad_ai:HasSquadAttached("inquisition_squad_scholar_calculus_logi")) then
+			CalculusTactic.InitAbilities( self )
+			CalculusTactic.DoAbilities( self )
+		elseif (self.squad_ai:HasSquadAttached("inquisition_squad_chaplain")) then
+			GKChaplainTactic.InitAbilities( self )
+			GKChaplainTactic.DoAbilities( self )
+		elseif (self.squad_ai:HasSquadAttached("inquisition_squad_inquisitor_ordo_malleus")) then
+			DHInquisitorTactic.InitAbilities( self )
+			DHInquisitorTactic.DoAbilities( self )
+		elseif (self.squad_ai:HasSquadAttached("inquisition_squad_inquisitor_lord")) then
+			DHLordTactic.InitAbilities( self )
+			DHLordTactic.DoAbilities( self )
+		elseif (self.squad_ai:HasSquadAttached("inquisition_squad_grey_knight_champion")) then
+			GKChampionTactic.InitAbilities( self )
+			GKChampionTactic.DoAbilities( self )
+		elseif (self.squad_ai:HasSquadAttached("inquisition_squad_grey_knight_hero")) then
+			GKHeroTactic.InitAbilities( self )
+			GKHeroTactic.DoAbilities( self )
+		end
+	end
+	
+	-- Detach commander from broken/capturing
+	if ((self.squad_ai:IsBroken() or self.squad_ai:IsCapturing()) and
+		(self.squad_ai:IsInCombat() or self.squad_ai:WasRecentlyHurt())) then 
+		
+		self.squad_ai:DoDetachSquad()
+		self.squad_ai:DoSetDefaultMeleeStance()
+	end
+	
+	-- Call basic DoAbilities methods
+	InfantryTactic.DoAbilities(self)
+end

@@ -1,0 +1,42 @@
+----------------------------------------
+-- File: 'darkeldarslavecaraveltactic.ai'
+-- Edited by Thudmeizer		@ 01.04.2016
+
+class 'DarkEldarSlaveCaravelTactic' (BaseTactic)
+
+DarkEldarSlaveCaravel = {}
+
+function DarkEldarSlaveCaravelTactic:__init( base_ai ) super( base_ai )
+
+	self:SetName("Dark Eldar Slave Caravel Tactic")
+end
+
+function DarkEldarSlaveCaravelTactic:InitAbilities()
+	
+	-- Init abilities
+	if (DarkEldarSlaveCaravel.shock_id == nil) then
+		DarkEldarSlaveCaravel.shock_id = cpu_manager.stats:GetAbilityID( "dark_eldar_soul_shock" )
+	end
+	if (DarkEldarSlaveCaravel.soulshock_id == nil) then
+		DarkEldarSlaveCaravel.soulshock_id = cpu_manager.stats:GetAbilityID( "dark_eldar_soul_shock_2" )
+	end
+	if (DarkEldarPortal.repair_id == nil) then
+		DarkEldarPortal.repair_id = cpu_manager.stats:GetAbilityID( "all_autorepair" )
+	end
+end
+
+function DarkEldarSlaveCaravelTactic:DoAbilities()
+
+	Ability.DoAbilityArea(self.base_ai, DarkEldarSlaveCaravel.shock_id, Ability.Filters.CloseInfantryEnemy, 20, 4)
+	Ability.DoAbilityArea(self.base_ai, DarkEldarSlaveCaravel.soulshock_id, Ability.Filters.CloseInfantryEnemy, 10, 8)
+
+	-- Base Repair!
+	if (self.base_ai:WasRecentlyHurt() and self.base_ai:GetHealthPercentage() < 0.6) then
+
+		if (self.base_ai:CanDoAbility( DarkEldarPortal.repair_id )) then
+			self.base_ai:DoSpecialAbility( DarkEldarPortal.repair_id )
+		end
+	end
+end
+
+

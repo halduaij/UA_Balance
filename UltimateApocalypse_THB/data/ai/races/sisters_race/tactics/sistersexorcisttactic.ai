@@ -1,0 +1,47 @@
+----------------------------------------
+-- File: 'sistersexorcisttactic.ai'
+-- Created by Arkhan 	        @ 16.03.2008
+-- Edited by Thudmeizer		@ 18.11.2016
+-- Edited by Cylarne
+
+class 'SistersExorcistTactic' (SistersVehicleTactic)
+
+SistersExorcist = {}
+
+function SistersExorcistTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Sisters Exorcist Tank Tactic")
+end
+
+function SistersExorcistTactic:InitAbilities()
+	
+	if (SistersExorcist.hkmissiles_id == nil) then
+		SistersExorcist.hkmissiles_id = cpu_manager.stats:GetAbilityID( "sisters_hk_missiles" )
+	end
+
+	if (SistersExorcist.incendiary_id == nil) then
+		SistersExorcist.incendiary_id = cpu_manager.stats:GetAbilityID( "sisters_exorcist_incendiary_missiles" )
+	end
+end
+
+function SistersExorcistTactic:DoAbilities()
+
+	--[[ Check if we are attacking and not in home base
+	if (self.squad_ai:IsAttacking() and self.squad_ai:CanDoAbility(SistersExorcist.hkmissiles_id)) then
+		
+		-- Launch HK Missiles at either Vehicles or Buildings
+		Ability.DoAbilityTarget( self.squad_ai, SistersExorcist.hkmissiles_id, Ability.Filters.CloseVehicleEnemy, 1 )
+    		Ability.DoAbilityTargetEntity( self.squad_ai, SistersExorcist.hkmissiles_id, Ability.EntityFilters.CloseBaseEntityEnemy, 2 )
+	end]]
+
+	-- Check if we are attacking and not in home base
+	if (self.squad_ai:IsAttacking() and self.squad_ai:CanDoAbility(SistersExorcist.incendiary_id)) then
+
+		-- Launch Incendiary Missiles at either Vehicles or Buildings
+		Ability.DoAbilityTarget( self.squad_ai, SistersExorcist.incendiary_id, Ability.Filters.CloseVehicleEnemy, 1 )
+    		Ability.DoAbilityTargetEntity( self.squad_ai, SistersExorcist.incendiary_id, Ability.EntityFilters.CloseBaseEntityEnemy, 2 )
+	end
+
+	-- Call standard method
+	SistersVehicleTactic.DoAbilities(self)
+end

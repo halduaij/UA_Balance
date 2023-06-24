@@ -1,0 +1,41 @@
+----------------------------------------
+-- File: 'makotactic.ai'
+-- Created by Cylarne @ 2011
+-- Edited by Thudmeizer	@ 01.07.2016
+
+class 'MakoTactic' (TauVehicleTactic)
+
+Mako = {}
+
+function MakoTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Mako Tactic")
+end
+
+function MakoTactic:InitAbilities()
+
+	-- Init ability ID's
+	if (Mako.barrage_id == nil) then
+		Mako.barrage_id = cpu_manager.stats:GetAbilityID( "tau_titan_missile_barrage" )
+	end
+
+	if (Mako.turret_id == nil) then
+		Mako.turret_id = cpu_manager.stats:GetAbilityID( "titan_turret_mode" )	
+	end
+end
+
+function MakoTactic:DoAbilities()
+
+	Ability.DoAbilityPos(self.squad_ai, Mako.barrage_id, Ability.Filters.CloseSquadEnemy, 6)
+	Ability.DoAbilityPos(self.squad_ai, Mako.barrage_id, Ability.Filters.CloseVehicleEnemy, 3)
+	Ability.DoAbilityPos(self.squad_ai, Mako.barrage_id, Ability.EntityFilters.CloseBaseEntityEnemy, 6)
+
+	-- Titan Stomp Mode - The vehicle will sacrifice combat accuracy in exchange for extra speed and the ability to knock down infantry wherever the vehicle goes.
+	-- Vehicle gains a 60% movement speed increase and will knock down infantry continuously on contact.
+	if (self.squad_ai:IsInCombat() and self.squad_ai:IsInStateMove()) then
+		if (self.squad_ai:CanDoAbility( Mako.turret_id )) then
+			Ability.DoAbilityArea(self.squad_ai, Mako.turret_id, Ability.Filters.CloseSquadEnemy, 10, 4)
+			Ability.DoAbilityArea(self.squad_ai, Mako.turret_id, Ability.Filters.CloseMonsterEnemy, 10, 4)
+		end
+	end
+end

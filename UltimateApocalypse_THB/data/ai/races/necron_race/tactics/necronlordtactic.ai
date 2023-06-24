@@ -1,0 +1,140 @@
+----------------------------------------
+-- File: 'necronlordtactic.ai'
+-- Edited by Thudmeizer @ 11.11.2016
+-- Edited by Cylarne_04 2011
+
+class 'NecronLordTactic' (NecronInfantryTactic)
+
+NecronLord = {}
+
+function NecronLordTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Necron Lord Tactic")
+
+	self.m_oTimedSpecialAbilities = Timer( NecronLordTactic.DoTimedSpecialAbilities, self, 7 )
+end
+
+-- Necron Lord is allowed to retreat even directly after a jump
+function NecronLordTactic:SetTarget( target, variant_type )
+
+	self.variant_type = variant_type
+	self.variant_type = variant_type
+       if self.variant_type==Tactic.Variant.Vector then
+    self.target = Vector3f(target)
+       elseif self.variant_type==Tactic.Variant.SquadAI then
+    self.target = target
+       elseif self.variant_type==Tactic.Variant.BaseAI then
+    self.target = target
+       end
+	self.m_iMoveDelay = 0
+	self.last_jump = 0
+end
+
+-- Assassinate win condition -- never attack
+function NecronLordTactic:IsAttacker()
+	return (not cpu_manager.assassinate and self:IsCommanderAttacker())
+end
+
+-- Assassinate win condition -- never defend
+function NecronLordTactic:IsDefender()
+	return (not cpu_manager.assassinate and self:IsCommanderDefender())
+end
+
+function NecronLordTactic:MoveToDisengage()
+	Tactic.MoveToDisengage(self)
+end
+
+-- Assassinate win condition -- never jump into combat
+function NecronLordTactic:JumpAttack()
+	if (not cpu_manager.assassinate) then
+		Tactic.JumpAttack(self)
+	end
+end
+
+function NecronLordTactic:CheckForDance()
+	InfantryTactic.CheckForDance(self)
+end
+
+function NecronLordTactic:CheckForDeath()
+	InfantryTactic.CheckForDeath(self)
+end
+
+function NecronLordTactic:InitAbilities()
+
+	-- Timed: Necron units advance normally while their opponents move in slow motion.
+	if (NecronLord.chronometron_id == nil) then
+		NecronLord.chronometron_id = cpu_manager.stats:GetAbilityID( "necron_chronometron" )
+	end
+
+	-- Timed / Passive: Mass Resurrection / Necron units in the Necron Lord's vicinity have a chance of returning to life.
+	if (NecronLord.resurrection_id == nil) then
+		NecronLord.resurrection_id = cpu_manager.stats:GetAbilityID( "necron_mass_resurrection" )
+	end
+
+	-- Timed: Lord and phase-shifted units are immune to all forms of damage, but cannot attack.	
+	if (NecronLord.shifter_id == nil) then
+		NecronLord.shifter_id = cpu_manager.stats:GetAbilityID( "necron_phase_shifter" )
+	end
+
+	-- Target Pos: Infiltrated units revealed, blinds units causing them firing inaccuracies.
+	if (NecronLord.solarpulse_id == nil) then
+		NecronLord.solarpulse_id = cpu_manager.stats:GetAbilityID( "necron_solar_pulse" )
+	end
+end
+
+function NecronLordTactic:DoAbilities()
+
+	-- Try to activate the Chronometron ability
+	if (self.squad_ai:CanDoAbility( NecronLord.chronometron_id )) then
+		Ability.DoAbilityArea(self.squad_ai, NecronLord.chronometron_id, Ability.Filters.CloseEnemy, 20, 5)
+	end
+
+	-- Shadow Shifter: Cloaks and disables the squad for several seconds, enabling quick regeneration and recovery from battle.
+	-- Infiltrated squad will also receive no damage from incoming attacks (if at all revealed), but cannot attack either.
+	if (self.squad_ai:IsInCombat()) then
+		if (self.squad_ai:WasRecentlyHurt() and self.squad_ai:GetHealthPercentage() < 0.4) then
+			self.squad_ai:DoSpecialAbility( NecronLord.shifter_id )
+		end
+	end
+
+	-- Solar Pulse: Allows the Necron Lord to periodically unleash photon bursts. Infiltrated units in a large area are revealed and blinds others for several seconds.
+	if (self.squad_ai:CanDoAbility(Overseer.solarpulse_id)) then
+		Ability.DoAbilityPos(self.squad_ai, NecronLord.solarpulse_id, Ability.Filters.CloseInfiltratedEnemy, 1)
+		Ability.DoAbilityPos(self.squad_ai, NecronLord.solarpulse_id, Ability.Filters.CloseEnemy, 6)
+	end
+
+	-- Try to possess if not using Assassinate win condition and when in combat
+	if (not cpu_manager.assassinate) then
+		if (self.squad_ai:IsInCombat() and self.squad_ai:CanPossess()) then
+			self.squad_ai:DoPossess()
+		end
+	end
+
+	-- Try to use mass resurrection ability
+	if (self.m_oTimedSpecialAbilities ~= nil) then
+		self.m_oTimedSpecialAbilities:Call()
+	else
+		NecronLordTactic.DoTimedSpecialAbilities(self)
+	end
+end
+
+function NecronLordTactic:DoTimedSpecialAbilities()
+
+	-- Try to use mass resurrection ability
+	Ability.DoAbility(self.squad_ai, NecronLord.resurrection_id, Ability.PredicateFilters.HasUsableBodies, { ability_id = NecronLord.resurrection_id, min_bodies = 5 })
+end
+
+function NecronLordTactic:Update()
+
+	if (self:IsComplete()) then
+		return
+	end
+
+	-- State machine
+	if (not InfantryTactic.Update(self)) then
+		return
+	end
+    
+	-- Check if we are in serious trouble
+	self:EmergencyRetreat()
+end

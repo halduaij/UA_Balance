@@ -1,0 +1,41 @@
+----------------------------------------
+-- File: 'tyranidvehicletactic.ai'
+-- Created by Thudmeizer @ 23.09.2016
+
+class 'TyranidVehicleTactic' (VehicleTactic)
+
+function TyranidVehicleTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Tyranid Vehicle Tactic")
+end
+
+--Check if the vehicle should dance away in melee
+function TyranidVehicleTactic:CheckVehicleDance(sName)
+
+	if (sName == "tyranids_squad_carnifex" or
+		sName == "tyranids_squad_carnifex_skiller" or
+		sName == "tyranids_squad_carnifex_hellfex" or
+		sName == "tyranids_squad_carnifex_tervigon" or
+		sName == "tyranids_squad_carnifex_uber") then
+		return true
+	end
+	return false
+end
+
+function TyranidVehicleTactic:Upgrade()
+
+	-- Check if we have free resources
+	if (not Tactic.Options.can_reinforce) then
+		return
+	end
+	
+	if (not self.squad_ai:IsReinforcing()) then
+	
+		-- Upgrade if possible
+		if (self.squad_ai:HasUpgradableTrooper() and self.squad_ai:GetNumTroopers() > 0) then
+			local class_type = cpu_manager:GetFirstEnemyPlayer():GetMajorityClassType()
+			self.squad_ai:DoBestUpgrade( class_type )
+		end
+	end
+end
+

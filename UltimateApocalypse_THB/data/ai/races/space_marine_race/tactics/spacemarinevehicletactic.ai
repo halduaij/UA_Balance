@@ -1,0 +1,128 @@
+----------------------------------------
+-- File: 'spacemarinevehicletactic.ai'
+-- Edited by Thudmeizer		@ 11.11.2016
+
+class 'SpaceMarineVehicleTactic' (VehicleTactic)
+
+function SpaceMarineVehicleTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Space Marine Vehicle Tactic")
+
+	-- All Dreadnoughts can enter deepstrike buildings
+	local sName = squad_ai:GetSquadName()
+	if (sName == "space_marine_squad_dreadnought" or
+		sName == "space_marine_squad_dreadnought_hellfire" or
+		sName == "space_marine_squad_dreadnought_ironclad" or
+		sName == "space_marine_squad_dreadnought_venerable") then
+		self.m_iDeepStrikeBlueprintID = cpu_manager.stats:GetBuildingID( "space_marine_orbital_relay" )
+
+	elseif (sName == "space_marine_squad_tactical_bike") then
+		
+		-- Squads are transportable and able to deepstrike	
+		self.m_iTransportable = 1
+		self.m_iDeepStrikeBlueprintID = cpu_manager.stats:GetBuildingID( "space_marine_orbital_relay" )
+	end
+
+	-- Set Stuck Unit Positions
+	self.initialPosition = self.squad_ai:GetPosition()
+	self.isStuck = false
+end
+
+-- Check if the vehicle should dance away in melee
+function SpaceMarineVehicleTactic:CheckVehicleDance(sName)
+
+	if (sName == "space_marine_squad_tactical_bike" or
+		sName == "space_marine_squad_rhino" or
+		sName == "space_marine_squad_razorback" or
+		sName == "space_marine_squad_land_speeder" or
+		sName == "space_marine_squad_tempest" or
+		sName == "space_marine_squad_dreadnought" or
+		sName == "space_marine_squad_dreadnought_hellfire" or
+		sName == "space_marine_squad_dreadnought_ironclad" or
+		sName == "space_marine_squad_dreadnought_venerable" or
+		sName == "space_marine_squad_damocles" or
+		sName == "space_marine_squad_vindicator" or
+		sName == "space_marine_squad_whirlwind" or
+		sName == "space_marine_squad_predator" or
+		sName == "space_marine_squad_predator_advance_sp" or
+		sName == "space_marine_squad_predator_murderer" or
+		sName == "space_marine_squad_land_raider" or
+		sName == "space_marine_squad_land_raider_redeemer" or
+		sName == "space_marine_squad_land_raider_crusader" or
+		sName == "space_marine_squad_land_raider_helios" or
+		sName == "space_marine_squad_land_raider_prometheus" or
+		sName == "space_marine_squad_land_raider_ares" or
+		sName == "space_marine_squad_land_raider_terminus") then
+		return true
+	end
+	return false
+end
+
+function SpaceMarineVehicleTactic:DoAbilities()
+--[[
+	-- Check if we can launch smoke
+	local vehiclesmoke_id = cpu_manager.stats:GetAbilityID( "marines_smoke_launchers" )
+
+	-- Search a squad
+	local iRange = self.squad_ai:GetAbilityRange(vehiclesmoke_id)
+	local oUnit = Ability.Filters.CloseHurt(self.squad_ai:GetPosition(), iRange, 1)
+	if (oUnit ~= nil and oUnit:IsInCombat() and cpu_manager:GetUnitStrength(oUnit) > 150) then
+		self.squad_ai:DoSpecialAbilitySquad(vehiclesmoke_id, oUnit:GetSquad())
+	end
+
+	-- RAM!!! - The vehicle will sacrifice combat accuracy in exchange for extra speed and the ability to knock down infantry wherever the vehicle goes.
+	-- Vehicle gains a 60% movement speed increase and will knock down infantry continuously on contact.
+	local rammingspeed_id = cpu_manager.stats:GetAbilityID( "all_bumpertank" )
+	if (self.squad_ai:IsInCombat() and self.squad_ai:IsInStateMove()) then
+		if (self.squad_ai:CanDoAbility( rammingspeed_id )) then
+			self.squad_ai:DoSpecialAbility( rammingspeed_id )
+		end
+	end
+]]
+	-- Jump squads' unstuck code call.
+	-- Checks jump-able stuck squads, and force them to jump nearby
+   	if self.squad_ai:CanJump() then
+        	self:SolveStuckCase()
+	end
+
+	-- Call standard method
+	VehicleTactic.DoAbilities(self)
+end
+
+-- Unstuck Code
+function SpaceMarineVehicleTactic:SolveStuckCase()
+
+	local iPosition = self.squad_ai:GetPosition()
+    	if iPosition.x ~= self.initialPosition.x or iPosition.z ~= self.initialPosition.z then
+        	self.isStuck = false
+    	elseif (self.squad_ai:IsInStateMove() or self.squad_ai:IsInStateAttackMove()) and not self.squad_ai:IsInCombat()
+    		and iPosition.x == self.initialPosition.x and iPosition.z == self.initialPosition.z then
+        	self.isStuck = true
+    	end
+    	if self.isStuck then
+        	self:ForceSquadJumpNear(iPosition)
+	end
+    	self.initialPosition = self.squad_ai:GetPosition()
+end
+
+function SpaceMarineVehicleTactic:ForceSquadJumpNear(pos)
+
+	-- Try to jump somewhere near, perform 16 checks for a viable position
+    	local jumpDisSqr = sqr(self.squad_ai:GetJumpDistance())
+    	for iLoop1 = 1, 16 do
+        	-- Create a jump position
+        	local vJumpPosition = pos
+        	local vDir = cpu_manager:GetDirectionToEnemy(pos)
+        	vJumpPosition.x = vJumpPosition.x + vDir.x * math.random(-20, 50)
+        	vJumpPosition.z = vJumpPosition.z + vDir.z * math.random(-20, 50)
+        	-- Check if target position is in range and if unit is able to jump to target position
+        	local iDistance = distance_sqr(vJumpPosition, pos)
+        	if iDistance < jumpDisSqr and self.squad_ai:CanJumpToPosition(vJumpPosition) then
+            		-- Jump to position
+            		self.squad_ai:DoJump(vJumpPosition)
+            		self.last_jump = g_iGMT
+            		self.m_iLastGatherMove = self.last_jump - 10
+            		return
+		end
+	end
+end

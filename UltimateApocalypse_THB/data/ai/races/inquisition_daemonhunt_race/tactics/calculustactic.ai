@@ -1,0 +1,90 @@
+----------------------------------------
+-- File: 'calculustactic.ai'
+-- Created by Cylarne
+-- Edited by Thudmeizer @ 18.04.2016
+
+class 'CalculusTactic' (DaemonhuntInfantryTactic)
+
+Calculus = {}
+
+function CalculusTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Calculus Tactic")
+end
+
+function CalculusTactic:IsAttacker()
+	return false
+end
+
+function CalculusTactic:IsDefender()
+	return false
+end
+
+function CalculusTactic:InitAbilities()
+
+	if (Calculus.entity_id == nil) then
+		Calculus.entity_id = cpu_manager.stats:GetAbilityID( "inquisition_calculation_entity" )	
+	end
+
+	if (Calculus.protection_id == nil) then
+		Calculus.protection_id = cpu_manager.stats:GetAbilityID( "inquisition_calculation_projectile" )	
+	end
+
+	if (Calculus.disable_id == nil) then
+		Calculus.disable_id = cpu_manager.stats:GetAbilityID( "inquisition_calculation_sabotage" )	
+	end
+
+	if (Calculus.structure_id == nil) then
+		Calculus.structure_id = cpu_manager.stats:GetAbilityID( "inquisition_calculation_structural_repair" )	
+	end
+
+	if (Calculus.vehicle_id == nil) then
+		Calculus.vehicle_id = cpu_manager.stats:GetAbilityID( "inquisition_calculation_vehicle_repair" )	
+	end
+end
+
+function CalculusTactic:DoAbilities()
+
+	local iPower = resource_manager:GetResourceAmount():Get( ResourceAmount.RT_Power )
+	
+	local abilitySelector = math.random(1, 100)
+	
+	-- Determine if we can use any ability. Use abilities at random
+	if (iPower >= 800) then
+
+		if (self.squad_ai:CanDoAbility(Calculus.vehicle_id) and abilitySelector <= 20) then
+			self.squad_ai:DoSpecialAbility(Calculus.vehicle_id)
+		end
+
+		if (self.squad_ai:CanDoAbility(Calculus.structure_id) and abilitySelector <= 40) then
+			self.squad_ai:DoSpecialAbility(Calculus.structure_id)
+		end
+
+		if (self.squad_ai:CanDoAbility(Calculus.protection_id) and abilitySelector <= 60) then
+			self.squad_ai:DoSpecialAbility(Calculus.protection_id)
+		end
+
+		if (self.squad_ai:CanDoAbility(Calculus.entity_id) and abilitySelector <= 80) then
+			self.squad_ai:DoSpecialAbility(Calculus.entity_id)
+		end
+
+		if (self.squad_ai:CanDoAbility(Calculus.disable_id) and abilitySelector <= 100) then
+			self.squad_ai:DoSpecialAbility(Calculus.disable_id)
+		end
+	end
+end
+
+function CalculusTactic:Update()
+
+	if self:IsComplete() then
+		return
+	end
+   
+	--state machine
+	if not InfantryTactic.Update( self ) then
+		return
+	end
+
+	--attach to squad
+	self:TryAttachSquad( false, false, 1000, 200, nil )
+end

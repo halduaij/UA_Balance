@@ -1,0 +1,49 @@
+----------------------------------------
+-- File: 'darkeldarravagertactic.ai'
+-- Edited by Thudmeizer @ 11.11.2016
+
+class 'DarkEldarRavagerTactic' (DarkEldarVehicleTactic)
+
+DarkEldarRavager = {}
+
+function DarkEldarRavagerTactic:__init( squad_ai ) super( squad_ai )
+	
+	self:SetName("Dark Eldar Ravager Tactic")
+end
+
+-- Ravager is allowed to retreat even directly after a jump
+function DarkEldarRavagerTactic:SetTarget( target, variant_type )
+
+	self.variant_type = variant_type
+	self.variant_type = variant_type
+       if self.variant_type==Tactic.Variant.Vector then
+    self.target = Vector3f(target)
+       elseif self.variant_type==Tactic.Variant.SquadAI then
+    self.target = target
+       elseif self.variant_type==Tactic.Variant.BaseAI then
+    self.target = target
+       end
+	self.m_iMoveDelay = 0
+	self.last_jump = 0
+end
+
+function DarkEldarRavagerTactic:InitAbilities()
+
+	if (DarkEldarRavager.horrorfex_id == nil) then
+		DarkEldarRavager.horrorfex_id = cpu_manager.stats:GetAbilityID( "dark_eldar_horrorfex" )	
+	end
+end
+
+function DarkEldarRavagerTactic:DoAbilities()
+--[[
+	-- Bugged: will cause crash when Horrorfex ability is used. Reason undetermined.
+	if (self.squad_ai:IsInCombat()) then
+
+		-- Send bomb against enemy infantry
+		Ability.DoAbilityPos( self.squad_ai, DarkEldarRavager.horrorfex_id, Ability.Filters.CloseSquadEnemy, 3 ) 
+	end
+]]
+	-- Call standard method
+	DarkEldarVehicleTactic.DoAbilities(self)
+end
+

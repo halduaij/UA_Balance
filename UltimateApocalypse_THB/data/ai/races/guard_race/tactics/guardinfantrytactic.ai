@@ -1,0 +1,156 @@
+----------------------------------------
+-- File: 'guardinfantrytactic.ai'
+-- Created by Arkhan		@ 12.01.2006
+-- Edited by Thudmeizer		@ 03.10.2016
+
+class 'GuardInfantryTactic' (InfantryTactic)
+
+function GuardInfantryTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Guard Infantry Tactic")
+	
+	-- Basic infantry is able to enter transport vehicles
+	local sSquadName = squad_ai:GetSquadName()
+	if (sSquadName == "guard_squad_guardsmen_conscript" or
+		sSquadName == "guard_squad_guardsmen" or
+		sSquadName == "guard_squad_guardsmen_rider" or
+		sSquadName == "guard_heavy_weapons_team_antitank_squad" or
+		sSquadName == "guard_heavy_weapons_team_mortar_squad" or
+		sSquadName == "guard_heavy_weapons_team_squad" or
+		sSquadName == "guard_heavy_weapons_team_support_squad" or
+		sSquadName == "guard_squad_guardsmen_specialweapons" or
+		sSquadName == "guard_squad_commissar_cadet" or
+	        sSquadName == "guard_squad_ogryns" or
+		sSquadName == "guard_squad_kasrkin" or
+		sSquadName == "guard_squad_stormtrooper" or
+		sSquadName == "guard_squad_command_squad_psykers" or
+		sSquadName == "guard_squad_assassin" or
+		sSquadName == "guard_squad_command_squad_colonel" or
+		sSquadName == "guard_squad_command_squad_advance_sp") then
+
+		-- Infantry is able to enter transport vehicles
+		self.m_iTransportable = 1	-- Chimera variants // Valkyrie // Storm Lord // Convoy // Imperator Titan
+ 		self.m_iDeepStrikeBlueprintID = cpu_manager.stats:GetBuildingID( "guard_comms_array" )
+
+	elseif (sSquadName == "guard_squad_command_squad") then
+
+		-- Commander is able to enter transport vehicles based on tier level
+		if (cpu_manager:GetTierLevel() < 5) then 
+			self.m_iTransportable = 1	-- Chimera variants // Valkyrie // Storm Lord
+		elseif (cpu_manager:GetTierLevel() > 4) then 
+			self.m_iTransportable = 3	-- Captain Reaver Titan (to allow it to upgrade)
+		end
+
+	elseif (sSquadName == "guard_squad_banner_bearer" or
+		sSquadName == "guard_squad_field_medic" or
+		sSquadName == "guard_squad_master_vox" or
+		sSquadName == "guard_squad_commissar" or
+		sSquadName == "guard_squad_psyker" or
+		sSquadName == "guard_squad_priest") then
+
+		-- Elite infantry are able to enter transport vehicles
+		self.m_iTransportable = 1	-- Chimera variants // Valkyrie // Storm Lord // Convoy
+		self.m_iDeepStrikeBlueprintID = cpu_manager.stats:GetBuildingID( "guard_comms_array" )
+
+	elseif (sSquadName == "guard_squad_officer_squad" or
+		sSquadName == "guard_squad_officer_support_squad") then
+
+		-- Commander is able to enter transport vehicles based on tier level
+		if (cpu_manager:GetTierLevel() < 5) then 
+
+			-- Officers are able to enter transport vehicles
+			self.m_iTransportable = 2	-- Vanquisher Command Tank
+			self.m_iDeepStrikeBlueprintID = cpu_manager.stats:GetBuildingID( "guard_comms_array" )
+
+		elseif (cpu_manager:GetTierLevel() > 4) then 
+			self.m_iTransportable = 3	-- Captain Reaver Titan (to allow it to upgrade)
+		end
+	end
+end
+
+function GuardInfantryTactic:AddTargetAbilities()
+--[[
+	table.insert(InfantryTactic.TargetAbilities, { nil, "guard_frag_grenades", Ability.Filters.CloseSquadEnemy, 4, 0 })
+	table.insert(InfantryTactic.TargetAbilities, { nil, "guard_frag_grenades_lieutenant", Ability.Filters.CloseSquadEnemy, 6, 0 })
+	table.insert(InfantryTactic.TargetAbilities, { nil, "guard_krak_grenades", Ability.Filters.CloseVehicleEnemy, 1, 0 })
+	table.insert(InfantryTactic.TargetAbilities, { nil, "guard_kasrkin_frag_grenades", Ability.Filters.CloseSquadEnemy, 4, 0 })
+	table.insert(InfantryTactic.TargetAbilities, { nil, "guard_flashbang_grenades", Ability.Filters.CloseSquadEnemy, 6, 0 })
+	table.insert(InfantryTactic.TargetAbilities, { nil, "guard_nervegas_grenades", Ability.Filters.CloseSquadEnemy, 9, 0 })
+	table.insert(InfantryTactic.TargetAbilities, { nil, "guard_nervegas_grenades_lieutenant", Ability.Filters.CloseSquadEnemy, 9, 0 })
+]]
+end
+
+function GuardInfantryTactic:AddCommanders()
+	table.insert(self.commander, { "guard_squad_command_squad", true })
+	table.insert(self.commander, { "guard_squad_officer_squad", false })
+	table.insert(self.commander, { "guard_squad_officer_support_squad", false })
+	table.insert(self.commander, { "guard_squad_command_squad_colonel", true })
+end
+
+function GuardInfantryTactic:DoAbilities()
+--[[
+	-- Check to make sure if no threats are nearby
+	if ((not self.squad_ai:IsInCombat() and self.squad_ai:IsInStateMove()) or self.stateID ~= Tactic.StateID.NoState) then
+
+		-- If I am safe I can run
+		local run_id = cpu_manager.stats:GetAbilityID( "all_run!" )
+		if (self.squad_ai:CanDoAbility( run_id )) then
+			self.squad_ai:DoSpecialAbility( run_id )
+		end
+	end
+]]
+	-- I might have these attached
+	if (self.squad_ai:IsAttached()) then
+	
+		if (self.squad_ai:HasSquadAttached("guard_squad_officer_squad")) then
+			OfficerMaleTactic.InitAbilities( self )
+			OfficerMaleTactic.DoAbilities( self )
+		elseif (self.squad_ai:HasSquadAttached("guard_squad_officer_support_squad")) then
+			OfficerFemaleTactic.InitAbilities( self )
+			OfficerFemaleTactic.DoAbilities( self )
+		elseif (self.squad_ai:HasSquadAttached("guard_squad_commissar")) then
+			CommissarTactic.InitAbilities( self )
+			CommissarTactic.DoAbilities( self )
+		elseif (self.squad_ai:HasSquadAttached("guard_squad_psyker")) then
+			PsykerTactic.InitAbilities( self )
+			PsykerTactic.DoAbilities( self )
+		elseif (self.squad_ai:HasSquadAttached("guard_squad_priest")) then
+			PriestTactic.InitAbilities( self )
+			PriestTactic.DoAbilities( self )
+		elseif (self.squad_ai:HasSquadAttached("guard_squad_assassin")) then
+			AssassinTactic.InitAbilities( self )
+			AssassinTactic.DoAbilities( self )
+		elseif (self.squad_ai:HasSquadAttached("guard_squad_banner_bearer")) then
+			BannerBearerTactic.InitAbilities( self )
+			BannerBearerTactic.DoAbilities( self )
+		elseif (self.squad_ai:HasSquadAttached("guard_squad_field_medic")) then
+			MedicTactic.InitAbilities( self )
+			MedicTactic.DoAbilities( self )
+		elseif (self.squad_ai:HasSquadAttached("guard_squad_master_vox")) then
+			MasterVoxTactic.InitAbilities( self )
+			MasterVoxTactic.DoAbilities( self )
+		end
+	end
+	
+	-- Call basic DoAbilities methods
+	InfantryTactic.DoAbilities(self)
+end
+
+function GuardInfantryTactic:CheckForDetach()
+
+	-- Detach commander from broken/capturing. guards stay attached
+	if ((self.squad_ai:IsBroken() or self.squad_ai:IsCapturing()) and
+		(self.squad_ai:IsInCombat() or self.squad_ai:WasRecentlyHurt()) and
+		not self.squad_ai:HasSquadAttached( "guard_squad_commissar" ) and
+		not self.squad_ai:HasSquadAttached( "guard_squad_priest" ) and
+		not self.squad_ai:HasSquadAttached( "guard_squad_psyker" )and
+		not self.squad_ai:HasSquadAttached( "guard_squad_field_medic" )and
+		not self.squad_ai:HasSquadAttached( "guard_squad_master_vox" )) then 
+		
+		self.squad_ai:DoDetachSquad()
+		self.squad_ai:DoSetDefaultMeleeStance()
+	end
+
+	-- Call basic detach method
+	InfantryTactic.CheckForDetach(self)
+end
