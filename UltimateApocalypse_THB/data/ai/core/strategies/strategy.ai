@@ -50,6 +50,8 @@ function Strategy:__init( info )
 	self.m_iNumHQAtStartPos = 1
 	
 	self.m_aBuildingCounts = {}
+
+        self.m_tBuildDump = {}
 end
 
 function Strategy:GetStatus( status )
@@ -706,14 +708,22 @@ function Strategy:ForceReleaseResource( id, res_type )
 	end
 
 end
-
+function Strategy:ClearBuildDump()
+   self.m_tBuildDump={}
+end
 --? @shortdesc Tries to build the squad, or it's prerequisites (may fail)
 --? @args int id
 --? @result void
 -- Arkhan 10.2005: No prerequisites are built any more
 function Strategy:TryBuild( build_type )
 	aitrace("try build start "..build_type.name..":")
-
+        local bBuildDump = false
+        for i in self.m_tBuildDump do
+            if self.m_tBuildDump[i]==build_type.name then
+               bBuildDump=true
+            end
+        end
+        if bBuildDump==true then aitrace("Build the queue is busy 1") return false else table.insert(self.m_tBuildDump, build_type.name) end
 	local prereq = CpuPrerequisites2( cpu_manager.cpu_player, build_type.name, build_type.btype )
 	
 --[[	--Kaiser Soze 04.2007

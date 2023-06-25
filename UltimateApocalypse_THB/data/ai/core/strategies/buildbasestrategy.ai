@@ -804,7 +804,8 @@ function BuildBaseStrategy:Update()
 	aitrace("BuildBaseStrategy: 14", true)
 		self:BuildFlexible()
 
-                self.m_iNextUpdateBuilding = g_iGMT + 5
+                self.m_iNextUpdateBuilding = g_iGMT + 3
+                self:ClearBuildDump()
 	end
 
 
