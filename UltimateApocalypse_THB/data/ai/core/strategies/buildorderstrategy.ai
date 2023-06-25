@@ -249,13 +249,13 @@ function BuildOrderStrategy:WaitOnNextPlan()
 	
 	self:AddPlan( plan )
 	
-	if current_build_order[3] == true then
+--[[	if current_build_order[3] == true then
 		--wait on start
 		plan:AddObserver( self )
-	else
+	else]]
 		--move on to the next one right away
 		self:WaitOnNextPlan()
-	end
+	--end
 end
 
 function BuildOrderStrategy:OnPlanEvent( event )
