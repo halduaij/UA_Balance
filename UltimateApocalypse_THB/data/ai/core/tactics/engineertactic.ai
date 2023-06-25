@@ -77,8 +77,7 @@ function EngineerTactic:Update()
 		end
 	  end
         end
-
-	if (self.squad_ai:IsLocked()) then
+	if (self.squad_ai:IsLocked())  then
 	
 		-- Arkhan 01.2006: Reset destination if squad is locked
    		self.m_vDestination = nil
@@ -125,7 +124,7 @@ function EngineerTactic:Update()
 		self:GoToNextPost()
 	end	
        end
-	
+
 	--aitrace("EngineerTactic: Nothing...")
 	return true
 end
@@ -143,7 +142,7 @@ function EngineerTactic:GoToNextPost()
 	-- Try to reach a save position if HQ is attacked
 	self.m_bBusy = false
 	local vEngineerPos = self.squad_ai:GetPosition()
-	if (self.squad_ai:WasRecentlyHurt()) then
+	if (self.squad_ai:GetHealthPercentage()<0.5 and cpu_manager.cpu_player:FindFirstEnemy(vEngineerPos, 35, 1)) then
 		local vBasePos = cpu_manager:FindClosestFriendlyBaseOrStrategicPoint(vEngineerPos, cpu_manager.start_pos, true, true)
 		if (vBasePos ~= nil) then
 			self:ValidMove(vBasePos)
@@ -165,7 +164,7 @@ function EngineerTactic:GoToNextPost()
 	  end
          end
               local necronrace = cpu_manager.player_stats:GetPlayerRaceName() == "necron_race"
-              if (self.m_numEngineerOnBuild < 1 and not necronrace) and ((g_iGMT < 300 and not necronrace) or cpu_manager:IsHQ(oBuildingToFinish:GetID())) then
+              if not cpu_manager:IsListeningPost(oBuildingToFinish:GetID()) and (self.m_numEngineerOnBuild < 1 and not necronrace) and ((g_iGMT < 120 and not necronrace) or cpu_manager:IsHQ(oBuildingToFinish:GetID())) and distance(oBuildingToFinish:GetPosition(), self.squad_ai:GetPosition())<70 then
 		aitrace("EngineerTactic: Help finishing a building...")
 		self.squad_ai:DoFinishBuilding(oBuildingToFinish)
 		self.m_vDestination = oBuildingToFinish:GetPosition()
@@ -175,7 +174,7 @@ function EngineerTactic:GoToNextPost()
 		return
               end
 	end
-
+ 
 	-- Only attempt vehicle repair if we can
 	local iClosestDistance = 0
 	if (self.squad_ai:CanRepair() and self.squad_ai:IsBuilding() == 0) then
@@ -183,9 +182,7 @@ function EngineerTactic:GoToNextPost()
 		local oVehicleToRepair = cpu_manager:GetDamagedVehicleInRange()
                 local oVehicleToRepair_temp = 0
 		if (oVehicleToRepair ~= nil) then
-                 local stVehicleToRepair  = cpu_manager:GetUnitStrength(oVehicleToRepair)
-                 local rVehicleToRepair15 = cpu_manager.terrain_analyzer:HasThreat(oVehicleToRepair:GetPosition(), 15)
-                 local rVehicleToRepair35 = cpu_manager.terrain_analyzer:HasThreat(oVehicleToRepair:GetPosition(), 35)
+		 local vPosThreat, iAlliedStrength = cpu_manager:GetArmyStrengthAtPos(oVehicleToRepair:GetPosition(), 35, true)
                   if table.getn(EngineerTactic.Bufer) > 0 then
                    for iLoop1 in EngineerTactic.Bufer do
                          oVehicleToRepair_temp = EngineerTactic.Bufer[iLoop1][1]
@@ -194,7 +191,7 @@ function EngineerTactic:GoToNextPost()
 	         	        end
 	           end
                   end
-                    if (((stVehicleToRepair >= 300 and not rVehicleToRepair15) or (stVehicleToRepair >= 500) or not rVehicleToRepair35)) and (self.m_numEngineerOnRepairVehicle < 1) then
+                    if vPosThreat<=1.1*iAlliedStrength and (self.m_numEngineerOnRepairVehicle < 1) then
 			aitrace("EngineerTactic: Repairing vehicle...")
 			self.squad_ai:DoRepairSquad(oVehicleToRepair)
 			self.m_vDestination = oVehicleToRepair:GetPosition()
@@ -212,6 +209,7 @@ function EngineerTactic:GoToNextPost()
 		-- Find the closest building that can be repaired
 		local oBuildingToRepair = cpu_manager:GetDamagedBuildingInRange()
                if oBuildingToRepair ~= nil then
+		local vPosThreat, iAlliedStrength = cpu_manager:GetArmyStrengthAtPos(oBuildingToRepair:GetPosition(), 35, true)
                 local oBuildingToRepair_temp = 0
                   if table.getn(EngineerTactic.Bufer) > 0 then
                    for iLoop1 in EngineerTactic.Bufer do
@@ -221,7 +219,7 @@ function EngineerTactic:GoToNextPost()
 	         	        end
 	           end
                   end
-		if (not cpu_manager.terrain_analyzer:HasThreat(oBuildingToRepair:GetPosition(), 35)) and ((self.m_numEngineerOnRepairBuilding < 1) or ((self.m_numEngineerOnRepairBuilding < 3) and cpu_manager:HQThreat())) then
+		if vPosThreat<1.1*iAlliedStrength and ((self.m_numEngineerOnRepairBuilding < 1) or ((self.m_numEngineerOnRepairBuilding < 3) and cpu_manager:HQThreat())) then
 			aitrace("EngineerTactic: Repairing building...")
 			self.squad_ai:DoRepairBase(oBuildingToRepair)
 			self.m_vDestination = oBuildingToRepair:GetPosition()

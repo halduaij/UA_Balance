@@ -349,7 +349,7 @@ function Strategy:BuildPrereq( build_type )
 		
 		-- Add building plan
 		local id = cpu_manager.stats:GetBuildingID( build_type.name )
---		if (self:PlanExists("Build Building Plan", id) == false) or id == cpu_manager.stats:GetBuildingID(self:GetBuildingName("BiggerGenerator")) or id == cpu_manager.stats:GetBuildingID(self:GetBuildingName("Generator")) then
+		if (self:PlanExists("Build Building Plan", id) == false) or id == cpu_manager.stats:GetBuildingID(self:GetBuildingName("BiggerGenerator")) or id == cpu_manager.stats:GetBuildingID(self:GetBuildingName("Generator")) then
 			local start_pos = cpu_manager.start_pos
 			local build_pos = nil
                         
@@ -619,7 +619,7 @@ function Strategy:BuildPrereq( build_type )
 				self:DeepStrikeBuilder(start_pos)
 				self.AddPlan(self, BuildBuildingPlan(id, start_pos, nil)) 
 			end
---		end
+		end
   
 	elseif (build_type.btype == CpuPrerequisites.BT_Research) then
 

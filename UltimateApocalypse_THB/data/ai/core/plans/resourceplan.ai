@@ -52,7 +52,7 @@ function ResourcePlan:FindStrategicPoint()
 		local vPosition = oStrategicPoint:GetPosition()
 		local vPosThreat, iAlliedStrength = cpu_manager:GetArmyStrengthAtPos(vPosition, 35, true)
 		-- We're the owner, but no post
-		if (((oStrategicPoint:Owner() == cpu_manager.player_id) or (distance(cpu_manager.start_pos,oStrategicPoint:GetPosition())<100 and oStrategicPoint:GetCaptureProgress()>0.4)) and not oStrategicPoint:HasListeningPost() and
+		if (((oStrategicPoint:Owner() == cpu_manager.player_id)) and not oStrategicPoint:HasListeningPost() and
 			not oStrategicPoint:IsStrategicObjective() and not oStrategicPoint:IsLocked() and (iAlliedStrength>vPosThreat or vPosThreat==0)) then
 			
 			-- Check threat on path
@@ -71,6 +71,9 @@ function ResourcePlan:ObtainFlagAndBuilder()
 		return
 	end
 	self.m_iNextUpdate = g_iGMT + 1/10
+        if (self.builder ~= nil and self.capturing_flag ~= nil) then
+           return
+        end
 
 	aitrace("ResourcePlan: ObtainFlagAndBuilder...")
 	
@@ -118,7 +121,7 @@ function ResourcePlan:ObtainFlagAndBuilder()
 			local squad_pos = oSquad:GetPosition()
 		
 			if (oSquad:CanBuildAt( self.garrison_id, build_pos ) and 
-				not cpu_manager:HasThreatOnPath(squad_pos, build_pos, 30) and oSquad:IsBuilding() == 0 and not oSquad:IsBuildProgressing()) then
+				not cpu_manager:HasThreatOnPath(squad_pos, build_pos, 30)) then
 		
 				if (self.builder == nil) then
 				
@@ -233,13 +236,13 @@ function ResourcePlan:BuildPost()
 		return
 	end
 	
-        if (self.builder:IsBuilding() == 0) and not self.builder:GetTactic():IsBufer() then
+--        if (self.builder:IsBuilding() == 0) then
 	      -- Try to build post
 	      self.builder:DoBuildBuilding( self.garrison_id, build_pos )
-        else
-              self:SetComplete( true )
-           return
-        end
+--        else
+--              self:SetComplete( true )
+--           return
+--        end
 	
 	Plan.SetState( self, "Building Garrison at "..vec2str(build_pos), ResourcePlan.BuildingListeningPost )
 
@@ -254,7 +257,7 @@ function ResourcePlan:BuildingListeningPost()
 	end
 	
 	-- Check if builder is building
-	if (self.builder:IsBuilding() == 0 and not self.builder:IsBuildProgressing() and not self.builder:GetTactic():IsBufer()) then
+	if (self.builder:IsBuilding() == 0) then
 		
 		if (not self.is_building) then
 			Plan.SetState( self, "Trying to build listening post", ResourcePlan.BuildPost )
@@ -278,7 +281,7 @@ function ResourcePlan:BuildingListeningPost()
 	end
 	
 	-- Check if builder is building
-	if (self.builder:IsBuilding() == 0 and not self.builder:IsBuildProgressing() and not self.builder:GetTactic():IsBufer()) then
+	if (self.builder:IsBuilding() == 0) then
 	
 		-- Check for building
 		--[[if (oBuilding ~= nil) then
@@ -333,6 +336,7 @@ function ResourcePlan:FreeResources()
 	-- Check capturing flag
 	if (self.capturing_flag ~= nil) then
 		self:UnlockResource(self.capturing_flag)
+                self.capturing_flag:TagFlagForEngineer( false )
 		self.capturing_flag = nil	
 	end
 end
@@ -378,7 +382,7 @@ function ResourcePlan:Update()
 		
 		-- Check threat
 		local vFlagPos = self.capturing_flag:GetPosition()
-		if (cpu_manager:CloseEnemyUnits(vFlagPos, 35) and cpu_manager.terrain_analyzer:HasThreat(vFlagPos, 35)) and (self.builder:GetHealthPercentage()<0.5) then
+		if (cpu_manager:CloseEnemyUnits(vFlagPos, 35)) and (self.builder:GetHealthPercentage()<0.5) then
 		
 			-- Abort if target threat too dangerous
 			local iEnemyStrength, iAlliedStrength = cpu_manager:GetArmyStrengthAtPos(vFlagPos, 35)
