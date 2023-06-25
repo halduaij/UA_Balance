@@ -696,8 +696,7 @@ end
 
 function BuildBuildingPlan:Update()
 
-	aitrace("BuildBuildingPlan: Update building plan for "..self.item_name, true)
-	
+	aitrace("BuildBuildingPlan: Update building plan for "..self.item_name, true)        
 	-- Take into account if my builder dies
 	if (self.builder ~= nil and not self.builder:IsValid()) then
 	
@@ -714,42 +713,6 @@ function BuildBuildingPlan:Update()
 			Plan.SetState(self, "Wanting to build: "..self.item_name, BuildBuildingPlan.BuildBuilding)
 		end
 	end
-
---[[	-- Check for unfinished building without builder
-	local oBuilding = build_manager:FindUnfinishedBuilding( self.item_id )
-        local has_builderfast = false	
-	if (oBuilding) then
-	
-		-- Check if building has a builder
-		for oSquad in military_manager:GetSquads() do
-			
-			-- Check builder
-			if (oSquad:IsValid() and oSquad:IsEngineer() and oSquad:IsBuilding() == self.item_id and oSquad:IsBuildProgressing()) then
-				has_builderfast = true
-				break
-			end
-		end
-		
-		-- If building has no builder then finish it
-		if (not has_builderfast) then		
-			aitrace("BuildBuildingPlan: Finish building...")
-			self.started_building = true
-			self.copy_build_pos = Vector3f(oBuilding:GetPosition())
-			self.bestPosition = Vector3f(oBuilding:GetPosition())
-			self.build_pos = Vector2f()
-			self.build_pos.x = self.bestPosition.x
-			self.build_pos.z = self.bestPosition.z
-			Plan.SetNeeds( self, "Fixing building...", BuildBuildingPlan.ObtainNewBuilder )
-			Plan.SetState( self, "Try to fix building: "..self.item_name, BuildBuildingPlan.FixState )
-		end
-	end]]
-
-      --[[  if self.started_building and self.builder ~= nil then
-			Plan.UnlockResource( self, self.builder )
-			self.builder = nil
-			self:SetComplete(true)	
-        end]]
-
 	-- retry or quit building if big generator is not progressing
 	if (self.builder ~= nil and cpu_manager:IsBiggerGenerator(self.item_id) and 
 		self.started_building and g_iGMT > self.m_iPlanStart + 10 and self.builder:IsBuilding() == self.item_id and 
@@ -772,33 +735,7 @@ function BuildBuildingPlan:Update()
 			self.builder = nil
 			self:SetComplete(true)		
 		end
-
-	-- quit building if slag generator is not progressing
-	elseif (self.builder ~= nil and (cpu_manager:IsSlagGenerator(self.item_id) or cpu_manager:IsBiggerGenerator(self.item_id)) and 
-			self.started_building and g_iGMT > self.m_iPlanStart + 10 and self.builder:IsBuilding() == self.item_id and 
-			not self.builder:IsBuildProgressing() and not self.builder:GetTactic():IsMoving()) then
-		
-		local build_time = 100
-		if cpu_manager:IsSlagGenerator(self.item_id) then
-			build_time = 35 + cpu_manager:HasBuilding("necron_plasma_generator") * 15
-		end
-	
-		if (g_iGMT >= self.m_iPlanStart + build_time + 10) then
-			aitrace("BuildBuildingPlan: Builder stuck, shift position")
-			if (g_iGMT >= self.shift_move + 8) then 
-				aitrace("BuildBuildingPlan: Builder stuck, set shift state")
-				Plan.SetState(self, "Shifting builder for: "..self.item_name, BuildBuildingPlan.ShiftState)
-			end
-		elseif (self.building ~= nil) then
-			self.builder:DoFinishBuilding(self.building)
-		else
-			aitrace("BuildBuildingPlan: Builder stuck. Abort "..self.item_name, true)
-			Plan.UnlockResource( self, self.builder )
-			self.builder = nil
-			self:SetComplete(true)		
-		end
-
-	-- Check if builder is lazy
+        	-- Check if builder is lazy
 	elseif (self.builder ~= nil and self.builder:IsIdle() and self.started_building and self.m_iPlanStart > 5) then
 		
 		-- Reactivate builder
@@ -809,7 +746,7 @@ function BuildBuildingPlan:Update()
 
         elseif (self.builder ~= nil and self.started_building and self.builder:IsIdle() and not self.builder:IsBuildProgressing() and not self.builder:GetTactic():IsMoving()) then
 	local build_time = 60
-               if (g_iGMT < self.m_iPlanStart + build_time + 10) then
+               if (g_iGMT > self.m_iPlanStart + build_time + 10) then
 			aitrace("BuildBuildingPlan: Builder stuck, shift position")
 			if (g_iGMT >= self.shift_move + 8) then 
 				aitrace("BuildBuildingPlan: Builder stuck, set shift state")
