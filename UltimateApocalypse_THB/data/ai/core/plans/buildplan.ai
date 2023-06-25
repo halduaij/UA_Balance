@@ -74,7 +74,7 @@ function BuildPlan:BuildingState()
 	else
 	
 		self.time_out = self.time_out + 1
-		if (self.time_out > 5) then
+		if (self.time_out > 30) then
 			self:Retry()
 			self.time_out = 0
 		end
