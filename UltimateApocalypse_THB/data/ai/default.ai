@@ -121,8 +121,8 @@ cpu:NetSay(550001, false)
 end
 
 function think()
- Rule_AddInterval(AI_Think, 0.124)
 cpu_manager.cpu_player:Enable(true)
+Rule_AddInterval(AI_Think, 0.124)
 end
 
 function InitializeAI()
@@ -135,9 +135,6 @@ function InitializeAI()
 	
 		dbAssert( build_manager ~= nil )
 		dbAssert( debug_display ~= nil )
-                collectgarbage(0)
-                AI_Think()
-                UpdateStats()
                 cpu_manager.cpu_player:Enable(false)
                 Rule_AddOneShot(think, (cpu_manager.player_id-1000)*0.125)
 --		Rule_AddInterval(UpdateManagersCPU, 0.25)

@@ -8,10 +8,10 @@ BuildBaseStrategyInfo =
 	chaos_marine_race =
 	{
 		post_builder = 2,
-		flag_capture = 2,
+		flag_capture = 3,
 
 		-- Reserve this amount for building units, reinforcing and upgrading
-		req_reserve = 250,
+		req_reserve = 150,
 		
 		--need at least this at all times
 		squad_cap_threshold = 2,
@@ -23,7 +23,12 @@ BuildBaseStrategyInfo =
 		Engineers =
 		{
 			--number of engineers we're aiming for
-			want = 4,
+			want = 3,
+			tier1 = 3,
+			tier2 = 5,
+			tier3 = 8,
+			tier4 = 8,
+                        max = 8,
 		},
 		
 		-- Is used to modify the army strength in the build programs (Allows faster balancing adjustments)
@@ -139,16 +144,14 @@ BuildOrderStrategyInfo =
 	{
 		Basic =
 		{
-			{ "flag_capture" }, { "flag_capture" },
-			{ "flag_capture" }, 
 			{ "squad", "chaos_squad_slave" },
 			{ "squad", "chaos_squad_cultist" },
+                        { "flag_capture" }, 
 			{ "squad", "chaos_squad_cultist" },
+                        { "flag_capture" }, 
 			{ "squad", "chaos_squad_cultist" },
-			{ "squad", "chaos_squad_cultist" },
-			{ "squad", "chaos_squad_slave" },
 			{ "post_builder" }, { "post_builder" },
-			{ "building", "chaos_temple", true },
+			{ "building", "chaos_temple", false },
 			{ "building", "chaos_plasma_generator" }
 		},
 		
@@ -169,15 +172,15 @@ BuildOrderStrategyInfo =
 		
 		LargeMap =
 		{
-			{ "flag_capture" }, { "flag_capture" }, 
 			{ "squad", "chaos_squad_cultist" },
 			{ "squad", "chaos_squad_slave" },
 			{ "squad", "chaos_squad_cultist" },
+			{ "flag_capture" }, 
 			{ "squad", "chaos_squad_cultist" },
+			{ "flag_capture" }, 
 			{ "squad", "chaos_squad_cultist" },
-			{ "flag_capture" }, { "flag_capture" },
 			{ "post_builder" }, 
-			{ "building", "chaos_temple", true },
+			{ "building", "chaos_temple", false },
 			{ "building", "chaos_plasma_generator" }
 		}
 	}

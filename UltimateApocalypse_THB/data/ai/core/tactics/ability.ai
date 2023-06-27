@@ -3,6 +3,10 @@
 -- Edited by Thudmeizer @ 15.11.2007
 -- Edited by Aliaska_RuS
 
+----
+
+
+
 -------------------------------------------------------------------------
 -- Helper functions to cast abilities ----------------------------
 -------------------------------------------------------------------------
@@ -266,6 +270,18 @@ Filters =
 			return nil
 		end
 		return cpu_manager.cpu_player:FindFirstInfiltratedEnemy(vPosition, iTolerance, iCount)
+	end,
+
+	CloseInfiltratedBaseEnemy = function(vPosition, iTolerance)
+	
+		-- Quick check
+		if (not cpu_manager:CloseEnemyInfiltrators(vPosition, iTolerance)) then
+			return nil
+		end
+                local functortemp = function(base)
+                      return distance(base:GetPosition(),vPosition)<iTolerance and base:IsInfiltrating()
+                end
+		return cpu_manager:FindFirstEnemyBase(functortemp)
 	end,
 
 	CloseStrategicPoint = function( position, range, args )

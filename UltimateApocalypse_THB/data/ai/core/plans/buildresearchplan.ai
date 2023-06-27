@@ -25,8 +25,8 @@ function BuildResearchPlan:__init( research_id, wait_on_builder) super( CpuPlaye
 end
 
 function BuildResearchPlan:ObtainBuilder()
-
-	for build_channel in build_manager:GetUnlockedBuildChannelAIs() do
+        local uManager = build_manager:GetUnlockedBuildChannelAIs()
+	for build_channel in uManager do
 
 		--don't queue
 		if build_channel:IsBuilding() == 0 then

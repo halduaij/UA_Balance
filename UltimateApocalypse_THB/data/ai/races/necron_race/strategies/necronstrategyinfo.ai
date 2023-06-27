@@ -23,7 +23,12 @@ BuildBaseStrategyInfo =
 		Engineers =
 		{
 			--number of engineers we're aiming for
-			want = 6,
+			want = 10,
+			tier1 = 10,
+			tier2 = 10,
+			tier3 = 10,
+			tier4 = 10,
+                        max = 10,
 		},
 
 		-- Is used to modify the army strength in the build programs (Allows faster balancing adjustments)
@@ -232,6 +237,6 @@ AttackStrategyInfo =
 {
 	necron_race =
 	{
-		MinArmyStrength = 350,
+		MinArmyStrength = 0,
 	},
 }

@@ -8,7 +8,7 @@ BuildBaseStrategyInfo =
 	tau_race =
 	{
 		post_builder = 2,
-		flag_capture = 2,
+		flag_capture = 3,
 
 		-- Reserve this amount for building units, reinforcing and upgrading
 		req_reserve = 150,
@@ -23,7 +23,12 @@ BuildBaseStrategyInfo =
 		Engineers =
 		{
 			--number of engineers we're aiming for
-			want = 4,
+			want = 3,
+			tier1 = 3,
+			tier2 = 5,
+			tier3 = 8,
+			tier4 = 8,
+                        max = 8,
 		},
 		
 		-- Is used to modify the army strength in the build programs (Allows faster balancing adjustments)
@@ -140,38 +145,33 @@ BuildOrderStrategyInfo =
 		Basic =
 		{
 			{ "flag_capture" }, { "flag_capture" },
-			{ "flag_capture" },
 			{ "squad", "tau_builder_squad" },
-			{ "squad", "tau_stealth_team_squad" },
-			{ "squad", "tau_stealth_team_squad" },
 			{ "squad", "tau_stealth_team_squad" },
 			{ "squad", "tau_stealth_team_squad" },
 			{ "squad", "tau_stealth_team_squad" },
 			{ "squad", "tau_builder_squad" },
 			{ "post_builder" }, { "post_builder" },
-			{ "building", "tau_barracks", true },
-			{ "building", "tau_plasma_generator", true }
+			{ "building", "tau_barracks", false },
+			{ "building", "tau_plasma_generator", false }
 		},
 		
 		QuickStart =
 		{
 			{ "flag_capture" }, { "flag_capture" }, 
-			{ "flag_capture" }, { "flag_capture" },
 			{ "squad", "tau_builder_squad" },
 			{ "squad", "tau_stealth_team_squad" },
 			{ "squad", "tau_stealth_team_squad" },
 			{ "squad", "tau_stealth_team_squad" },
 			{ "squad", "tau_builder_squad" },
 			{ "post_builder" }, { "post_builder" },
-			{ "building", "tau_barracks", true },
-			{ "building", "tau_barracks", true },
-			{ "building", "tau_plasma_generator", true }
+			{ "building", "tau_barracks", false },
+			{ "building", "tau_barracks", false },
+			{ "building", "tau_plasma_generator",false }
 		},
 		
 		LargeMap =
 		{
 			{ "flag_capture" }, { "flag_capture" }, 
-			{ "flag_capture" }, { "flag_capture" },
 			{ "squad", "tau_builder_squad" },
 			{ "squad", "tau_stealth_team_squad" },
 			{ "squad", "tau_stealth_team_squad" },
@@ -180,8 +180,8 @@ BuildOrderStrategyInfo =
 			{ "squad", "tau_builder_squad" },
 			{ "squad", "tau_stealth_team_squad" },
 			{ "post_builder" }, { "post_builder" },
-			{ "building", "tau_barracks", true },
-			{ "building", "tau_plasma_generator", true }
+			{ "building", "tau_barracks", false },
+			{ "building", "tau_plasma_generator", false }
 		}
 	}
 }
@@ -190,6 +190,6 @@ AttackStrategyInfo =
 {	
 	tau_race =
 	{
-		MinArmyStrength = 300,
+		MinArmyStrength = 200,
 	},
 }

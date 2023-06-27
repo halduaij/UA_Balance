@@ -7,7 +7,7 @@ BuildBaseStrategyInfo =
 	tyranids_race =
 	{
 		post_builder = 2,
-		flag_capture = 2,
+		flag_capture = 4,
 
 		--reserve this amount for building units/buildings (not for use in upgrading/ reinforcing)
 		req_reserve = 100,
@@ -23,6 +23,11 @@ BuildBaseStrategyInfo =
 		{
 			--number of engineers we're aiming for
 			want = 3,
+			tier1 = 3,
+			tier2 = 5,
+			tier3 = 8,
+			tier4 = 8,
+                        max = 8,
 		},
 
 		-- Is used to modify the army strength in the build programs (Allows faster balancing adjustments)

@@ -8,22 +8,27 @@ BuildBaseStrategyInfo =
 	ork_race =
 	{
 		post_builder = 2,
-		flag_capture = 2,
+		flag_capture = 3,
 		
 		-- Reserve this amount for building units, reinforcing and upgrading
-		req_reserve = 175,
+		req_reserve = 150,
 		
 		-- need at least this at all times
 		squad_cap_threshold = 3,
 		
 		--need at least this at all times
-		support_cap_threshold = 3,
+		support_cap_threshold = 2,
 
 		-- used to calculate wants for engineers
 		Engineers =
 		{
 			--number of engineers we're aiming for
-			want = 4,
+			want = 3,
+			tier1 = 3,
+			tier2 = 5,
+			tier3 = 8,
+			tier4 = 8,
+                        max = 8,
 		},
 		
 		-- Is used to modify the army strength in the build programs (Allows faster balancing adjustments)

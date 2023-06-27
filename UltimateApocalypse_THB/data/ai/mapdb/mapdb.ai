@@ -7,7 +7,7 @@
 
 class 'MapDB'
 
-MapDB.Path = "Dowai_mod\\Data\\ai\\mapdb\\"
+MapDB.Path = "AI_Extended\\Data\\ai\\mapdb\\"
 
 function MapDB:__init( )
 

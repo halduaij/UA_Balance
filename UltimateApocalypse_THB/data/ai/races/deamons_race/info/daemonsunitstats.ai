@@ -1,18 +1,61 @@
-----------------------------------------
--- File: 'daemonsunitstats.ai'
--- Edited by Thudmeizer	@ 03.05.2016
--- Edited by fuggles @ 27.05.2013
--- Created by Cylarne @ 2012
--- Slightly edited by Gambit 26.7.2013
--- Hugely Edited by Cylarne 6/16/2014 xD
-----------------------------------------
-
--- NPCs
-UnitStrengths.npc_squad_superweapon1 = 0
-UnitStrengths.npc_squad_civilian_group = 0
-
--- Unit squad list and strengths.
+--Created by Aliaska_RuS Script ver.29.01.2023
+UnitStrengths.daemon_maledictum = 0
+UnitStrengths.daemon_squad_blight_drones = 330
+UnitStrengths.daemon_squad_bloodletter_elites = 110
+UnitStrengths.daemon_squad_bloodletters = 200
+UnitStrengths.daemon_squad_bloodthirster = 1150
+UnitStrengths.daemon_squad_bloodthirster_angron = 0
+UnitStrengths.daemon_squad_blue_horror = 30
+UnitStrengths.daemon_squad_daemon_prince = 0
+UnitStrengths.daemon_squad_daemon_prince_khorne = 1000
+UnitStrengths.daemon_squad_daemon_prince_nurgle = 1000
+UnitStrengths.daemon_squad_daemon_prince_slaanesh = 1000
+UnitStrengths.daemon_squad_daemon_prince_tzeentch = 1000
+UnitStrengths.daemon_squad_daemonettes = 65
+UnitStrengths.daemon_squad_daemonettes_greater = 110
+UnitStrengths.daemon_squad_defiler_khorne = 615
+UnitStrengths.daemon_squad_defiler_nurgle = 590
+UnitStrengths.daemon_squad_defiler_slaanesh = 590
+UnitStrengths.daemon_squad_defiler_tzeentch = 590
+UnitStrengths.daemon_squad_fiends = 220
+UnitStrengths.daemon_squad_flamers = 85
+UnitStrengths.daemon_squad_flesh_hound = 50
+UnitStrengths.daemon_squad_fury = 45
+UnitStrengths.daemon_squad_greater_brass_scorpion = 6250
+UnitStrengths.daemon_squad_guo = 1200
+UnitStrengths.daemon_squad_hell_drake = 5800
+UnitStrengths.daemon_squad_hell_spawn = 0
+UnitStrengths.daemon_squad_honor_guard = 60
+UnitStrengths.daemon_squad_horblu = 60
+UnitStrengths.daemon_squad_horblu_stature = 600
+UnitStrengths.daemon_squad_horror = 0
+UnitStrengths.daemon_squad_jugg = 380
+UnitStrengths.daemon_squad_juggernaut = 420
+UnitStrengths.daemon_squad_keeper_of_secrets = 900
+UnitStrengths.daemon_squad_khorne_herald = 300
+UnitStrengths.daemon_squad_lord = 320
+UnitStrengths.daemon_squad_lord_khorne = 300
+UnitStrengths.daemon_squad_lord_nurgle = 300
+UnitStrengths.daemon_squad_lord_of_change = 1000
+UnitStrengths.daemon_squad_lord_slaanesh = 300
+UnitStrengths.daemon_squad_lord_stature = 750
+UnitStrengths.daemon_squad_lord_stature_khorne = 340
+UnitStrengths.daemon_squad_lord_stature_nurgle = 340
+UnitStrengths.daemon_squad_lord_stature_slaanesh = 340
+UnitStrengths.daemon_squad_lord_stature_tzeentch = 340
+UnitStrengths.daemon_squad_lord_tzeentch = 245
 UnitStrengths.daemon_squad_lost_soul = 0
+UnitStrengths.daemon_squad_mutilator = 120
+UnitStrengths.daemon_squad_nurgle_herald = 260
+UnitStrengths.daemon_squad_nurgling = 10
+UnitStrengths.daemon_squad_obliterator = 60
+UnitStrengths.daemon_squad_pink_horror = 50
+UnitStrengths.daemon_squad_pink_horror_minions = 50
+UnitStrengths.daemon_squad_plague_bearers = 70
+UnitStrengths.daemon_squad_primarch_angron = 0
+UnitStrengths.daemon_squad_screamers = 75
+UnitStrengths.daemon_squad_slaanesh_herald = 285
+UnitStrengths.daemon_squad_soul_grinder = 1460
 UnitStrengths.daemon_squad_trade_power = 0
 UnitStrengths.daemon_squad_trade_power2 = 0
 UnitStrengths.daemon_squad_trade_power3 = 0
@@ -21,1026 +64,1448 @@ UnitStrengths.daemon_squad_trade_relic2 = 0
 UnitStrengths.daemon_squad_trade_requisition = 0
 UnitStrengths.daemon_squad_trade_requisition2 = 0
 UnitStrengths.daemon_squad_trade_requisition3 = 0
+UnitStrengths.daemon_squad_tzeentch_herald = 220
+UnitStrengths.daemon_squad_warp_spawn = 780
 
-UnitStrengths.daemon_squad_fury = 35
-UnitStrengths.daemon_squad_flesh_hound = 70
-UnitStrengths.daemon_squad_nurgling = 70
-UnitStrengths.daemon_squad_daemonettes = 70
-UnitStrengths.daemon_squad_screamers = 70
-UnitStrengths.daemon_squad_bloodletters = 90
-UnitStrengths.daemon_squad_daemonettes_greater = 90
-UnitStrengths.daemon_squad_fiends = 90
-UnitStrengths.daemon_squad_plague_bearers = 90
-UnitStrengths.daemon_squad_flamers = 90
-UnitStrengths.daemon_squad_pink_horror = 100
-UnitStrengths.daemon_squad_pink_horror_minions = 100
-UnitStrengths.daemon_squad_horblu = 230
-UnitStrengths.daemon_squad_horblu_stature = 250
-UnitStrengths.daemon_squad_khorne_herald = 120
-UnitStrengths.daemon_squad_nurgle_herald = 120
-UnitStrengths.daemon_squad_slaanesh_herald = 120
-UnitStrengths.daemon_squad_tzeentch_herald = 120
-UnitStrengths.daemon_squad_lord = 270
-UnitStrengths.daemon_squad_lord_stature = 330
-UnitStrengths.daemon_squad_jugg = 120
-UnitStrengths.daemon_squad_blight_drones = 350
-UnitStrengths.daemon_squad_defiler_khorne = 410
-UnitStrengths.daemon_squad_defiler_nurgle = 410
-UnitStrengths.daemon_squad_defiler_slaanesh = 410
-UnitStrengths.daemon_squad_defiler_tzeentch = 410
-UnitStrengths.daemon_squad_warp_spawn = 500
-UnitStrengths.daemon_squad_soul_grinder = 600
-UnitStrengths.daemon_squad_bloodthirster = 700
-UnitStrengths.daemon_squad_guo = 700
-UnitStrengths.daemon_squad_keeper_of_secrets = 700
-UnitStrengths.daemon_squad_lord_of_change = 700
-UnitStrengths.daemon_squad_bloodthirster_angron = 1000
-UnitStrengths.daemon_squad_daemon_prince_khorne = 600
-UnitStrengths.daemon_squad_daemon_prince_nurgle = 600
-UnitStrengths.daemon_squad_daemon_prince_slaanesh = 600
-UnitStrengths.daemon_squad_daemon_prince_tzeentch = 600
-UnitStrengths.daemon_squad_daemon_prince = 850
-UnitStrengths.daemon_squad_hell_spawn = 1000
-UnitStrengths.daemon_squad_greater_brass_scorpion = 1000
-UnitStrengths.daemon_squad_hell_drake = 1000
-UnitStrengths.daemon_squad_primarch_angron = 3000
+LeaderStrengths.daemon_horblu_purple = 60
 
-LeaderStrengths.daemon_squad_horblu = 0
-LeaderStrengths.daemon_squad_horblu_stature = 0
-
-Attachments.daemon_squad_fury = { "daemon_squad_lost_soul", "daemon_squad_khorne_herald", "daemon_squad_nurgle_herald", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_primarch_angron" }
-Attachments.daemon_squad_fiends = { "daemon_squad_lost_soul", "daemon_squad_khorne_herald", "daemon_squad_nurgle_herald", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_primarch_angron" }
-Attachments.daemon_squad_flesh_hound = { "daemon_squad_lost_soul", "daemon_squad_khorne_herald", "daemon_squad_nurgle_herald", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_primarch_angron" }
-Attachments.daemon_squad_bloodletters = { "daemon_squad_lost_soul", "daemon_squad_khorne_herald", "daemon_squad_nurgle_herald", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_primarch_angron" }
-Attachments.daemon_squad_nurgling = { "daemon_squad_lost_soul", "daemon_squad_khorne_herald", "daemon_squad_nurgle_herald", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_primarch_angron" }
-Attachments.daemon_squad_plague_bearers = { "daemon_squad_lost_soul", "daemon_squad_khorne_herald", "daemon_squad_nurgle_herald", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_primarch_angron" }
-Attachments.daemon_squad_daemonettes = { "daemon_squad_lost_soul", "daemon_squad_khorne_herald", "daemon_squad_nurgle_herald", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_primarch_angron" }
-Attachments.daemon_squad_daemonettes_greater = { "daemon_squad_lost_soul", "daemon_squad_khorne_herald", "daemon_squad_nurgle_herald", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_primarch_angron" }
-Attachments.daemon_squad_flamers = { "daemon_squad_lost_soul", "daemon_squad_khorne_herald", "daemon_squad_nurgle_herald", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_primarch_angron" }
-Attachments.daemon_squad_pink_horror = { "daemon_squad_lost_soul", "daemon_squad_khorne_herald", "daemon_squad_nurgle_herald", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_primarch_angron" }
-Attachments.daemon_squad_pink_horror_minions = { "daemon_squad_lost_soul", "daemon_squad_khorne_herald", "daemon_squad_nurgle_herald", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_primarch_angron" }
-Attachments.daemon_squad_screamers = { "daemon_squad_lost_soul", "daemon_squad_khorne_herald", "daemon_squad_nurgle_herald", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_primarch_angron" }
-Attachments.daemon_squad_horblu = { "daemon_squad_lost_soul", "daemon_squad_khorne_herald", "daemon_squad_nurgle_herald", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_primarch_angron" }
-Attachments.daemon_squad_horblu_stature = { "daemon_squad_lost_soul", "daemon_squad_khorne_herald", "daemon_squad_nurgle_herald", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_primarch_angron" }
-Attachments.daemon_squad_bloodthirster_angron = { "daemon_squad_lost_soul", "daemon_squad_khorne_herald", "daemon_squad_nurgle_herald", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_primarch_angron" }
+Attachments.daemon_squad_horblu_stature = {"daemon_squad_khorne_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_lost_soul", "daemon_squad_nurgle_herald", "daemon_squad_primarch_angron", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald"}
+Attachments.daemon_squad_bloodletters = {"daemon_squad_khorne_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_lost_soul", "daemon_squad_nurgle_herald", "daemon_squad_primarch_angron", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald"}
+Attachments.daemon_squad_bloodthirster_angron = {"daemon_squad_khorne_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_lost_soul", "daemon_squad_nurgle_herald", "daemon_squad_primarch_angron", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald"}
+Attachments.daemon_squad_daemonettes_greater = {"daemon_squad_khorne_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_lost_soul", "daemon_squad_nurgle_herald", "daemon_squad_primarch_angron", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald"}
+Attachments.daemon_squad_pink_horror = {"daemon_squad_khorne_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_lost_soul", "daemon_squad_nurgle_herald", "daemon_squad_primarch_angron", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald"}
+Attachments.daemon_squad_screamers = {"daemon_squad_khorne_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_lost_soul", "daemon_squad_nurgle_herald", "daemon_squad_primarch_angron", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald"}
+Attachments.daemon_squad_flamers = {"daemon_squad_khorne_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_lost_soul", "daemon_squad_nurgle_herald", "daemon_squad_primarch_angron", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald"}
+Attachments.daemon_squad_fury = {"daemon_squad_khorne_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_lost_soul", "daemon_squad_nurgle_herald", "daemon_squad_primarch_angron", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald"}
+Attachments.daemon_squad_horblu = {"daemon_squad_khorne_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_lost_soul", "daemon_squad_nurgle_herald", "daemon_squad_primarch_angron", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald"}
+Attachments.daemon_squad_pink_horror_minions = {"daemon_squad_khorne_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_lost_soul", "daemon_squad_nurgle_herald", "daemon_squad_primarch_angron", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald"}
+Attachments.daemon_squad_bloodletter_elites = {"daemon_squad_khorne_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_lost_soul", "daemon_squad_nurgle_herald", "daemon_squad_primarch_angron", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald"}
+Attachments.daemon_squad_blue_horror = {"daemon_squad_khorne_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_lost_soul", "daemon_squad_nurgle_herald", "daemon_squad_primarch_angron", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald"}
+Attachments.daemon_squad_daemonettes = {"daemon_squad_khorne_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_lost_soul", "daemon_squad_nurgle_herald", "daemon_squad_primarch_angron", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald"}
+Attachments.daemon_squad_nurgling = {"daemon_squad_khorne_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_lost_soul", "daemon_squad_nurgle_herald", "daemon_squad_primarch_angron", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald"}
+Attachments.daemon_squad_plague_bearers = {"daemon_squad_khorne_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_lost_soul", "daemon_squad_nurgle_herald", "daemon_squad_primarch_angron", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald"}
+Attachments.daemon_squad_fiends = {"daemon_squad_khorne_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_lost_soul", "daemon_squad_nurgle_herald", "daemon_squad_primarch_angron", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald"}
+Attachments.daemon_squad_flesh_hound = {"daemon_squad_khorne_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_lost_soul", "daemon_squad_nurgle_herald", "daemon_squad_primarch_angron", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald"}
+Attachments.daemon_squad_honor_guard = {"daemon_squad_khorne_herald", "daemon_squad_lord", "daemon_squad_lord_khorne", "daemon_squad_lord_nurgle", "daemon_squad_lord_slaanesh", "daemon_squad_lord_stature", "daemon_squad_lord_stature_khorne", "daemon_squad_lord_stature_nurgle", "daemon_squad_lord_stature_slaanesh", "daemon_squad_lord_stature_tzeentch", "daemon_squad_lord_tzeentch", "daemon_squad_lost_soul", "daemon_squad_nurgle_herald", "daemon_squad_primarch_angron", "daemon_squad_slaanesh_herald", "daemon_squad_tzeentch_herald"}
 
 DaemonsUnitStats =
 {
 	race = "deamons_race",
 	{
-		name = "Lost Soul",
-		sbp_name = "daemon_squad_lost_soul",
-		ebp_name = "daemon_lost_soul",
-		class = UnitStatsAI.UC_LightInfantryLow,
-		rating = 0.0,
-		potential =
+		name = "daemon_maledictum",
+		sbp_name = "daemon_maledictum",
+		ebp_name = "guard_civilian_child_a",
+		class = fe,
+		rating = 1,
+		max_range = 0,
+		potential = 
 		{
 			{
 				name = "none",
-				effectiveness = GenerateUnitEffectiveness(0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0),
+				effectiveness = GenerateUnitEffectiveness(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
 				range = UnitStatsAI.RT_None,
 			},
-		}
+		},
 	},
 	{
-		name = "Daemonic Power Trader",
-		sbp_name = "daemon_squad_trade_power",
-		ebp_name = "daemon_trade_power",
-		class = UnitStatsAI.UC_LightInfantryLow,
-		rating = 0.0,
-		potential =
+		name = "daemon_squad_blight_drones",
+		sbp_name = "daemon_squad_blight_drones",
+		ebp_name = "daemon_blight_drone",
+		class = UnitStatsAI.UC_AirMed,
+		rating = 1,
+		max_range = 30,
+		potential = 
 		{
 			{
-				name = "none",
-				effectiveness = GenerateUnitEffectiveness(0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_None,
+				name = "daemons_blight_drone_storm_bolter",
+				effectiveness = GenerateUnitEffectiveness(0.308,0.838,0.838,1.048,0.806,0.524,0.398,0.168,0.999,0.21,0.377,0.44,0.176,0.196,0,0.524,0),
+				range = UnitStatsAI.RT_Ranged,
 			},
-		}
-	},
-	{
-		name = "Daemonic Power Trader2",
-		sbp_name = "daemon_squad_trade_power2",
-		ebp_name = "daemon_trade_power2",
-		class = UnitStatsAI.UC_LightInfantryLow,
-		rating = 0.0,
-		potential =
-		{
 			{
-				name = "none",
-				effectiveness = GenerateUnitEffectiveness(0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_None,
+				name = "daemons_blight_drone_ranged",
+				effectiveness = GenerateUnitEffectiveness(0.14,0.429,0.386,0.275,0.266,0.086,0.064,0,0.263,0.064,0.135,0.326,0.258,0.129,0.429,0.343,0.165),
+				range = UnitStatsAI.RT_Ranged,
 			},
-		}
+		},
 	},
 	{
-		name = "Daemonic Power Trader3",
-		sbp_name = "daemon_squad_trade_power3",
-		ebp_name = "daemon_trade_power3",
-		class = UnitStatsAI.UC_LightInfantryLow,
-		rating = 0.0,
-		potential =
-		{
-			{
-				name = "none",
-				effectiveness = GenerateUnitEffectiveness(0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_None,
-			},
-		}
-	},
-	{
-		name = "Daemonic Requisition Trader",
-		sbp_name = "daemon_squad_trade_requisition",
-		ebp_name = "daemon_trade_requisition",
-		class = UnitStatsAI.UC_LightInfantryLow,
-		rating = 0.0,
-		potential =
-		{
-			{
-				name = "none",
-				effectiveness = GenerateUnitEffectiveness(0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_None,
-			},
-		}
-	},
-	{
-		name = "Daemonic Requisition Trader2",
-		sbp_name = "daemon_squad_trade_requisition2",
-		ebp_name = "daemon_trade_requisition2",
-		class = UnitStatsAI.UC_LightInfantryLow,
-		rating = 0.0,
-		potential =
-		{
-			{
-				name = "none",
-				effectiveness = GenerateUnitEffectiveness(0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_None,
-			},
-		}
-	},
-	{
-		name = "Daemonic Requisition Trader3",
-		sbp_name = "daemon_squad_trade_requisition3",
-		ebp_name = "daemon_trade_requisition3",
-		class = UnitStatsAI.UC_LightInfantryLow,
-		rating = 0.0,
-		potential =
-		{
-			{
-				name = "none",
-				effectiveness = GenerateUnitEffectiveness(0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_None,
-
-			},
-		}
-	},
-	{
-		name = "Furies",
-		sbp_name = "daemon_squad_fury",
-		ebp_name = "daemon_fury",
+		name = "daemon_squad_bloodletter_elites",
+		sbp_name = "daemon_squad_bloodletter_elites",
+		ebp_name = "daemon_bloodletter_elite",
 		class = UnitStatsAI.UC_MonsterMed,
-		rating = 3,
-		potential =
+		rating = 1,
+		max_range = 0,
+		potential = 
 		{
 			{
-				name = "daemons_fury_melee",
-				effectiveness = GenerateUnitEffectiveness(3.1,3.3,3.8,3.9,3.2,1.0,0.0,0.0,1.0,0.0,1.7,1.0,2.8,0.0,0.0,0.0,0.0),
+				name = "daemons_bloodletter_hellblade_fury",
+				effectiveness = GenerateUnitEffectiveness(0.275,0.39,0.41,0.422,0.241,0.322,0.338,0.069,0.41,0.172,0.124,0.31,0.241,0.069,0,0,0),
 				range = UnitStatsAI.RT_Melee,
 			},
-		}
+		},
 	},
 	{
-		name = "Flesh Hounds",
-		sbp_name = "daemon_squad_flesh_hound",
-		ebp_name = "daemon_flesh_hound",
-		class = UnitStatsAI.UC_MonsterMed,
-		rating = math.random(5.0*10,6.5*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_unarmed_flesh_hound",
-				effectiveness = GenerateUnitEffectiveness(math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-			{
-				name = "daemons_unarmed_flesh_hound_improved",
-				effectiveness = GenerateUnitEffectiveness(5.1,5.3,5.8,5.9,5.2,1.0,0.0,0.0,4.0,0.0,3.7,4.0,2.8,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Nurglings",
-		sbp_name = "daemon_squad_nurgling",
-		ebp_name = "daemon_nurgling",
-		class = UnitStatsAI.UC_MonsterMed,
-		rating = math.random(5.0*10,6.5*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_nurgling_melee",
-				effectiveness = GenerateUnitEffectiveness(math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-			{
-				name = "daemons_nurgling_create_zit",
-				effectiveness = GenerateUnitEffectiveness(3.1,5.8,4.4,5.2,5.1,0.2,0.0,0.0,1.0,0.0,1.7,2.0,0.8,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-			{
-				name = "daemons_nurgling_create_rain",
-				effectiveness = GenerateUnitEffectiveness(6.1,6.8,7.4,6.2,6.1,6.2,0.0,0.0,1.0,0.0,1.7,2.0,0.8,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Daemonettes",
-		sbp_name = "daemon_squad_daemonettes",
-		ebp_name = "daemon_daemonette",
-		class = UnitStatsAI.UC_MonsterMed,
-		rating = math.random(5.0*10,6.5*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_daemonettes_melee",
-				effectiveness = GenerateUnitEffectiveness(math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Screamers",
-		sbp_name = "daemon_squad_screamers",
-		ebp_name = "daemon_screamer",
-		class = UnitStatsAI.UC_MonsterMed,
-		rating = math.random(5.0*10,6.5*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_screamer_melee",
-				effectiveness = GenerateUnitEffectiveness(math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Bloodletters",
+		name = "daemon_squad_bloodletters",
 		sbp_name = "daemon_squad_bloodletters",
 		ebp_name = "daemon_bloodletter",
-		class = UnitStatsAI.UC_MonsterMed,
-		rating = math.random(6.0*10,7.0*10)/10,
-		potential =
+		class = UnitStatsAI.UC_HeavyInfantryMed,
+		rating = 1,
+		max_range = 0,
+		potential = 
 		{
 			{
 				name = "daemons_bloodletter_hellblade",
-				effectiveness = GenerateUnitEffectiveness(math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
+				effectiveness = GenerateUnitEffectiveness(0.6,0.6,0.6,0.6,0.6,0.6,0.6,0.35,0.6,0.3,0.18,0.45,0.35,0.15,0,0,0),
 				range = UnitStatsAI.RT_Melee,
 			},
 			{
 				name = "daemons_bloodletter_hellblade_improved",
-				effectiveness = GenerateUnitEffectiveness(7.1,7.3,7.8,7.3,7.2,4.0,3.0,5.0,4.0,3.0,3.7,3.0,1.8,0.0,0.0,0.0,0.0),
+				effectiveness = GenerateUnitEffectiveness(0.306,0.434,0.456,0.469,0.268,0.357,0.375,0.077,0.456,0.191,0.138,0.344,0.268,0.077,0,0,0),
 				range = UnitStatsAI.RT_Melee,
 			},
-		}
+		},
 	},
 	{
-		name = "Plaguebearers",
-		sbp_name = "daemon_squad_plague_bearers",
-		ebp_name = "daemon_plague_bearer",
-		class = UnitStatsAI.UC_MonsterMed,
-		rating = math.random(6.0*10,7.0*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_plaguebearer_melee",
-				effectiveness = GenerateUnitEffectiveness(math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-			{
-				name = "daemons_plague_sword_daemon_noxius_touch",
-				effectiveness = GenerateUnitEffectiveness(9,9,9,9,9,9,1,1,4,2,3,4,2,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Greater Daemonettes",
-		sbp_name = "daemon_squad_daemonettes_greater",
-		ebp_name = "daemon_daemonette_greater",
-		class = UnitStatsAI.UC_MonsterMed,
-		rating = math.random(6.0*10,7.0*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_daemonette_greater_pincers",
-				effectiveness = GenerateUnitEffectiveness(math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Fiends of Slaanesh",
-		sbp_name = "daemon_squad_fiends",
-		ebp_name = "daemon_fiend",
-		class = UnitStatsAI.UC_MonsterMed,
-		rating = math.random(6.0*10,7.0*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_fiend_melee",
-				effectiveness = GenerateUnitEffectiveness(math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Flamers",
-		sbp_name = "daemon_squad_flamers",
-		ebp_name = "daemon_flamer",
-		class = UnitStatsAI.UC_MonsterMed,
-		rating = math.random(6.0*10,7.0*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_daemon_fire_flamer",
-				effectiveness = GenerateUnitEffectiveness(math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Ranged,
-			},
-			{
-				name = "daemons_flamer_melee",
-				effectiveness = GenerateUnitEffectiveness(4.1,6.3,4.8,6.9,4.2,2.0,0.0,1.0,3.0,1.0,2.7,3.0,1.8,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Pink Horrors",
-		sbp_name = "daemon_squad_pink_horror",
-		ebp_name = "daemon_pink_horror",
-		class = UnitStatsAI.UC_MonsterMed,
-		rating = math.random(6.0*10,7.0*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_daemon_fire",
-				effectiveness = GenerateUnitEffectiveness(math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Ranged,
-			},
-			{
-				name = "daemons_daemon_fire_tzeentch_bolt_lesser",
-				effectiveness = GenerateUnitEffectiveness(7.8,7.9,7.8,7.8,7.9,7.0,7.7,7.2,7.8,1.1,3.9,5.7,4.9,4.1,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Ranged,
-			},
-			{
-				name = "daemons_pink_horror_melee",
-				effectiveness = GenerateUnitEffectiveness(2.8,2.9,2.8,2.8,2.9,6.0,5.7,4.2,2.8,0.1,2.9,4.7,3.9,3.1,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Pink Horrors (Minions)",
-		sbp_name = "daemon_squad_pink_horror_minions",
-		ebp_name = "daemon_pink_horror",
-		class = UnitStatsAI.UC_MonsterMed,
-		rating = math.random(6.0*10,7.5*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_daemon_fire",
-				effectiveness = GenerateUnitEffectiveness(math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,math.random(5*10,6*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Ranged,
-			},
-			{
-				name = "daemons_daemon_fire_tzeentch_bolt_lesser",
-				effectiveness = GenerateUnitEffectiveness(7.8,7.9,7.8,7.8,7.9,7.0,7.7,7.2,7.8,1.1,3.9,5.7,4.9,4.1,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Ranged,
-			},
-			{
-				name = "daemons_pink_horror_melee",
-				effectiveness = GenerateUnitEffectiveness(2.8,2.9,2.8,2.8,2.9,6.0,5.7,4.2,2.8,0.1,2.9,4.7,3.9,3.1,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Angron Bloodthirsters",
-		sbp_name = "daemon_squad_bloodthirster_angron",
-		ebp_name = "daemon_bloodthirster_angron",
+		name = "daemon_squad_bloodthirster",
+		sbp_name = "daemon_squad_bloodthirster",
+		ebp_name = "daemon_bloodthirster",
 		class = UnitStatsAI.UC_MonsterHigh,
-		rating = 8,
-		potential =
+		rating = 1,
+		max_range = 0,
+		potential = 
 		{
 			{
 				name = "daemons_bloodthirster_melee",
-				effectiveness = GenerateUnitEffectiveness(7.8,7.9,7.8,7.8,7.9,7.0,7.7,7.2,7.8,1.1,3.9,5.7,4.9,4.1,0.0,0.0,0.0),
+				effectiveness = GenerateUnitEffectiveness(3.348,4.746,4.984,5.129,5.022,3.909,4.104,3.139,4.984,3.139,1.004,3.348,2.092,0.837,0,4.104,0),
 				range = UnitStatsAI.RT_Melee,
 			},
-		}
+		},
 	},
 	{
-		name = "Black Horrors",
-		sbp_name = "daemon_squad_horblu",
-		ebp_name = "daemon_horblu",
-		class = UnitStatsAI.UC_Commander,
-		rating = math.random(8.0*10,9.0*10)/10,
-		potential =
+		name = "daemon_squad_bloodthirster_angron",
+		sbp_name = "daemon_squad_bloodthirster_angron",
+		ebp_name = "daemon_bloodthirster_angron",
+		class = UnitStatsAI.UC_MonsterHigh,
+		rating = 1,
+		max_range = 0,
+		potential = 
 		{
 			{
-				name = "daemons_daemon_fire_improved",
-				effectiveness = GenerateUnitEffectiveness(math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Ranged,
-			},
-			{
-				name = "daemons_daemon_fire_improved_tzeentch",
-				effectiveness = GenerateUnitEffectiveness(3.8,3.9,3.8,3.8,3.9,7.0,6.7,5.2,3.8,1.1,3.9,5.7,4.9,4.1,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Ranged,
-			},
-			{
-				name = "daemons_horror_black_melee",
-				effectiveness = GenerateUnitEffectiveness(4.6,6.3,4.8,5.9,6.7,0.7,0.0,0.0,3.0,0.0,0.7,2.0,0.8,0.0,0.0,0.0,0.0),
+				name = "daemons_bloodthirster_melee",
+				effectiveness = GenerateUnitEffectiveness(3.348,4.746,4.984,5.129,5.022,3.909,4.104,3.139,4.984,3.139,1.004,3.348,2.092,0.837,0,4.104,0),
 				range = UnitStatsAI.RT_Melee,
 			},
-		}
+		},
 	},
 	{
-		name = "Black Horrors Stature",
-		sbp_name = "daemon_squad_horblu_stature",
-		ebp_name = "daemon_horblu_stature",
-		class = UnitStatsAI.UC_Commander,
-		rating = math.random(8.0*10,9.0*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_daemon_fire_improved",
-				effectiveness = GenerateUnitEffectiveness(math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Ranged,
-			},
-			{
-				name = "daemons_poison_bolt",
-				effectiveness = GenerateUnitEffectiveness(math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Ranged,
-			},
-			{
-				name = "daemons_doombolt",
-				effectiveness = GenerateUnitEffectiveness(math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Ranged,
-			},
-			{
-				name = "daemons_firebolt",
-				effectiveness = GenerateUnitEffectiveness(math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Ranged,
-			},
-			{
-				name = "daemons_horror_black_melee",
-				effectiveness = GenerateUnitEffectiveness(4.6,6.3,4.8,5.9,6.7,0.7,0.0,0.0,3.0,0.0,0.7,2.0,0.8,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Herald of Khorne",
-		sbp_name = "daemon_squad_khorne_herald",
-		ebp_name = "daemon_khorne_herald",
+		name = "daemon_squad_blue_horror",
+		sbp_name = "daemon_squad_blue_horror",
+		ebp_name = "daemon_blue_horror",
 		class = UnitStatsAI.UC_MonsterMed,
-		rating = math.random(9.0*10,9.5*10)/10,
-		potential =
+		rating = 1,
+		max_range = 35,
+		potential = 
 		{
-			{
-				name = "daemons_herald_hellblade_fury_of_chaos",
-				effectiveness = GenerateUnitEffectiveness(math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Herald of Nurgle",
-		sbp_name = "daemon_squad_nurgle_herald",
-		ebp_name = "daemon_nurgle_herald",
-		class = UnitStatsAI.UC_MonsterMed,
-		rating = math.random(9.0*10,9.5*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_plague_sword_herald",
-				effectiveness = GenerateUnitEffectiveness(math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-			{
-				name = "daemons_plague_weapon",
-				effectiveness = GenerateUnitEffectiveness(9.5,9.0,9.0,9.0,9.5,4.0,4.0,4.0,9.5,9.0,8.0,8.0,9.5,7.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Herald of Slaanesh",
-		sbp_name = "daemon_squad_slaanesh_herald",
-		ebp_name = "daemon_slaanesh_herald",
-		class = UnitStatsAI.UC_MonsterMed,
-		rating = math.random(9.0*10,9.5*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_slaanesh_herald_melee",
-				effectiveness = GenerateUnitEffectiveness(math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Herald of Tzeentch",
-		sbp_name = "daemon_squad_tzeentch_herald",
-		ebp_name = "daemon_tzeentch_herald",
-		class = UnitStatsAI.UC_MonsterMed,
-		rating = math.random(9.0*10,9.5*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_daemon_fire_herald",
-				effectiveness = GenerateUnitEffectiveness(math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Ranged,
-			},
-			{
-				name = "daemons_daemon_fire_tzeentch_bolt",
-				effectiveness = GenerateUnitEffectiveness(8.6,9.7,9.8,9.9,9.8,9.4,9.5,9.0,9.8,9.9,6.7,9.3,8.3,9.1,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Ranged,
-			},
 			{
 				name = "daemons_horror_melee",
-				effectiveness = GenerateUnitEffectiveness(9.5,9.0,9.0,9.0,9.5,4.0,4.0,4.0,9.5,9.0,8.0,8.0,9.5,7.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Daemon Lord",
-		sbp_name = "daemon_squad_lord",
-		ebp_name = "daemon_lord",
-		class = UnitStatsAI.UC_Commander,
-		rating = math.random(9.0*10,9.5*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_hellsword",
-				effectiveness = GenerateUnitEffectiveness(math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
+				effectiveness = GenerateUnitEffectiveness(0.088,0.098,0.068,0.07,0.035,0,0,0,0.171,0.015,0.017,0.079,0.021,0,0,0,0),
 				range = UnitStatsAI.RT_Melee,
 			},
 			{
-				name = "daemons_hellsword_improved",
-				effectiveness = GenerateUnitEffectiveness(8.6,9.7,9.8,9.9,9.8,9.4,9.5,9.0,9.8,9.9,6.7,9.3,8.3,9.1,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-			{
-				name = "daemons_hellsword_greater",
-				effectiveness = GenerateUnitEffectiveness(9.5,9.0,9.0,9.0,9.5,4.0,4.0,4.0,9.5,9.0,8.0,8.0,9.5,7.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Daemon Lord Stature",
-		sbp_name = "daemon_squad_lord_stature",
-		ebp_name = "daemon_lord_stature",
-		class = UnitStatsAI.UC_Commander,
-		rating = math.random(9.0*10,9.5*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_hellsword_greater",
-				effectiveness = GenerateUnitEffectiveness(math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Juggernaut",
-		sbp_name = "daemon_squad_jugg",
-		ebp_name = "daemon_jugg",
-		class = UnitStatsAI.UC_VehicleMed,
-		rating = 6,
-		potential =
-		{
-			{
-				name = "daemons_jugg_bite",
-				effectiveness = GenerateUnitEffectiveness(math.random(4*10,7*10)/10,math.random(4*10,7*10)/10,math.random(4*10,7*10)/10,math.random(4*10,7*10)/10,math.random(4*10,7*10)/10,math.random(4*10,7*10)/10,math.random(4*10,7*10)/10,math.random(4*10,7*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{	
-		name = "Blight Drones of Nurgle",
-		sbp_name = "daemon_squad_blight_drones",
-		ebp_name = "daemon_blight_drone",
-		class = UnitStatsAI.UC_VehicleMed,
-		rating = 6,
-		potential =
-		{
-			{
-				name = "daemons_blight_drone_ranged",
-				effectiveness = GenerateUnitEffectiveness(math.random(4*10,7*10)/10,math.random(4*10,7*10)/10,math.random(4*10,7*10)/10,math.random(4*10,7*10)/10,math.random(4*10,7*10)/10,math.random(4*10,7*10)/10,math.random(4*10,7*10)/10,math.random(4*10,7*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
+				name = "daemons_blue_horror_fire",
+				effectiveness = GenerateUnitEffectiveness(0.182,0.154,0.126,0.098,0.07,0.034,0.006,0,0.126,0.021,0.045,0.05,0,0,0,0,0),
 				range = UnitStatsAI.RT_Ranged,
 			},
-			{
-				name = "daemons_blight_drone_storm_bolter",
-				effectiveness = GenerateUnitEffectiveness(6.3,6.1,6.0,5.8,5.6,5.5,4.3,0.0,5.7,0.0,4.0,6.8,5.0,3.9,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Ranged,
-			},
-		}
+		},
 	},
 	{
-		name = "Defiler (Khorne)",
+		name = "daemon_squad_daemon_prince",
+		sbp_name = "daemon_squad_daemon_prince",
+		ebp_name = "daemon_daemon_prince",
+		class = UnitStatsAI.UC_MonsterHigh,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_daemon_prince_sword_undivided",
+				effectiveness = GenerateUnitEffectiveness(7.926,10,10,8.587,7.266,10,6.605,4.624,9.247,4.888,2.378,7.926,5.284,3.963,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_daemon_prince_khorne",
+		sbp_name = "daemon_squad_daemon_prince_khorne",
+		ebp_name = "daemon_daemon_prince_khorne",
+		class = UnitStatsAI.UC_MonsterHigh,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_daemon_prince_sword_khorne",
+				effectiveness = GenerateUnitEffectiveness(2.94,3.675,3.369,3.981,3.369,4.594,3.675,2.756,3.369,1.96,1.103,3.675,2.45,1.838,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_daemon_prince_nurgle",
+		sbp_name = "daemon_squad_daemon_prince_nurgle",
+		ebp_name = "daemon_daemon_prince_nurgle",
+		class = UnitStatsAI.UC_MonsterHigh,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_daemon_prince_sword_nurgle",
+				effectiveness = GenerateUnitEffectiveness(2.796,3.495,3.204,3.786,3.204,4.369,3.495,2.621,3.204,1.864,1.049,3.495,2.33,1.748,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_daemon_prince_slaanesh",
+		sbp_name = "daemon_squad_daemon_prince_slaanesh",
+		ebp_name = "daemon_daemon_prince_slaanesh",
+		class = UnitStatsAI.UC_MonsterHigh,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_daemon_prince_sword_slaanesh",
+				effectiveness = GenerateUnitEffectiveness(4.206,5.257,4.819,5.696,4.819,6.572,5.257,3.943,4.819,2.804,1.577,5.257,3.505,2.629,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_daemon_prince_tzeentch",
+		sbp_name = "daemon_squad_daemon_prince_tzeentch",
+		ebp_name = "daemon_daemon_prince_tzeentch",
+		class = UnitStatsAI.UC_MonsterHigh,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_daemon_prince_sword_tzeentch",
+				effectiveness = GenerateUnitEffectiveness(2.698,3.372,3.091,3.653,3.091,4.215,3.372,2.529,3.091,1.798,1.012,3.372,2.248,1.686,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_daemonettes",
+		sbp_name = "daemon_squad_daemonettes",
+		ebp_name = "daemon_daemonette",
+		class = UnitStatsAI.UC_HeavyInfantryMed,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_daemonettes_melee",
+				effectiveness = GenerateUnitEffectiveness(0.26,0.256,0.24,0.24,0.22,0.04,0,0,0.168,0.03,0.038,0.072,0,0,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_daemonettes_greater",
+		sbp_name = "daemon_squad_daemonettes_greater",
+		ebp_name = "daemon_daemonette_greater",
+		class = UnitStatsAI.UC_HeavyInfantryHigh,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_daemonette_greater_pincers",
+				effectiveness = GenerateUnitEffectiveness(0.65,0.64,0.6,0.6,0.6,0.19,0.12,0.05,0.42,0.15,0.096,0.18,0.05,0.05,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_defiler_khorne",
 		sbp_name = "daemon_squad_defiler_khorne",
 		ebp_name = "daemon_defiler_khorne",
 		class = UnitStatsAI.UC_VehicleMed,
-		rating = 7,
-		potential =
+		rating = 1,
+		max_range = 35,
+		potential = 
 		{
 			{
 				name = "daemons_defiler_melee_khorne",
-				effectiveness = GenerateUnitEffectiveness(math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
+				effectiveness = GenerateUnitEffectiveness(2.04,2.04,2.04,2.04,2.04,2.04,1.632,1.428,2.04,1.428,0.735,1.224,0.816,0.408,0,0,0),
 				range = UnitStatsAI.RT_Melee,
 			},
 			{
-				name = "daemons_autocannon_twin_defiler",
-				effectiveness = GenerateUnitEffectiveness(5.9,7.8,7.7,7.5,7.0,5.1,4.7,0.0,7.0,1.4,5.9,7.7,5.8,1.4,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Ranged,
-			},
-			{
 				name = "daemons_heavy_flamer_defiler",
-				effectiveness = GenerateUnitEffectiveness(5.1,4.9,4.7,4.5,4.2,2.8,0.0,0.0,4.5,0.0,2.8,4.2,3.8,3.8,0.0,0.0,0.0),
+				effectiveness = GenerateUnitEffectiveness(0.09,0.08,0.07,0.06,0.05,0.02,0,0,0.06,0.015,0.024,0.08,0.04,0.04,0,0,0),
 				range = UnitStatsAI.RT_ShortRanged,
 			},
-		}
+			{
+				name = "daemons_autocannon_twin_defiler",
+				effectiveness = GenerateUnitEffectiveness(0.268,0.268,0.268,0.268,0.161,0.536,0.471,0.107,0.161,0.118,0.103,0.792,0.423,0.107,0,0.536,0),
+				range = UnitStatsAI.RT_Ranged,
+			},
+		},
 	},
 	{
-		name = "Defiler (Nurgle)",
+		name = "daemon_squad_defiler_nurgle",
 		sbp_name = "daemon_squad_defiler_nurgle",
 		ebp_name = "daemon_defiler_nurgle",
 		class = UnitStatsAI.UC_VehicleMed,
-		rating = 7,
-		potential =
+		rating = 1,
+		max_range = 100,
+		potential = 
 		{
 			{
-				name = "daemons_battlecannon",
-				effectiveness = GenerateUnitEffectiveness(math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Ranged,
+				name = "daemons_defiler_melee",
+				effectiveness = GenerateUnitEffectiveness(1.575,1.575,1.575,1.575,1.575,1.575,1.26,1.102,1.575,1.102,0.567,0.945,0.63,0.315,0,0,0),
+				range = UnitStatsAI.RT_Melee,
 			},
 			{
 				name = "daemons_autocannon_twin_defiler",
-				effectiveness = GenerateUnitEffectiveness(5.9,7.8,7.7,7.5,7.0,5.1,4.7,0.0,7.0,1.4,5.9,7.7,5.8,1.4,0.0,0.0,0.0),
+				effectiveness = GenerateUnitEffectiveness(0.268,0.268,0.268,0.268,0.161,0.536,0.471,0.107,0.161,0.118,0.103,0.792,0.423,0.107,0,0.536,0),
+				range = UnitStatsAI.RT_Ranged,
+			},
+			{
+				name = "daemons_battlecannon",
+				effectiveness = GenerateUnitEffectiveness(0.303,0.303,0.26,0.217,0.173,0.477,0.303,0.13,0.217,0.156,0.156,0.303,0.303,0.087,0,0,0),
 				range = UnitStatsAI.RT_Ranged,
 			},
 			{
 				name = "daemons_heavy_flamer_defiler",
-				effectiveness = GenerateUnitEffectiveness(5.1,4.9,4.7,4.5,4.2,2.8,0.0,0.0,4.5,0.0,2.8,4.2,3.8,3.8,0.0,0.0,0.0),
+				effectiveness = GenerateUnitEffectiveness(0.09,0.08,0.07,0.06,0.05,0.02,0,0,0.06,0.015,0.024,0.08,0.04,0.04,0,0,0),
 				range = UnitStatsAI.RT_ShortRanged,
 			},
-			{
-				name = "daemons_defiler_melee",
-				effectiveness = GenerateUnitEffectiveness(6.3,6.7,6.3,5.6,4.5,7.6,7.3,5.8,5.6,4.4,4.4,5.9,4.4,4.4,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
+		},
 	},
 	{
-		name = "Defiler (Slaanesh)",
+		name = "daemon_squad_defiler_slaanesh",
 		sbp_name = "daemon_squad_defiler_slaanesh",
 		ebp_name = "daemon_defiler_slaanesh",
 		class = UnitStatsAI.UC_VehicleMed,
-		rating = 7,
-		potential =
+		rating = 1,
+		max_range = 35,
+		potential = 
 		{
 			{
-				name = "daemons_blastmaster_twin",
-				effectiveness = GenerateUnitEffectiveness(math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Ranged,
+				name = "daemons_defiler_melee",
+				effectiveness = GenerateUnitEffectiveness(1.575,1.575,1.575,1.575,1.575,1.575,1.26,1.102,1.575,1.102,0.567,0.945,0.63,0.315,0,0,0),
+				range = UnitStatsAI.RT_Melee,
 			},
 			{
 				name = "daemons_sonic_blaster_twin_right",
-				effectiveness = GenerateUnitEffectiveness(5.9,7.8,7.7,7.5,7.0,5.1,4.7,0.0,7.0,1.4,5.9,7.7,5.8,1.4,0.0,0.0,0.0),
+				effectiveness = GenerateUnitEffectiveness(0.087,0.152,0.218,0.261,0.261,0.13,0.087,0.044,0.177,0.048,0.078,0.078,0.03,0,0,0.122,0),
+				range = UnitStatsAI.RT_Ranged,
+			},
+			{
+				name = "daemons_blastmaster_twin",
+				effectiveness = GenerateUnitEffectiveness(0.363,0.363,0.363,0.363,0.218,0.363,0.218,0.073,0.218,0.109,0.261,0.87,0.58,0.363,0,0,0),
 				range = UnitStatsAI.RT_Ranged,
 			},
 			{
 				name = "daemons_sonic_blaster_twin_left",
-				effectiveness = GenerateUnitEffectiveness(5.9,7.8,7.7,7.5,7.0,5.1,4.7,0.0,7.0,1.4,5.9,7.7,5.8,1.4,0.0,0.0,0.0),
+				effectiveness = GenerateUnitEffectiveness(0.087,0.152,0.218,0.261,0.261,0.13,0.087,0.044,0.177,0.048,0.078,0.078,0.03,0,0,0.122,0),
 				range = UnitStatsAI.RT_Ranged,
 			},
-			{
-				name = "daemons_defiler_melee",
-				effectiveness = GenerateUnitEffectiveness(6.3,6.7,6.3,5.6,4.5,7.6,7.3,5.8,5.6,4.4,4.4,5.9,4.4,4.4,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
+		},
 	},
 	{
-		name = "Defiler (Tzeentch)",
+		name = "daemon_squad_defiler_tzeentch",
 		sbp_name = "daemon_squad_defiler_tzeentch",
 		ebp_name = "daemon_defiler_tzeentch",
 		class = UnitStatsAI.UC_VehicleMed,
-		rating = 7,
-		potential =
+		rating = 1,
+		max_range = 24,
+		potential = 
 		{
-			{
-				name = "daemons_heavy_flamer_defiler_rubric",
-				effectiveness = GenerateUnitEffectiveness(math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,math.random(5*10,7*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_ShortRanged,
-			},
 			{
 				name = "daemons_defiler_melee",
-				effectiveness = GenerateUnitEffectiveness(6.3,6.7,6.3,5.6,4.5,7.6,7.3,5.8,5.6,4.4,4.4,5.9,4.4,4.4,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Greater Warp Spawn",
-		sbp_name = "daemon_squad_warp_spawn",
-		ebp_name = "daemon_warp_spawn",
-		class = UnitStatsAI.UC_MonsterHigh,
-		rating = math.random(7*10,8*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_warp_spawn_melee",
-				effectiveness = GenerateUnitEffectiveness(math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
+				effectiveness = GenerateUnitEffectiveness(1.575,1.575,1.575,1.575,1.575,1.575,1.26,1.102,1.575,1.102,0.567,0.945,0.63,0.315,0,0,0),
 				range = UnitStatsAI.RT_Melee,
 			},
 			{
-				name = "daemons_curse_weapon_warp_spawn",
-				effectiveness = GenerateUnitEffectiveness(5.9,7.8,7.7,7.5,7.0,5.1,4.7,0.0,7.0,1.4,5.9,7.7,5.8,1.4,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,	
-			},
-		}
-	},
-	{
-		name = "Soul Grinder",
-		sbp_name = "daemon_squad_soul_grinder",
-		ebp_name = "daemon_soul_grinder",
-		class = UnitStatsAI.UC_VehicleHigh,
-		rating = math.random(7*10,8*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_soul_grinder_melee",
-				effectiveness = GenerateUnitEffectiveness(math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Daemon Prince",
-		sbp_name = "daemon_squad_daemon_prince",
-		ebp_name = "daemon_daemon_prince",
-		class = UnitStatsAI.UC_MonsterHigh,
-		rating = math.random(7*10,9*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_daemon_prince_sword_undivided",
-				effectiveness = GenerateUnitEffectiveness(math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Daemon Prince (Khorne)",
-		sbp_name = "daemon_squad_daemon_prince_khorne",
-		ebp_name = "daemon_daemon_prince_khorne",
-		class = UnitStatsAI.UC_MonsterHigh,
-		rating = math.random(7*10,9*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_daemon_prince_sword_khorne",
-				effectiveness = GenerateUnitEffectiveness(math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Daemon Prince (Nurgle)",
-		sbp_name = "daemon_squad_daemon_prince_nurgle",
-		ebp_name = "daemon_daemon_prince_nurgle",
-		class = UnitStatsAI.UC_MonsterHigh,
-		rating = math.random(7*10,9*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_daemon_prince_sword_nurgle",
-				effectiveness = GenerateUnitEffectiveness(math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Daemon Prince (Slaanesh)",
-		sbp_name = "daemon_squad_daemon_prince_slaanesh",
-		ebp_name = "daemon_daemon_prince_slaanesh",
-		class = UnitStatsAI.UC_MonsterHigh,
-		rating = math.random(7*10,9*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_daemon_prince_sword_slaanesh",
-				effectiveness = GenerateUnitEffectiveness(math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Daemon Prince (Tzeentch)",
-		sbp_name = "daemon_squad_daemon_prince_tzeentch",
-		ebp_name = "daemon_daemon_prince_tzeentch",
-		class = UnitStatsAI.UC_MonsterHigh,
-		rating = math.random(7*10,9*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_daemon_prince_sword_tzeentch",
-				effectiveness = GenerateUnitEffectiveness(math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Bloodthirster",
-		sbp_name = "daemon_squad_bloodthirster",
-		ebp_name = "daemon_bloodthirster",
-		class = UnitStatsAI.UC_MonsterHigh,
-		rating = math.random(7*10,9*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_bloodthirster_melee",
-				effectiveness = GenerateUnitEffectiveness(math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Great Unclean One",
-		sbp_name = "daemon_squad_guo",
-		ebp_name = "daemon_guo",
-		class = UnitStatsAI.UC_MonsterHigh,
-		rating = math.random(7*10,9*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_guo_melee",
-				effectiveness = GenerateUnitEffectiveness(math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-			{
-				name = "daemons_guo_sword",
-				effectiveness = GenerateUnitEffectiveness(9.6,9.7,9.8,9.8,9.8,9.4,9.9,9.0,9.8,9.0,6.7,9.3,8.9,9.1,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Keeper of Secrets",
-		sbp_name = "daemon_squad_keeper_of_secrets",
-		ebp_name = "daemon_keeper_of_secrets",
-		class = UnitStatsAI.UC_MonsterHigh,
-		rating = math.random(7*10,9*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_kos_melee",
-				effectiveness = GenerateUnitEffectiveness(math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Lord of Change",
-		sbp_name = "daemon_squad_lord_of_change",
-		ebp_name = "daemon_lord_of_change",
-		class = UnitStatsAI.UC_MonsterHigh,
-		rating = math.random(7*10,9*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_loc_melee",
-				effectiveness = GenerateUnitEffectiveness(math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,math.random(7*10,8*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-		}
-	},
-	{
-		name = "Hell Spawn",
-		sbp_name = "daemon_squad_hell_spawn",
-		ebp_name = "daemon_hell_spawn",
-		class = UnitStatsAI.UC_MonsterHigh,
-		rating = math.random(8.0*10,10*10)/10,
-		potential =
-		{
-			{
-				name = "daemons_firebolt_hellspawn",
-				effectiveness = GenerateUnitEffectiveness(math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
+				name = "daemons_heavy_flamer_defiler_rubric",
+				effectiveness = GenerateUnitEffectiveness(1.296,1.152,1.008,0.864,0.72,0.288,0,0,0.864,0.216,0.346,1.152,0.576,0.576,0,0,0),
 				range = UnitStatsAI.RT_Ranged,
 			},
-			{
-				name = "daemons_doombolt_hellspawn",
-				effectiveness = GenerateUnitEffectiveness(8.6,9.7,9.8,9.9,9.8,9.4,9.5,9.0,9.8,9.9,6.7,9.3,8.3,9.1,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Ranged,
-			},
-			{
-				name = "daemons_daemon_fire_hellspawn",
-				effectiveness = GenerateUnitEffectiveness(8.6,9.7,9.8,9.9,9.8,9.4,9.5,9.0,9.8,9.9,6.7,9.3,8.3,9.1,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Ranged,
-			},
-		}
+		},
 	},
 	{
-		name = "Greater Brass Scorpion",
+		name = "daemon_squad_fiends",
+		sbp_name = "daemon_squad_fiends",
+		ebp_name = "daemon_fiend",
+		class = UnitStatsAI.UC_MonsterMed,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_fiend_melee",
+				effectiveness = GenerateUnitEffectiveness(0.573,1.032,0.573,0.458,0.401,0.688,0.458,0.287,0.573,0.172,0.206,0.287,0.172,0.057,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_flamers",
+		sbp_name = "daemon_squad_flamers",
+		ebp_name = "daemon_flamer",
+		class = UnitStatsAI.UC_MonsterMed,
+		rating = 1,
+		max_range = 22,
+		potential = 
+		{
+			{
+				name = "daemons_daemon_fire_flamer",
+				effectiveness = GenerateUnitEffectiveness(0.262,0.347,0.25,0.3,0.206,0.028,0,0,0.292,0.037,0.07,0.1,0.07,0.025,0,0,0),
+				range = UnitStatsAI.RT_Ranged,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_flesh_hound",
+		sbp_name = "daemon_squad_flesh_hound",
+		ebp_name = "daemon_flesh_hound",
+		class = UnitStatsAI.UC_MonsterMed,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_unarmed_flesh_hound",
+				effectiveness = GenerateUnitEffectiveness(0.193,0.289,0.231,0.212,0.135,0.077,0,0,0.174,0,0.062,0.069,0,0,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_unarmed_flesh_hound_improved",
+				effectiveness = GenerateUnitEffectiveness(0.097,0.145,0.116,0.097,0.068,0.039,0.011,0.014,0.068,0,0.031,0.035,0.021,0.009,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_fury",
+		sbp_name = "daemon_squad_fury",
+		ebp_name = "daemon_fury",
+		class = UnitStatsAI.UC_LightInfantryMed,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_fury_melee",
+				effectiveness = GenerateUnitEffectiveness(0.136,0.149,0.163,0.136,0.095,0.049,0,0,0.122,0,0.043,0.049,0,0,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_fury_melee_stun",
+				effectiveness = GenerateUnitEffectiveness(0.123,0.154,0.123,0.093,0.077,0.062,0.017,0.022,0.123,0.062,0.037,0.046,0.025,0.014,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_greater_brass_scorpion",
 		sbp_name = "daemon_squad_greater_brass_scorpion",
 		ebp_name = "daemon_greater_brass_scorpion",
 		class = UnitStatsAI.UC_VehicleHigh,
-		rating = math.random(8.0*10,10*10)/10,
-		potential =
+		rating = 1,
+		max_range = 100,
+		potential = 
 		{
 			{
-				name = "daemons_greater_brass_scorpion_demolisher_cannon",
-				effectiveness = GenerateUnitEffectiveness(math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
+				name = "daemons_greater_brass_scorpion_autocannon",
+				effectiveness = GenerateUnitEffectiveness(0.99,0.99,0.99,0.99,0.825,2.573,2.144,1.056,0.99,0.495,0.594,1.484,0.66,0.165,0,1.319,0),
+				range = UnitStatsAI.RT_Ranged,
 			},
 			{
-				name = "daemons_greater_brass_scorpion_autocannon",
-				effectiveness = GenerateUnitEffectiveness(8.6,9.7,9.8,9.9,9.8,9.4,9.5,9.0,9.8,9.9,6.7,9.3,8.3,9.1,0.0,0.0,0.0),
+				name = "daemons_greater_brass_scorpion_demolisher_cannon",
+				effectiveness = GenerateUnitEffectiveness(0.531,0.531,0.531,0.531,0.443,1.382,1.151,0.567,0.531,0.266,0.319,0.797,0.354,0.089,0,0.708,0),
 				range = UnitStatsAI.RT_Ranged,
 			},
 			{
 				name = "daemons_greater_brass_scorpion_melee",
-				effectiveness = GenerateUnitEffectiveness(9.5,9.0,9.0,9.0,9.5,4.0,4.0,4.0,9.5,9.0,8.0,8.0,9.5,7.0,0.0,0.0,0.0),
+				effectiveness = GenerateUnitEffectiveness(4.725,8.1,4.725,4.725,3.375,10,10,8.1,6.75,6.75,2.43,10,5.4,2.7,0,0.708,0),
 				range = UnitStatsAI.RT_Melee,
 			},
-		}
+		},
 	},
 	{
-		name = "Hell Drake",
+		name = "daemon_squad_guo",
+		sbp_name = "daemon_squad_guo",
+		ebp_name = "daemon_guo",
+		class = UnitStatsAI.UC_MonsterHigh,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_guo_sword",
+				effectiveness = GenerateUnitEffectiveness(3.704,4.667,4.963,5.334,5.185,2.593,1.185,1.111,5.556,3.556,0.533,1.333,0.296,0.074,0,2.074,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_guo_melee",
+				effectiveness = GenerateUnitEffectiveness(3.029,5.613,5.895,6.066,5.94,4.623,4.854,3.712,5.895,3.712,0.99,4.548,2.428,1.485,0,4.854,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_hell_drake",
 		sbp_name = "daemon_squad_hell_drake",
 		ebp_name = "daemon_hell_drake",
 		class = UnitStatsAI.UC_VehicleHigh,
-		rating = math.random(9.0*10,10*10)/10,
-		potential =
+		rating = 1,
+		max_range = 90,
+		potential = 
 		{
 			{
-				name = "chaos_flamer_heldrake",
-				effectiveness = GenerateUnitEffectiveness(math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
+				name = "chaos_firebolt_heldrake",
+				effectiveness = GenerateUnitEffectiveness(0,0.66,0.66,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
 				range = UnitStatsAI.RT_Ranged,
 			},
 			{
 				name = "chaos_daemon_fire_heldrake",
-				effectiveness = GenerateUnitEffectiveness(8.6,9.7,9.8,9.9,9.8,9.4,9.5,9.0,9.8,9.9,6.7,9.3,8.3,9.1,0.0,0.0,0.0),
+				effectiveness = GenerateUnitEffectiveness(0.256,0.256,0.256,0.256,0.154,1.538,1.538,0.513,0.256,0.256,0.185,0.308,0.205,0.103,0,0,0),
+				range = UnitStatsAI.RT_Ranged,
+			},
+			{
+				name = "chaos_flamer_heldrake",
+				effectiveness = GenerateUnitEffectiveness(2.861,5.45,4.905,3.815,3.27,4.36,2.18,1.362,5.45,5.45,0.981,2.725,3.27,3.815,0,10,0),
 				range = UnitStatsAI.RT_Ranged,
 			},
 			{
 				name = "chaos_doombolt_heldrake",
-				effectiveness = GenerateUnitEffectiveness(8.6,9.7,9.8,9.9,9.8,9.4,9.5,9.0,9.8,9.9,6.7,9.3,8.3,9.1,0.0,0.0,0.0),
+				effectiveness = GenerateUnitEffectiveness(2.861,0.516,0.516,3.815,3.27,4.36,2.18,1.362,5.45,5.45,0.981,2.725,3.27,3.815,0,10,0),
+				range = UnitStatsAI.RT_Ranged,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_hell_spawn",
+		sbp_name = "daemon_squad_hell_spawn",
+		ebp_name = "daemon_hell_spawn",
+		class = UnitStatsAI.UC_MonsterHigh,
+		rating = 1,
+		max_range = 150,
+		potential = 
+		{
+			{
+				name = "daemons_doombolt_hellspawn",
+				effectiveness = GenerateUnitEffectiveness(0,0,0,0,0,0,0,0,0,0.06,0,0,0,0,0,0,0),
 				range = UnitStatsAI.RT_Ranged,
 			},
 			{
-				name = "chaos_firebolt_heldrake",
-				effectiveness = GenerateUnitEffectiveness(8.6,9.7,9.8,9.9,9.8,9.4,9.5,9.0,9.8,9.9,6.7,9.3,8.3,9.1,0.0,0.0,0.0),
+				name = "daemons_firebolt_hellspawn",
+				effectiveness = GenerateUnitEffectiveness(1.5,1.2,0.9,0.75,0.6,2.7,2.4,1.8,0.9,1.5,0.54,0.6,0.3,0.15,0,2.4,0),
 				range = UnitStatsAI.RT_Ranged,
 			},
-		}
+			{
+				name = "daemons_daemon_fire_hellspawn",
+				effectiveness = GenerateUnitEffectiveness(1.25,1,0.75,0.625,0.5,2.25,2,1.5,0.75,1.25,0.45,0.5,0.25,0.125,0,2,0),
+				range = UnitStatsAI.RT_Ranged,
+			},
+		},
 	},
 	{
-		name = "Primarch Angron",
+		name = "daemon_squad_honor_guard",
+		sbp_name = "daemon_squad_honor_guard",
+		ebp_name = "daemon_obliterator",
+		class = UnitStatsAI.UC_HeavyInfantryHigh,
+		rating = 1,
+		max_range = 10,
+		potential = 
+		{
+			{
+				name = "daemons_power_fist_obliterator",
+				effectiveness = GenerateUnitEffectiveness(0.082,0.14,0.123,0.139,0.07,0.058,0.043,0.018,0.147,0.018,0.035,0.095,0.037,0.042,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_obliterator_ranged_group",
+				effectiveness = GenerateUnitEffectiveness(0.36,0.615,0.538,0.609,0.308,0.253,0.19,0.079,0.646,0.084,0.152,0.415,0.155,0.184,0,0.253,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_heavy_flamer_obliterator",
+				effectiveness = GenerateUnitEffectiveness(0.16,0.16,0.14,0.12,0.1,0.04,0,0,0.12,0.03,0.04,0.06,0.04,0.02,0,0,0),
+				range = UnitStatsAI.RT_ShortRanged,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_horblu",
+		sbp_name = "daemon_squad_horblu",
+		ebp_name = "daemon_horblu",
+		class = UnitStatsAI.UC_Commander,
+		rating = 1,
+		max_range = 35,
+		potential = 
+		{
+			{
+				name = "daemons_horror_black_melee",
+				effectiveness = GenerateUnitEffectiveness(0.024,0.027,0.019,0.019,0.009,0,0,0,0.047,0.005,0.005,0.022,0.006,0,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_daemon_fire_improved",
+				effectiveness = GenerateUnitEffectiveness(0.123,0.123,0.123,0.123,0.074,0.371,0.322,0.049,0.221,0.147,0.088,0.172,0.102,0.039,0,0.368,0),
+				range = UnitStatsAI.RT_Ranged,
+			},
+			{
+				name = "daemons_daemon_fire_improved_tzeentch",
+				effectiveness = GenerateUnitEffectiveness(0.228,0.228,0.163,0.163,0.365,0.493,0.429,0.065,0.163,0.261,0.117,0.228,0.136,0.052,0,0.489,0),
+				range = UnitStatsAI.RT_Ranged,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_horblu_stature",
+		sbp_name = "daemon_squad_horblu_stature",
+		ebp_name = "daemon_horblu_stature",
+		class = UnitStatsAI.UC_Commander,
+		rating = 1,
+		max_range = 35,
+		potential = 
+		{
+			{
+				name = "daemons_horror_black_melee",
+				effectiveness = GenerateUnitEffectiveness(0.024,0.027,0.019,0.019,0.009,0,0,0,0.047,0.005,0.005,0.022,0.006,0,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_daemon_fire_improved",
+				effectiveness = GenerateUnitEffectiveness(0.123,0.123,0.123,0.123,0.074,0.371,0.322,0.049,0.221,0.147,0.088,0.172,0.102,0.039,0,0.368,0),
+				range = UnitStatsAI.RT_Ranged,
+			},
+			{
+				name = "daemons_doombolt",
+				effectiveness = GenerateUnitEffectiveness(0.084,0.084,0,0,0,0,0,0,0,0.008,0,0,0,0,0,0,0),
+				range = UnitStatsAI.RT_Ranged,
+			},
+			{
+				name = "daemons_firebolt",
+				effectiveness = GenerateUnitEffectiveness(0.096,0.096,0.08,0.096,0.064,0.638,0.558,0.319,0.096,0.319,0.096,0.159,0.08,0.04,0,0.359,0),
+				range = UnitStatsAI.RT_Ranged,
+			},
+			{
+				name = "daemons_poison_bolt",
+				effectiveness = GenerateUnitEffectiveness(0.223,0.202,0.182,0.162,0.101,0.073,0,0,0.182,0,0.073,0,0,0,0,0,0),
+				range = UnitStatsAI.RT_Ranged,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_horror",
+		sbp_name = "daemon_squad_horror",
+		ebp_name = "daemon_horblu_yellow",
+		class = UnitStatsAI.UC_MonsterMed,
+		rating = 1,
+		max_range = 100,
+		potential = 
+		{
+			{
+				name = "daemons_horror_melee",
+				effectiveness = GenerateUnitEffectiveness(0.088,0.098,0.068,0.07,0.035,0,0,0,0.171,0.015,0.017,0.079,0.021,0,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_doombolt",
+				effectiveness = GenerateUnitEffectiveness(0.084,0.084,0,0,0,0,0,0,0,0.008,0,0,0,0,0,0,0),
+				range = UnitStatsAI.RT_Ranged,
+			},
+			{
+				name = "daemons_firebolt",
+				effectiveness = GenerateUnitEffectiveness(0.096,0.096,0.08,0.096,0.064,0.638,0.558,0.319,0.096,0.319,0.096,0.159,0.08,0.04,0,0.359,0),
+				range = UnitStatsAI.RT_Ranged,
+			},
+			{
+				name = "daemons_firebolt_artillery",
+				effectiveness = GenerateUnitEffectiveness(0.104,0.104,0.104,0.139,0.173,0.433,0.477,0.217,0.433,0.347,0.26,0.087,0.069,0.043,0,0.347,0),
+				range = UnitStatsAI.RT_Ranged,
+			},
+			{
+				name = "daemons_poison_bolt",
+				effectiveness = GenerateUnitEffectiveness(0.223,0.202,0.182,0.162,0.101,0.073,0,0,0.182,0,0.073,0,0,0,0,0,0),
+				range = UnitStatsAI.RT_Ranged,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_jugg",
+		sbp_name = "daemon_squad_jugg",
+		ebp_name = "daemon_jugg",
+		class = UnitStatsAI.UC_VehicleMed,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "none",
+				effectiveness = GenerateUnitEffectiveness(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
+				range = UnitStatsAI.RT_None,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_juggernaut",
+		sbp_name = "daemon_squad_juggernaut",
+		ebp_name = "daemon_juggernaut",
+		class = UnitStatsAI.UC_Commander,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_juggernaut_melee",
+				effectiveness = GenerateUnitEffectiveness(3.445,3.19,3.19,4.594,2.364,3.903,4.477,1.801,4.466,2.002,0.961,4.253,1.561,2.002,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_keeper_of_secrets",
+		sbp_name = "daemon_squad_keeper_of_secrets",
+		ebp_name = "daemon_keeper_of_secrets",
+		class = UnitStatsAI.UC_MonsterHigh,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_kos_melee",
+				effectiveness = GenerateUnitEffectiveness(2.7,3.827,4.02,4.136,3.375,3.152,2.025,1.35,4.02,2.531,0.81,2.7,1.687,0.675,0,3.31,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_khorne_herald",
+		sbp_name = "daemon_squad_khorne_herald",
+		ebp_name = "daemon_khorne_herald",
+		class = UnitStatsAI.UC_Commander,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_herald_hellblade_fury_of_chaos",
+				effectiveness = GenerateUnitEffectiveness(0.708,0.955,0.801,0.693,0.539,0.739,0.493,0.185,0.554,0.847,0.493,0.585,0.185,0.092,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_melee_slowdown_weapon",
+				effectiveness = GenerateUnitEffectiveness(0.708,0.955,0.801,0.693,0.539,0.739,0.493,0.185,0.554,0.847,0.493,0.585,0.185,0.092,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_lord",
+		sbp_name = "daemon_squad_lord",
+		ebp_name = "daemon_lord",
+		class = UnitStatsAI.UC_Commander,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_hellsword",
+				effectiveness = GenerateUnitEffectiveness(0.886,1.194,1.001,0.866,0.674,0.693,0.231,0,0.693,1.059,0.616,0.732,0.231,0.115,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_hellsword_greater",
+				effectiveness = GenerateUnitEffectiveness(4.14,5.58,4.68,4.32,3.78,3.6,2.16,1.62,3.24,4.95,2.88,4.32,2.52,1.62,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_hellsword_improved",
+				effectiveness = GenerateUnitEffectiveness(1.978,2.666,2.236,1.935,1.505,1.72,1.032,0.516,1.548,2.365,1.376,1.634,0.516,0.258,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_lord_khorne",
+		sbp_name = "daemon_squad_lord_khorne",
+		ebp_name = "daemon_lord_khorne",
+		class = UnitStatsAI.UC_Commander,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_hellsword",
+				effectiveness = GenerateUnitEffectiveness(0.886,1.194,1.001,0.866,0.674,0.693,0.231,0,0.693,1.059,0.616,0.732,0.231,0.115,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_hellsword_greater",
+				effectiveness = GenerateUnitEffectiveness(4.14,5.58,4.68,4.32,3.78,3.6,2.16,1.62,3.24,4.95,2.88,4.32,2.52,1.62,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_hellsword_improved",
+				effectiveness = GenerateUnitEffectiveness(1.978,2.666,2.236,1.935,1.505,1.72,1.032,0.516,1.548,2.365,1.376,1.634,0.516,0.258,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_lord_nurgle",
+		sbp_name = "daemon_squad_lord_nurgle",
+		ebp_name = "daemon_lord_nurgle",
+		class = UnitStatsAI.UC_Commander,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_hellsword",
+				effectiveness = GenerateUnitEffectiveness(0.886,1.194,1.001,0.866,0.674,0.693,0.231,0,0.693,1.059,0.616,0.732,0.231,0.115,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_hellsword_greater",
+				effectiveness = GenerateUnitEffectiveness(4.14,5.58,4.68,4.32,3.78,3.6,2.16,1.62,3.24,4.95,2.88,4.32,2.52,1.62,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_hellsword_improved",
+				effectiveness = GenerateUnitEffectiveness(1.978,2.666,2.236,1.935,1.505,1.72,1.032,0.516,1.548,2.365,1.376,1.634,0.516,0.258,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_lord_of_change",
+		sbp_name = "daemon_squad_lord_of_change",
+		ebp_name = "daemon_lord_of_change",
+		class = UnitStatsAI.UC_MonsterHigh,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_loc_melee",
+				effectiveness = GenerateUnitEffectiveness(0.504,0.714,0.75,0.772,0.756,1.121,0.844,1.008,0.75,0.945,0.227,0.504,0.315,0.126,0,0.618,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_lord_slaanesh",
+		sbp_name = "daemon_squad_lord_slaanesh",
+		ebp_name = "daemon_lord_slaanesh",
+		class = UnitStatsAI.UC_Commander,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_hellsword",
+				effectiveness = GenerateUnitEffectiveness(0.886,1.194,1.001,0.866,0.674,0.693,0.231,0,0.693,1.059,0.616,0.732,0.231,0.115,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_hellsword_greater",
+				effectiveness = GenerateUnitEffectiveness(4.14,5.58,4.68,4.32,3.78,3.6,2.16,1.62,3.24,4.95,2.88,4.32,2.52,1.62,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_hellsword_improved",
+				effectiveness = GenerateUnitEffectiveness(1.978,2.666,2.236,1.935,1.505,1.72,1.032,0.516,1.548,2.365,1.376,1.634,0.516,0.258,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_lord_stature",
+		sbp_name = "daemon_squad_lord_stature",
+		ebp_name = "daemon_lord_stature",
+		class = UnitStatsAI.UC_Commander,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_hellsword_greater",
+				effectiveness = GenerateUnitEffectiveness(4.14,5.58,4.68,4.32,3.78,3.6,2.16,1.62,3.24,4.95,2.88,4.32,2.52,1.62,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_lord_stature_khorne",
+		sbp_name = "daemon_squad_lord_stature_khorne",
+		ebp_name = "daemon_lord_stature_khorne",
+		class = UnitStatsAI.UC_Commander,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_hellsword",
+				effectiveness = GenerateUnitEffectiveness(0.886,1.194,1.001,0.866,0.674,0.693,0.231,0,0.693,1.059,0.616,0.732,0.231,0.115,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_hellsword_greater",
+				effectiveness = GenerateUnitEffectiveness(4.14,5.58,4.68,4.32,3.78,3.6,2.16,1.62,3.24,4.95,2.88,4.32,2.52,1.62,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_hellsword_improved",
+				effectiveness = GenerateUnitEffectiveness(1.978,2.666,2.236,1.935,1.505,1.72,1.032,0.516,1.548,2.365,1.376,1.634,0.516,0.258,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_lord_stature_nurgle",
+		sbp_name = "daemon_squad_lord_stature_nurgle",
+		ebp_name = "daemon_lord_stature_nurgle",
+		class = UnitStatsAI.UC_Commander,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_hellsword",
+				effectiveness = GenerateUnitEffectiveness(0.886,1.194,1.001,0.866,0.674,0.693,0.231,0,0.693,1.059,0.616,0.732,0.231,0.115,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_hellsword_greater",
+				effectiveness = GenerateUnitEffectiveness(4.14,5.58,4.68,4.32,3.78,3.6,2.16,1.62,3.24,4.95,2.88,4.32,2.52,1.62,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_hellsword_improved",
+				effectiveness = GenerateUnitEffectiveness(1.978,2.666,2.236,1.935,1.505,1.72,1.032,0.516,1.548,2.365,1.376,1.634,0.516,0.258,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_lord_stature_slaanesh",
+		sbp_name = "daemon_squad_lord_stature_slaanesh",
+		ebp_name = "daemon_lord_stature_slaanesh",
+		class = UnitStatsAI.UC_Commander,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_hellsword",
+				effectiveness = GenerateUnitEffectiveness(0.886,1.194,1.001,0.866,0.674,0.693,0.231,0,0.693,1.059,0.616,0.732,0.231,0.115,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_hellsword_greater",
+				effectiveness = GenerateUnitEffectiveness(4.14,5.58,4.68,4.32,3.78,3.6,2.16,1.62,3.24,4.95,2.88,4.32,2.52,1.62,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_hellsword_improved",
+				effectiveness = GenerateUnitEffectiveness(1.978,2.666,2.236,1.935,1.505,1.72,1.032,0.516,1.548,2.365,1.376,1.634,0.516,0.258,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_lord_stature_tzeentch",
+		sbp_name = "daemon_squad_lord_stature_tzeentch",
+		ebp_name = "daemon_lord_stature_tzeentch",
+		class = UnitStatsAI.UC_Commander,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_hellsword",
+				effectiveness = GenerateUnitEffectiveness(0.886,1.194,1.001,0.866,0.674,0.693,0.231,0,0.693,1.059,0.616,0.732,0.231,0.115,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_hellsword_greater",
+				effectiveness = GenerateUnitEffectiveness(4.14,5.58,4.68,4.32,3.78,3.6,2.16,1.62,3.24,4.95,2.88,4.32,2.52,1.62,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_hellsword_improved",
+				effectiveness = GenerateUnitEffectiveness(1.978,2.666,2.236,1.935,1.505,1.72,1.032,0.516,1.548,2.365,1.376,1.634,0.516,0.258,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_lord_tzeentch",
+		sbp_name = "daemon_squad_lord_tzeentch",
+		ebp_name = "daemon_lord_tzeentch",
+		class = UnitStatsAI.UC_Commander,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_hellsword",
+				effectiveness = GenerateUnitEffectiveness(0.886,1.194,1.001,0.866,0.674,0.693,0.231,0,0.693,1.059,0.616,0.732,0.231,0.115,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_hellsword_greater",
+				effectiveness = GenerateUnitEffectiveness(4.14,5.58,4.68,4.32,3.78,3.6,2.16,1.62,3.24,4.95,2.88,4.32,2.52,1.62,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_hellsword_improved",
+				effectiveness = GenerateUnitEffectiveness(1.978,2.666,2.236,1.935,1.505,1.72,1.032,0.516,1.548,2.365,1.376,1.634,0.516,0.258,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_lost_soul",
+		sbp_name = "daemon_squad_lost_soul",
+		ebp_name = "daemon_lost_soul",
+		class = UnitStatsAI.UC_MonsterMed,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "none",
+				effectiveness = GenerateUnitEffectiveness(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
+				range = UnitStatsAI.RT_None,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_mutilator",
+		sbp_name = "daemon_squad_mutilator",
+		ebp_name = "daemon_mutilator",
+		class = UnitStatsAI.UC_MonsterMed,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_power_fist_mutilator",
+				effectiveness = GenerateUnitEffectiveness(0.59,1.008,0.882,0.998,0.504,0.831,0.623,0.415,1.058,0.332,0.249,0.68,0.267,0.166,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_nurgle_herald",
+		sbp_name = "daemon_squad_nurgle_herald",
+		ebp_name = "daemon_nurgle_herald",
+		class = UnitStatsAI.UC_Commander,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_plague_weapon",
+				effectiveness = GenerateUnitEffectiveness(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_plague_sword_herald",
+				effectiveness = GenerateUnitEffectiveness(0.821,1.107,0.928,0.803,0.625,0.857,0.571,0.214,0.643,0.982,0.571,0.678,0.214,0.107,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_nurgling",
+		sbp_name = "daemon_squad_nurgling",
+		ebp_name = "daemon_nurgling",
+		class = UnitStatsAI.UC_LightInfantryMed,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_nurgling_melee",
+				effectiveness = GenerateUnitEffectiveness(0.054,0.054,0.05,0.038,0.01,0.01,0,0,0.048,0.009,0.014,0.022,0,0,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_nurgling_create_rain",
+				effectiveness = GenerateUnitEffectiveness(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_nurgling_create_zit",
+				effectiveness = GenerateUnitEffectiveness(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_obliterator",
+		sbp_name = "daemon_squad_obliterator",
+		ebp_name = "daemon_obliterator",
+		class = UnitStatsAI.UC_HeavyInfantryHigh,
+		rating = 1,
+		max_range = 10,
+		potential = 
+		{
+			{
+				name = "daemons_power_fist_obliterator",
+				effectiveness = GenerateUnitEffectiveness(0.082,0.14,0.123,0.139,0.07,0.058,0.043,0.018,0.147,0.018,0.035,0.095,0.037,0.042,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_obliterator_ranged_group",
+				effectiveness = GenerateUnitEffectiveness(0.36,0.615,0.538,0.609,0.308,0.253,0.19,0.079,0.646,0.084,0.152,0.415,0.155,0.184,0,0.253,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_heavy_flamer_obliterator",
+				effectiveness = GenerateUnitEffectiveness(0.16,0.16,0.14,0.12,0.1,0.04,0,0,0.12,0.03,0.04,0.06,0.04,0.02,0,0,0),
+				range = UnitStatsAI.RT_ShortRanged,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_pink_horror",
+		sbp_name = "daemon_squad_pink_horror",
+		ebp_name = "daemon_pink_horror",
+		class = UnitStatsAI.UC_MonsterMed,
+		rating = 1,
+		max_range = 40,
+		potential = 
+		{
+			{
+				name = "daemons_daemon_fire",
+				effectiveness = GenerateUnitEffectiveness(0.093,0.093,0.093,0.093,0.056,0.299,0.261,0.056,0.056,0.075,0.045,0.131,0.075,0.037,0,0.28,0),
+				range = UnitStatsAI.RT_Ranged,
+			},
+			{
+				name = "daemons_daemon_fire_tzeentch_bolt_lesser",
+				effectiveness = GenerateUnitEffectiveness(0.42,0.42,0.36,0.36,0.3,0.18,0.03,0.015,0.36,0.045,0.108,0.12,0.06,0.03,0,0.18,0),
+				range = UnitStatsAI.RT_Ranged,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_pink_horror_minions",
+		sbp_name = "daemon_squad_pink_horror_minions",
+		ebp_name = "daemon_pink_horror",
+		class = UnitStatsAI.UC_MonsterMed,
+		rating = 1,
+		max_range = 40,
+		potential = 
+		{
+			{
+				name = "daemons_daemon_fire",
+				effectiveness = GenerateUnitEffectiveness(0.093,0.093,0.093,0.093,0.056,0.299,0.261,0.056,0.056,0.075,0.045,0.131,0.075,0.037,0,0.28,0),
+				range = UnitStatsAI.RT_Ranged,
+			},
+			{
+				name = "daemons_daemon_fire_tzeentch_bolt_lesser",
+				effectiveness = GenerateUnitEffectiveness(0.42,0.42,0.36,0.36,0.3,0.18,0.03,0.015,0.36,0.045,0.108,0.12,0.06,0.03,0,0.18,0),
+				range = UnitStatsAI.RT_Ranged,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_plague_bearers",
+		sbp_name = "daemon_squad_plague_bearers",
+		ebp_name = "daemon_plague_bearer",
+		class = UnitStatsAI.UC_HeavyInfantryMed,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_plague_sword_daemon_noxius_touch",
+				effectiveness = GenerateUnitEffectiveness(0.8,1.008,1.072,1.152,1.12,0.96,0.8,0.48,1.2,0.24,0.115,0.288,0.064,0.016,0,0.448,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_plaguebearer_melee",
+				effectiveness = GenerateUnitEffectiveness(0.254,0.363,0.363,0.326,0.254,0.073,0,0,0.282,0.054,0.13,0.13,0,0,0,0.448,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_primarch_angron",
 		sbp_name = "daemon_squad_primarch_angron",
 		ebp_name = "daemon_primarch_angron",
 		class = UnitStatsAI.UC_MonsterHigh,
-		rating = math.random(9.5*10,10*10)/10,
-		potential =
+		rating = 1,
+		max_range = 0,
+		potential = 
 		{
 			{
-				name = "daemons_skullaxe_angron",
-				effectiveness = GenerateUnitEffectiveness(math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,math.random(8*10,9*10)/10,6.1,2.3,3.1,3.7,1.9,0.0,0.0,0.0,0.0),
+				name = "daemons_leeching_angron",
+				effectiveness = GenerateUnitEffectiveness(0.32,0.454,0.476,0.49,0.48,0.374,0.392,0.3,0.476,0.3,0.096,0.32,0.2,0.08,0,0.392,0),
 				range = UnitStatsAI.RT_Melee,
 			},
 			{
-				name = "daemons_firesword_angron",
-				effectiveness = GenerateUnitEffectiveness(9.5,9.0,9.0,9.0,9.5,4.0,4.0,4.0,9.5,9.0,8.0,8.0,9.5,7.0,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-			{
-				name = "daemons_voidsword_angron",
-				effectiveness = GenerateUnitEffectiveness(4.3,4.7,4.3,4.6,4.5,9.6,9.0,9.0,4.0,8.0,8.0,7.0,7.0,9.5,0.0,0.0,0.0),
-				range = UnitStatsAI.RT_Melee,
-			},
-			{
-				name = "daemons_doom_sickle_angron",
-				effectiveness = GenerateUnitEffectiveness(9.0,9.5,9.0,9.5,9.0,4.0,4.0,4.0,4.0,9.5,8.0,9.5,7.0,7.0,0.0,0.0,0.0),
+				name = "daemons_gaze_of_warp_wargear",
+				effectiveness = GenerateUnitEffectiveness(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
 				range = UnitStatsAI.RT_Melee,
 			},
 			{
 				name = "daemons_daemon_prince_sword_angron",
-				effectiveness = GenerateUnitEffectiveness(9.0,9.0,9.5,9.0,9.0,4.0,4.0,4.0,4.0,9.0,9.5,8.0,7.0,7.0,0.0,0.0,0.0),
+				effectiveness = GenerateUnitEffectiveness(8.932,10,10,10,10,10,10,10,10,10,0.893,10,10,10,0,10,0),
 				range = UnitStatsAI.RT_Melee,
 			},
-		}
+			{
+				name = "daemons_doom_sickle_angron",
+				effectiveness = GenerateUnitEffectiveness(7.063,10,10,10,10,10,10,8.655,10,10,10,10,5.661,9.417,0,10,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_firesword_angron",
+				effectiveness = GenerateUnitEffectiveness(7.783,10,10,10,10,6.359,6.359,6.359,10,10,7.63,10,10,10,0,6.359,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_skullaxe_angron",
+				effectiveness = GenerateUnitEffectiveness(9.466,10,10,10,10,10,10,10,10,10,3.093,10,7.586,10,0,10,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_voidsword_angron",
+				effectiveness = GenerateUnitEffectiveness(2.319,5.566,4.175,4.175,4.638,10,10,10,5.566,7.885,3.711,10,10,10,0,10,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_screamers",
+		sbp_name = "daemon_squad_screamers",
+		ebp_name = "daemon_screamer",
+		class = UnitStatsAI.UC_MonsterMed,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_screamer_melee",
+				effectiveness = GenerateUnitEffectiveness(0.35,0.385,0.35,0.28,0.245,0.126,0.07,0.014,0.385,0.053,0.126,0.21,0.084,0,0.28,0.385,0.105),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_slaanesh_herald",
+		sbp_name = "daemon_squad_slaanesh_herald",
+		ebp_name = "daemon_slaanesh_herald",
+		class = UnitStatsAI.UC_Commander,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_slaanesh_herald_melee",
+				effectiveness = GenerateUnitEffectiveness(1.083,1.46,1.225,1.06,0.824,1.13,0.471,0.283,0.848,1.295,0.754,0.589,0.283,0.141,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_soul_grinder",
+		sbp_name = "daemon_squad_soul_grinder",
+		ebp_name = "daemon_soul_grinder",
+		class = UnitStatsAI.UC_VehicleHigh,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_soul_grinder_melee",
+				effectiveness = GenerateUnitEffectiveness(10,10,6.03,5.528,5.025,10,5.528,3.518,5.025,4.02,1.106,10,2.513,1.508,0,10,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_trade_power",
+		sbp_name = "daemon_squad_trade_power",
+		ebp_name = "daemon_trade_power",
+		class = UnitStatsAI.UC_LightInfantryLow,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "none",
+				effectiveness = GenerateUnitEffectiveness(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
+				range = UnitStatsAI.RT_None,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_trade_power2",
+		sbp_name = "daemon_squad_trade_power2",
+		ebp_name = "daemon_trade_power2",
+		class = UnitStatsAI.UC_LightInfantryLow,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "none",
+				effectiveness = GenerateUnitEffectiveness(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
+				range = UnitStatsAI.RT_None,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_trade_power3",
+		sbp_name = "daemon_squad_trade_power3",
+		ebp_name = "daemon_trade_power3",
+		class = UnitStatsAI.UC_LightInfantryLow,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "none",
+				effectiveness = GenerateUnitEffectiveness(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
+				range = UnitStatsAI.RT_None,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_trade_relic",
+		sbp_name = "daemon_squad_trade_relic",
+		ebp_name = "daemon_trade_relic",
+		class = UnitStatsAI.UC_LightInfantryLow,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "none",
+				effectiveness = GenerateUnitEffectiveness(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
+				range = UnitStatsAI.RT_None,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_trade_relic2",
+		sbp_name = "daemon_squad_trade_relic2",
+		ebp_name = "daemon_trade_relic2",
+		class = UnitStatsAI.UC_LightInfantryLow,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "none",
+				effectiveness = GenerateUnitEffectiveness(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
+				range = UnitStatsAI.RT_None,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_trade_requisition",
+		sbp_name = "daemon_squad_trade_requisition",
+		ebp_name = "daemon_trade_requisition",
+		class = UnitStatsAI.UC_LightInfantryLow,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "none",
+				effectiveness = GenerateUnitEffectiveness(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
+				range = UnitStatsAI.RT_None,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_trade_requisition2",
+		sbp_name = "daemon_squad_trade_requisition2",
+		ebp_name = "daemon_trade_requisition2",
+		class = UnitStatsAI.UC_LightInfantryLow,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "none",
+				effectiveness = GenerateUnitEffectiveness(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
+				range = UnitStatsAI.RT_None,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_trade_requisition3",
+		sbp_name = "daemon_squad_trade_requisition3",
+		ebp_name = "daemon_trade_requisition3",
+		class = UnitStatsAI.UC_LightInfantryLow,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "none",
+				effectiveness = GenerateUnitEffectiveness(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
+				range = UnitStatsAI.RT_None,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_tzeentch_herald",
+		sbp_name = "daemon_squad_tzeentch_herald",
+		ebp_name = "daemon_tzeentch_herald",
+		class = UnitStatsAI.UC_Commander,
+		rating = 1,
+		max_range = 56,
+		potential = 
+		{
+			{
+				name = "daemons_daemon_fire_herald",
+				effectiveness = GenerateUnitEffectiveness(1.077,1.411,1.282,1.411,1.103,1.667,1.154,0.769,1.496,0.744,0.462,0.641,0.641,0.256,0,0.769,0),
+				range = UnitStatsAI.RT_Ranged,
+			},
+			{
+				name = "daemons_daemon_fire_tzeentch_bolt",
+				effectiveness = GenerateUnitEffectiveness(0.253,0.334,0.241,0.289,0.198,0.144,0.12,0.096,0.281,0.14,0.087,0.12,0.072,0.048,0,0.144,0),
+				range = UnitStatsAI.RT_Ranged,
+			},
+		},
+	},
+	{
+		name = "daemon_squad_warp_spawn",
+		sbp_name = "daemon_squad_warp_spawn",
+		ebp_name = "daemon_warp_spawn",
+		class = UnitStatsAI.UC_MonsterHigh,
+		rating = 1,
+		max_range = 0,
+		potential = 
+		{
+			{
+				name = "daemons_curse_weapon_warp_spawn",
+				effectiveness = GenerateUnitEffectiveness(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+			{
+				name = "daemons_warp_spawn_melee",
+				effectiveness = GenerateUnitEffectiveness(3.437,3.781,3.094,2.406,1.719,4.125,4.812,3.781,3.437,3.781,0.825,2.062,1.375,0.687,0,0,0),
+				range = UnitStatsAI.RT_Melee,
+			},
+		},
 	},
 }

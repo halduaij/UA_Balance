@@ -9,7 +9,7 @@ BuildBaseStrategyInfo =
 	sisters_race =
 	{
 		post_builder = 2,
-		flag_capture = 2,
+		flag_capture = 3,
 
 		-- Reserve this amount for building units, reinforcing and upgrading
 		req_reserve = 150,
@@ -24,7 +24,12 @@ BuildBaseStrategyInfo =
 		Engineers =
 		{
 			--number of engineers we're aiming for
-			want = 4,
+			want = 3,
+			tier1 = 3,
+			tier2 = 5,
+			tier3 = 8,
+			tier4 = 8,
+                        max = 8,
 		},
 		
 		-- Is used to modify the army strength in the build programs (Allows faster balancing adjustments)
@@ -134,21 +139,18 @@ BuildOrderStrategyInfo =
 		Basic =
 		{
 			{ "flag_capture" }, { "flag_capture" },
-			{ "flag_capture" }, { "flag_capture" },
-			{ "flag_capture" }, { "flag_capture" },
 			{ "squad", "sisters_squad_servitor" },
 			{ "squad", "sisters_squad_missionary" },
 			{ "squad", "sisters_squad_missionary" },
 			{ "squad", "sisters_squad_missionary" },
 			{ "post_builder" }, { "post_builder" }, 
-			{ "building", "sisters_infantry", true },
+			{ "building", "sisters_infantry", false },
 			{ "building", "sisters_plasma_generator" }
 		},
 		
 		QuickStart =
 		{
 			{ "flag_capture" }, { "flag_capture" }, 
-			{ "flag_capture" }, { "flag_capture" },
 			{ "squad", "sisters_squad_missionary" },
 			{ "squad", "sisters_squad_servitor" },
 			{ "squad", "sisters_squad_missionary" },
@@ -156,25 +158,22 @@ BuildOrderStrategyInfo =
 			{ "squad", "sisters_squad_servitor" },
 			{ "squad", "sisters_squad_missionary" },
 			{ "post_builder" }, 
-			{ "building", "sisters_infantry", true },
-			{ "building", "sisters_infantry", true },
+			{ "building", "sisters_infantry", false },
+			{ "building", "sisters_infantry", false },
 			{ "building", "sisters_plasma_generator" }
 		},
 		
 		LargeMap =
 		{
 			{ "flag_capture" }, { "flag_capture" }, 
-			{ "flag_capture" }, { "flag_capture" },
-			{ "flag_capture" }, { "flag_capture" },
 			{ "squad", "sisters_squad_missionary" },
 			{ "squad", "sisters_squad_servitor" },
 			{ "squad", "sisters_squad_missionary" },
 			{ "squad", "sisters_squad_servitor" },
-			{ "squad", "sisters_squad_missionary" },
 			{ "squad", "sisters_squad_missionary" },
 			{ "squad", "sisters_squad_missionary" },
 			{ "post_builder" }, { "post_builder" }, 
-			{ "building", "sisters_infantry", true },
+			{ "building", "sisters_infantry", false },
 			{ "building", "sisters_plasma_generator" }
 		}
 	}
@@ -184,6 +183,6 @@ AttackStrategyInfo =
 {	
 	sisters_race =
 	{
-		MinArmyStrength = 500,
+		MinArmyStrength = 300,
 	},
 }

@@ -8,7 +8,7 @@
 
 class 'AttackPlan' (Plan)
 
-function AttackPlan:__init( enemy, attack_pos, start_pos, min_strength, max_percentage ) super( CpuPlayer.CT_Attacking )
+function AttackPlan:__init( enemy, attack_pos, start_pos, min_strength, max_percentage, numname ) super( CpuPlayer.CT_Attacking )
 
 	dbAssert( attack_pos ~= nil )
 	dbAssert( start_pos ~= nil )
@@ -21,13 +21,14 @@ function AttackPlan:__init( enemy, attack_pos, start_pos, min_strength, max_perc
 	self.m_iSavePosX = 0
 	self.m_iSavePosY = 0
 	self.m_iSavePosZ = 0
+        self.m_inumname = 1
+        if numname ~= nil then self.m_inumname = numname end
 
 	--max percentage of opponents army to attack with
 	self.max_percentage = max_percentage 
 
 	self:GenerateSafePoint()
 	Plan.SetNeeds( self, "Obtain Force", AttackPlan.ObtainForce )
-
 	Plan.SetName( self, "Attack Plan" ) 
 	Plan.SetState( self, "Gather: "..vec2str(self.m_vGatherPos).." Attack: "..vec2str(self.attack_pos).." ("..self.enemy:GetPlayerID()..")", AttackPlan.GatherForces )
 
@@ -44,6 +45,7 @@ function AttackPlan:__init( enemy, attack_pos, start_pos, min_strength, max_perc
 	
 	self.m_iObtainForcesDelay = 0
 	self.m_vLastAttackPos = self.attack_pos
+	self.m_bObtainFlag = false
 	
 	self.m_iArmyStrength = 0
 	self.m_vArmyPosition = nil
@@ -51,6 +53,10 @@ function AttackPlan:__init( enemy, attack_pos, start_pos, min_strength, max_perc
 	self.m_iLastUpdate = 0
 	
 	self.m_oSupportDetector = nil
+end
+
+function AttackPlan:GetNumName()
+   return self.m_inumname
 end
 
 function AttackPlan:SplitArmy()
@@ -181,6 +187,7 @@ function AttackPlan:GetArmyStrength()
 	local iArmyStrength = 0
 	local vArmyPosition = Vector3f(0, 0, 0)
 	self.m_bBaseBuster = false
+	local iCount = 0
 	for iLoop1 in self.attack_units do
 	
 		-- Get unit
@@ -195,9 +202,9 @@ function AttackPlan:GetArmyStrength()
 			
 			-- Add unit position to army position
 			local vUnitPosition = oUnit:GetPosition()
-			vArmyPosition.x = vArmyPosition.x + iUnitStrength * vUnitPosition.x
-			vArmyPosition.z = vArmyPosition.z + iUnitStrength * vUnitPosition.z
-			
+			vArmyPosition.x = vArmyPosition.x + vUnitPosition.x
+			vArmyPosition.z = vArmyPosition.z + vUnitPosition.z
+			iCount = iCount + 1
 			-- Check for a commander or vehicle
 			local oStats = oUnit:GetStats()
 			if (oStats ~= nil) then
@@ -212,8 +219,8 @@ function AttackPlan:GetArmyStrength()
 		end
 	end
 	if (iArmyStrength > 0) then
-		vArmyPosition.x = vArmyPosition.x / iArmyStrength
-		vArmyPosition.z = vArmyPosition.z / iArmyStrength
+		vArmyPosition.x = vArmyPosition.x / iCount
+		vArmyPosition.z = vArmyPosition.z / iCount
 	end
 	
 	-- Get closest valid position to army center
@@ -252,7 +259,7 @@ end
 -- Decide where we should gather
 function AttackPlan:GenerateSafePoint()
 
-	aitrace("AttackPlan: Generate gather point...")
+	aitrace("AttackPlan "..tostring(self.m_inumname)..": Generate gather point...")
 	
 	-- Get army strengths
 	local iMyArmyStrength = cpu_manager:GetArmyStrength()
@@ -294,17 +301,18 @@ end
 function AttackPlan:ObtainForce()
 
 	-- Check obtain forces delay time
-	if (g_iGMT < self.m_iObtainForcesDelay + 1) or (Strategy.bFlagUpdateObt1 == false and AttackStrategy2.m_vAttackPosition.x~=0) then
+	if (g_iGMT < self.m_iObtainForcesDelay + 1) then
 		return
 	end
-        Strategy.bFlagUpdateObt2 = false
+	--self.m_bObtainFlag==false
+    
 	-- Check the army power of my attack force
 --	military_manager:Update()
 	self.m_iAttackPower = self:GetArmyStrength()
 	
-	aitrace("AttackPlan: Obtain forces...")
-	aitrace("AttackPlan: Required: "..tostring(self.m_iRequiredArmyPower))
-	aitrace("AttackPlan: Already obtained: "..tostring(self.m_iAttackPower))
+	aitrace("AttackPlan "..tostring(self.m_inumname)..": Obtain forces...")
+	aitrace("AttackPlan "..tostring(self.m_inumname)..": Required: "..tostring(self.m_iRequiredArmyPower))
+	aitrace("AttackPlan "..tostring(self.m_inumname)..": Already obtained: "..tostring(self.m_iAttackPower))
 	
 	-- Check enemy infiltrator threat
 	local bNeedSupportDetector = (cpu_manager:EnemyHasUnitInfiltrators() or cpu_manager:EnemyHasBaseInfiltrators())
@@ -316,10 +324,16 @@ function AttackPlan:ObtainForce()
 	
 	-- Find the forces and gather them at your own base
 	local oSupportDetector = nil
-	for oSquad in military_manager:GetUnlockedSquads() do
-	        if self.m_iAttackPower > self.m_iRequiredArmyPower*1.2 and AttackStrategy2.m_vAttackPosition.x==0 and AttackStrategy2.m_vAttackPosition.z==0 then
-                   break
+        local uManager = military_manager:GetUnlockedSquads()
+	for oSquad in uManager do
+	     local bCheckattack=false
+	       for i=1,AttackStrategy.iMaxAttackPoints do
+	        if self.m_iAttackPower > self.m_iRequiredArmyPower*1.2 then
+                   bCheckattack=true
+				   break
                 end
+	       end
+		   if bCheckattack then break end
 		-- Check if squad is valid
 		if (oSquad:IsValid()) then
 
@@ -378,16 +392,15 @@ function AttackPlan:ObtainForce()
 	
 	-- Check if obtain forces time is out
 	if (g_iGMT > self.m_iPlanStart + 10 and self.m_iAttackPower < self.m_iRequiredArmyPower and state ~= AttackPlan.Attacking) then
-		aitrace("AttackPlan: Not enough forces available")
+		aitrace("AttackPlan "..tostring(self.m_inumname)..": Not enough forces available")
 		self:SetComplete( true )
 	end
-        Strategy.bFlagUpdateObt2 = true
 end
 
 -- Arkhan 11.2005: Attack condition is now only based on gathered army power
 function AttackPlan:GatherForces()
 
-	aitrace("AttackPlan: Gather troops...")
+	aitrace("AttackPlan "..tostring(self.m_inumname)..": Gather troops...")
 	
 	-- Make sure that we have obtained enough forces
 	local bReadyForAttack = true
@@ -463,8 +476,8 @@ function AttackPlan:GatherForces()
 	
 	-- Check gather strength
 	local iEnemyStrength, iAlliedStrength, iGatherStrength = cpu_manager:GetArmyStrengthAtPos(self.m_vGatherPos, iGatherRange)
-	aitrace("AttackPlan: Gather pos = "..tostring(self.m_vGatherPos.x).. ", "..tostring(self.m_vGatherPos.z))
-	aitrace("AttackPlan: Gathered troops = "..tostring(iGatherStrength).. " of "..tostring(self.m_iAttackPower))
+	aitrace("AttackPlan "..tostring(self.m_inumname)..": Gather pos = "..tostring(self.m_vGatherPos.x).. ", "..tostring(self.m_vGatherPos.z))
+	aitrace("AttackPlan "..tostring(self.m_inumname)..": Gathered troops = "..tostring(iGatherStrength).. " of "..tostring(self.m_iAttackPower))
 	if (5 * iGatherStrength < 4 * self.m_iAttackPower and table.getn(self.attack_units) > 1 and self.m_iAttackPower < 3000) then
 		bReadyForAttack = false
 	end
@@ -473,7 +486,7 @@ function AttackPlan:GatherForces()
 	if (bReadyForAttack or g_iGMT > self.m_iPlanStart + 10) then
 	
 		-- Start attack
-		aitrace("AttackPlan: Start attack!!!")
+		aitrace("AttackPlan "..tostring(self.m_inumname)..": Start attack!!!")
 		Plan.SetState( self, "Attack!", AttackPlan.Attack )
 		
 		-- Move units to target position
@@ -497,7 +510,7 @@ function AttackPlan:GatherForces()
 	if (iEnemyStrength > self.m_iAttackPower) then
 	
 		-- Get new safe point
-		aitrace("AttackPlan: Need to back off a bit")
+		aitrace("AttackPlan "..tostring(self.m_inumname)..": Need to back off a bit")
 		self:GenerateSafePoint()
 		
 		-- Move everyone there
@@ -520,7 +533,7 @@ end
 
 function AttackPlan:Attacking()
 	
-	aitrace("AttackPlan: Attacking...")
+	aitrace("AttackPlan "..tostring(self.m_inumname)..": Attacking...")
 		
 	-- Don't change target to often
 	if (g_iGMT < self.m_iTargetChange + 5) then
@@ -570,8 +583,9 @@ function AttackPlan:Attacking()
 	
 		-- Set time
 		self.m_iTargetChange = g_iGMT
-
+--[[
 		-- In addition, deepstrike if I can
+                local uManager = build_manager:GetBuildChannelAIs()
 		for build_channel in build_manager:GetBuildChannelAIs() do
 
                        local name = build_channel:GetEntity()
@@ -623,7 +637,7 @@ function AttackPlan:Attacking()
 
 				end			
 			end		
-		end
+		end]]
 	else
 
 		-- Check if it is time to stop a critical timer
@@ -782,7 +796,7 @@ end
 
 function AttackPlan:Retreat( retreat_pos )
 
-	aitrace("AttackPlan: Retreat!!!")
+	aitrace("AttackPlan "..tostring(self.m_inumname)..": Retreat!!!")
 
 	-- Retreat: move all my dudes to the closest base or start position
 	if (retreat_pos == nil) then
@@ -821,7 +835,7 @@ end
    
 function AttackPlan:RemoveLosses()
 
-	aitrace("AttackPlan: Remove Losses...")
+	aitrace("AttackPlan "..tostring(self.m_inumname)..": Remove Losses...")
 
 	-- Remove lost and severly damaged squads
 	local iSquadCount = table.getn( self.attack_units )
@@ -898,7 +912,7 @@ function AttackPlan:Update()
 		return
 	end
 	
-	aitrace("Attackplan: Update...", true)
+	aitrace("AttackPlan "..tostring(self.m_inumname)..": Update...", true)
 	
 	-- Update gather pos
 	self.m_vGatherPos.x = self.m_iSavePosX

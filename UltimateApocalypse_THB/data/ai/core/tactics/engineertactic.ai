@@ -191,7 +191,7 @@ function EngineerTactic:GoToNextPost()
 	         	        end
 	           end
                   end
-                    if vPosThreat<=1.1*iAlliedStrength and (self.m_numEngineerOnRepairVehicle < 1) then
+                    if vPosThreat<1.1*iAlliedStrength and (self.m_numEngineerOnRepairVehicle < 1) then
 			aitrace("EngineerTactic: Repairing vehicle...")
 			self.squad_ai:DoRepairSquad(oVehicleToRepair)
 			self.m_vDestination = oVehicleToRepair:GetPosition()

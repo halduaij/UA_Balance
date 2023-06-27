@@ -208,7 +208,7 @@ function chaos_marine_race:GetInfo(sType)
 	elseif (sType == "CriticalRangeIncreasePerTier") then
 		return 10
 	elseif (sType == "MinArmyStrengthPerTier") then
-		return 750
+		return 1000
 	elseif (sType == "AttackRatio") then
 		return 4 / 5
 	elseif (sType == "RetreatRatio") then
