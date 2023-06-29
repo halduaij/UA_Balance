@@ -47,12 +47,11 @@ function InitCapturingList()
 	end
 
 	-- Find best strategic point to capture
-        local uManager = resource_manager:GetStrategicPointAIs()
-	for oStrategicPoint in uManager do
+	for oStrategicPoint in resource_manager:GetStrategicPointAIs() do
 		
 		-- Get position of strategic point
 		local vStratPos = oStrategicPoint:GetPosition()
-
+		
 		-- Get shortest pathing distance to my base
 		local iPathingDistanceToMyBase = cpu_manager:GetShortestPathingDistance(cpu_manager.start_pos, vStratPos, false)
 		
@@ -290,13 +289,7 @@ function CapturePlan:FindFreeStrategicPoint()
 	
 		-- Check only unlocked strategic points
 		local oStrategicPoint = CapturePlan.StratPoints[iLoop1]
---[[               if g_iGMT<90 then
-                local ShDis = oStrategicPoint:ShouldDisown(oStrategicPoint:GetPosition(),cpu_manager.player_stats:GetPlayerTeam(),60)
-               else
-                local ShDis = oStrategicPoint:ShouldDisown(oStrategicPoint:GetPosition(),cpu_manager.player_stats:GetPlayerTeam(),40)
-               end]]
-
-		if (not oStrategicPoint:IsLocked())  then 
+		if (not oStrategicPoint:IsLocked()) then
 	
 			-- Get position
 			local vStratPos = oStrategicPoint:GetPosition()
@@ -459,7 +452,7 @@ function CapturePlan:FightBack()
 		local iRequisition = resource_manager:GetResourceAmount():Get( ResourceAmount.RT_Requisition )
 
 	   	-- Reinforce basic trooper while fighting for SP at gamestart
-		if (iRequisition > 110) then
+		if (iRequisition > 200 and g_iGMT < DefendChokePointPlan.HarassingTime * 60) then
 
 	   		if (not self.capturing_squad:IsReinforcing()) then
 		  

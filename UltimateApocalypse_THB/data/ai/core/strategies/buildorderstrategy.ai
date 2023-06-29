@@ -5,15 +5,9 @@
 -- Edited by Dark40k@ 14.10.2008
 -- Edited by Aliaska_RuS
 
-----
-
-
-
-
 class 'BuildOrderStrategy' (Strategy)
 
 BuildOrderStrategy.mid_capture_flag = {}
-BuildOrderStrategy.mid_capture_flag_rush = {}
 BuildOrderStrategy.mid_capture_flag_random = math.random(1,3)
 
 function BuildOrderStrategy:__init( info ) super( info )
@@ -48,23 +42,12 @@ function BuildOrderStrategy:__init( info ) super( info )
 		aitrace("BuildOrderStrategy: Quickstart build order...")
 		self.aBuildOrder = self.info.QuickStart
 		
-	elseif (map_size == "large") and self.info.LargeMap~=nil then
+	elseif (map_size == "large") then
 	
 		-- Use early build order for large maps
 		aitrace("BuildOrderStrategy: LargeMap build order...")	
 		self.aBuildOrder = self.info.LargeMap
 		
-	elseif (map_size == "medium") and self.info.Medium~=nil then
-	
-		-- Use basic early build order
-		aitrace("BuildOrderStrategy: Medium build order...")	
-		self.aBuildOrder = self.info.Medium
-
-	elseif (map_size == "small") and self.info.Small~=nil then
-	
-		-- Use basic early build order
-		aitrace("BuildOrderStrategy: Small build order...")	
-		self.aBuildOrder = self.info.Small
 	else
 	
 		-- Use basic early build order
@@ -106,7 +89,7 @@ function BuildOrderStrategy:WaitOnNextPlan()
 			local id = cpu_manager.stats:GetSquadID( current_build_order[2] )
 			plan = BuildUnitPlan( id, true )
 		end
-			
+		
 	elseif current_build_order[1] == "flag_capture" then
 		--Project Midcapture
         --Flenser added 9 May 2005
@@ -122,7 +105,7 @@ function BuildOrderStrategy:WaitOnNextPlan()
 		-- the exact midpoint a strat point can be and still be suitable
 		local tolerance = 30
 		if map_size == "small" then
-			tolerance = 15
+			local tolerance = 15
 		end
       local mid_pos = Vector3f()
       local base_pos = cpu_manager.start_pos
@@ -144,8 +127,8 @@ function BuildOrderStrategy:WaitOnNextPlan()
 					if not cpu_manager:IsFriendly( strat_ai:Owner() ) and 
 						not strat_ai:HasListeningPost() and not strat_ai:IsRelic() and
 						not strat_ai:IsBeingCaptured() and
-						not cpu_manager:HasThreatOnPath( base_pos, strat_ai:GetEntity():GetPosition(), 40 ) and not cpu_manager:FindClosestFriendlyBase(strat_ai:GetEntity():GetPosition(),30) then
-						if not cpu_manager.terrain_analyzer:HasThreat( strat_ai:GetEntity():GetPosition(), 35 ) and 
+						not cpu_manager:HasThreatOnPath( base_pos, strat_ai:GetEntity():GetPosition(), 40 ) then
+						if not cpu_manager.terrain_analyzer:HasThreat( strat_ai:GetEntity():GetPosition(), 40 ) and 
 							not strat_ai:HasWeapons() then
                             local strat_pos = strat_ai:GetEntity():GetPosition()
                             if self.is_capturing_pos ~= nil then
@@ -169,7 +152,7 @@ function BuildOrderStrategy:WaitOnNextPlan()
                                     --now find out how far the strat_pt is from the midway position
                                     local diff = math.sqrt( distance_sqr( mid_pos, strat_pos ))
                                     aitrace("Distance from mid point to strat point "..string.format( "%.2f", diff))
-    		    			    	 table.insert(differences, { strat_ai, diff })
+    		    			    	table.insert( differences, { strat_ai, diff } )
 	    					    end
                       end
                       fail = 0
@@ -197,9 +180,8 @@ function BuildOrderStrategy:WaitOnNextPlan()
             aitrace("Distance from mid point to strat point "..string.format( "%.2f", differences [1] [2]))
 				aitrace("Starting Capture Plan for the midway strategic point")
             plan = CapturePlan( strategic_flag_pos , true)
-             table.insert(BuildOrderStrategy.mid_capture_flag, strategic_flag)
-             table.insert(BuildOrderStrategy.mid_capture_flag_rush, strategic_flag_pos)
-             table.insert(self.is_capturing_pos,strategic_flag_pos)
+            table.insert( BuildOrderStrategy.mid_capture_flag, strategic_flag )
+            table.insert( self.is_capturing_pos, strategic_flag_pos )
 			end
          self.capture_flag = self.capture_flag + 1
 		else
@@ -208,8 +190,8 @@ function BuildOrderStrategy:WaitOnNextPlan()
          self.capture_flag = self.capture_flag + 1
 		end
 		aipoptrace("Capture Plan - MidCapture")
-	   -- end Project Midcapture code
-	
+	    --end Project Midcapture code
+
 	elseif current_build_order[1] == "post_builder" then
 
 		plan = ResourcePlan( true )
@@ -222,6 +204,7 @@ function BuildOrderStrategy:WaitOnNextPlan()
 			if (oStrategicPoint ~= nil) then
 				bias = oStrategicPoint:GetPosition()
 			end
+
              if (current_build_order[3] == Front1) and (bias ~= nil) then
            	-- Local copy to tweak with bias
            	local bias_pos = Vector3f()
@@ -248,31 +231,31 @@ function BuildOrderStrategy:WaitOnNextPlan()
               else]]
 		local id = cpu_manager.stats:GetBuildingID( current_build_order[2] )
 		plan = BuildBuildingPlan( id, start, true, Front1 )
-	
 --              end
 
 	elseif current_build_order[1] == "research" then
 	
 		local id = cpu_manager.stats:GetResearchID( current_build_order[2] )
 		plan = BuildResearchPlan( id, true )
-
+		
 	elseif current_build_order[1] == "addon" then
 	
 		local id = cpu_manager.stats:GetAddOnID( current_build_order[2] )
 		plan = BuildAddOnPlan( id, true )
+
 	end	
 	
 	dbAssert( plan ~= nil )
 	
 	self:AddPlan( plan )
 	
---	if current_build_order[3] == true then
+--[[	if current_build_order[3] == true then
 		--wait on start
---		plan:AddObserver( self )
---	else
+		plan:AddObserver( self )
+	else]]
 		--move on to the next one right away
 		self:WaitOnNextPlan()
---	end
+	--end
 end
 
 function BuildOrderStrategy:OnPlanEvent( event )
@@ -286,7 +269,7 @@ end
 function BuildOrderStrategy:Update()
 
 	--FIXME: update timer, and quit out if timer reaches over limit
-	if (self.complete == true or g_iGMT > 3*60) then
+	if (self.complete == true or g_iGMT > 3 * 60) then
 		self:PostEvent( Strategy.Events.OnSuccess )
 		return
 	end

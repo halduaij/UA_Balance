@@ -213,7 +213,7 @@ function Plan:UnlockAll()
 		if not self.locked_resources[i]:IsLocked() then
 			local name = self:GetName()
 			print(name)
---			dbBreak()
+			dbBreak()
 		else
 			if self.locked_resources[i]:GetType() == AIResource.AI_Squad then
 				local tactic = self.locked_resources[i]:GetTactic()
@@ -221,7 +221,7 @@ function Plan:UnlockAll()
 				tactic:SetState( Tactic.States.Idle )
 			end
 			self.locked_resources[i]:Unlock()
-		end 
+		end
 	end
 	
 	locked_resources = {}

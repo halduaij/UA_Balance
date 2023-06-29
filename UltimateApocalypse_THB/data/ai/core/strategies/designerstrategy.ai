@@ -3,11 +3,6 @@
 -- Edited by Dark40k @ 14.10.2008
 -- Edited by Aliaska_RuS
 
-----
-
-
-
-
 class 'DesignerStrategy' (Strategy)
 
 function DesignerStrategy:__init() super()

@@ -15,8 +15,8 @@ function BuildAddOnPlan:__init( addon_id ) super(  CpuPlayer.CT_BuildAddOns )
 end
 
 function BuildAddOnPlan:ObtainBuilder()
-	local uManager = build_manager:GetUnlockedBuildChannelAIs()
-	for build_channel in uManager do
+	
+	for build_channel in build_manager:GetUnlockedBuildChannelAIs() do
 
 		--don't queue
 		if( build_channel:IsBuilding() == 0 ) then

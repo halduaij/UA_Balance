@@ -100,7 +100,6 @@ function DefendPlan:GetArmyStrength()
 	-- Calculate army strength
 	local iArmyStrength = 0
 	local vArmyPosition = Vector3f(0, 0, 0)
-	local iCount = 0
 	for iLoop1 in self.defend_units do
 	
 		-- Get unit
@@ -115,14 +114,13 @@ function DefendPlan:GetArmyStrength()
 			
 			-- Add unit position to army position
 			local vUnitPosition = oUnit:GetPosition()
-	                vArmyPosition.x = vArmyPosition.x + vUnitPosition.x
-			vArmyPosition.z = vArmyPosition.z + vUnitPosition.z
-			iCount = iCount + 1
+			vArmyPosition.x = vArmyPosition.x + iUnitStrength * vUnitPosition.x
+			vArmyPosition.z = vArmyPosition.z + iUnitStrength * vUnitPosition.z
 		end
 	end
 	if (iArmyStrength > 0) then
-		vArmyPosition.x = vArmyPosition.x / iCount
-		vArmyPosition.z = vArmyPosition.z / iCount
+		vArmyPosition.x = vArmyPosition.x / iArmyStrength
+		vArmyPosition.z = vArmyPosition.z / iArmyStrength
 	end
 	
 	-- Get closest valid position to army center
@@ -211,16 +209,12 @@ function DefendPlan:ObtainForce()
 	-- Find the forces and defend
 	local oSupportDetector = nil
 --        military_manager:Update()
-        local uManager = military_manager:GetUnlockedSquads()
-	for oSquad in uManager do
-		   local bCheckattack=false
-	       for i=1,AttackStrategy.iMaxAttackPoints do
-	        if self.m_iEnemyStrength*1.1<self.m_iArmyStrength and AttackStrategy.m_vAttackPosition[i].x~=0 and AttackStrategy.m_vAttackPosition[i].z~=0 then
-                   bCheckattack=true
-				   break
-            end
-		   end
-		   if bCheckattack then break end
+	for oSquad in military_manager:GetUnlockedSquads() do
+               if AttackStrategy.m_vAttackPosition.x~=0 or AttackStrategy.m_vAttackPosition.z ~=0 or AttackStrategy2.m_vAttackPosition.x~=0 or AttackStrategy2.m_vAttackPosition.z ~=0 then
+	        if self.m_iEnemyStrength*1.1<self.m_iArmyStrength then
+                   break
+                end
+               end
 		-- Check if squad is valid
 		if (oSquad:IsValid()) then 
 		
@@ -424,6 +418,61 @@ function DefendPlan:Defending()
 	end
 
 	cpu_manager:DeepStrikeToPos(vDetectorTarget, true)
+
+	-- Deepstrike if I can
+	for build_channel in build_manager:GetBuildChannelAIs() do
+
+                local name = build_channel:GetEntity()
+		local id = build_channel:GetBlueprintID()
+		if (build_channel:CanDeepStrike() and cpu_manager:MilitaryDeepStrike(id)) then
+	        local oDeepStrikeBuilding = name:GetPosition()
+	
+			if (build_channel:CanOnlyDeepStrikeToEntity()) then
+ 			   
+				-- Find someone who can summon
+				local can_summon = function( squad_ai )
+					return squad_ai:CanSummon()
+				end
+
+				-- Summon unit
+				local summon_unit = cpu_manager:GetClosestSquad(vDeepStrikePos, 100, can_summon)
+				if (summon_unit) then
+					build_channel:DoDeepStrikeToSquad( summon_unit:GetSquad() )
+				end
+
+                        elseif (CpuManager:GetShortestPathingDistance(oDeepStrikeBuilding, vDetectorTarget, false)>100) then
+	                   local oStrategicPost = cpu_manager:FindClosestPostToStructure(oDeepStrikeBuilding, false, 100)
+                           if oStrategicPost ~= nil then
+                            voStrategicPost = oStrategicPost
+
+                                local vDeepStrikeBuilding = Vector3f()
+                                local iBiasToEnemy = math.random(10, 20)
+
+	                          -- Calculate direction vector
+	                          riClosestDistance = math.sqrt(iClosestDistance)
+	                          vDir = Vector3f(0, 0, 0)
+	                          vDir.x = (vDetectorTarget.x - voStrategicPost.x) / riClosestDistance
+	                          vDir.z = (vDetectorTarget.z - voStrategicPost.z) / riClosestDistance
+	
+	                          -- Add bias to enemy
+	                          riClosestDistance = riClosestDistance + iBiasToEnemy
+	                          vDeepStrikeBuilding.x = voStrategicPost.x + vDir.x * iBiasToEnemy
+	                          vDeepStrikeBuilding.z = voStrategicPost.z + vDir.z * iBiasToEnemy
+
+                                local vPosAttack  = vDeepStrikeBuilding
+                                build_channel:DoDeepStrikeToPos(vPosAttack)
+                           end
+			elseif (CpuManager:GetShortestPathingDistance(oDeepStrikeBuilding, vDetectorTarget, false)<100) then
+					build_channel:DoDeepStrikeToPos(vDetectorTarget)
+
+                        elseif (build_channel:CanDeepStrike() and not build_channel:CanOnlyDeepStrikeToEntity()) then
+				local pos = oDeepStrikeBuilding
+ 				pos.x = pos.x + math.random(-10, 10)
+				pos.z = pos.z + math.random(-10, 10)
+				build_channel:DoDeepStrikeToPos(pos)
+			end
+		end
+	end
 	
 	-- Move support detector
 	if (self.m_oSupportDetector ~= nil) then
@@ -507,7 +556,7 @@ function DefendPlan:RemoveLosses()
 		(cpu_manager:GetCriticalThreat() > 0 or cpu_manager:HQThreat())) then
 		bDefendHomeBase = true
 	end
-        aitrace("DefendPlan: Remove Losses1...")
+
 	-- Remove lost and severly damaged squads
 	local iSquadCount = table.getn( self.defend_units )
 	for iLoop1 = iSquadCount, 1, -1 do
@@ -522,7 +571,6 @@ function DefendPlan:RemoveLosses()
 			-- Remove invalid squads
 			Plan.UnlockResource( self, oSquad )
 			table.remove(self.defend_units, iLoop1)
-                   aitrace("DefendPlan: Remove Losses11...")
 		else
 			-- Get tactic
 			local bWeak = self:IsWeak(oSquad)
@@ -548,10 +596,9 @@ function DefendPlan:RemoveLosses()
 				oTactic:SetState(Tactic.States.Retreat)
 				oTactic:SetTarget(cpu_manager.start_pos, Tactic.Variant.Vector)
 			end
-                         aitrace("DefendPlan: Remove Losses12...")
 		end
 	end
-	aitrace("DefendPlan: Remove Losses2...")
+	
 	-- Check support detector
 	if (self.m_oSupportDetector ~= nil) then
 	
@@ -576,10 +623,7 @@ function DefendPlan:RemoveLosses()
 		end
 	end
 end
-function DefendPlan:GetStrength()
-        local t={imy=self.m_iArmyStrength, ienemy=self.m_iEnemyStrength}
-        return t
-end
+
 function DefendPlan:Update()
 	
 	if (self:IsComplete()) then

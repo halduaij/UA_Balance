@@ -698,7 +698,7 @@ function BuildBuildingPlan:Update()
 			self:SetComplete(true)		
 		end
         	-- Check if builder is lazy
-	elseif (self.builder ~= nil and self.builder:IsIdle() and self.started_building and self.m_iPlanStart > 5) then
+	elseif (self.builder ~= nil and self.builder:IsIdle() and self.started_building and self.m_iPlanStart > 10) then
 		
 		-- Reactivate builder
 		aitrace("BuildBuildingPlan: Builder lazy, send him to work again")

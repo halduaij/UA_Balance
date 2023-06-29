@@ -3,11 +3,6 @@
 -- Created by Arkhan 	@ 12.11.2005
 -- Edited by Aliaska_RuS
 
-----
-
-
-
-
 class 'PlayerInfo'
 
 function PlayerInfo:__init( oPlayer, iLocalRange, iNearRange, iMidRange, iLongRange )
@@ -203,7 +198,7 @@ function PlayerInfo:InitBuildingInformation()
     
     	-- Check alignement
     	if (self.oPlayer:IsEnemy(oPlayer)) then
-    		table.insert(vStartPoints,Vector3f(oPlayer:GetStartingPosition()))
+    		table.insert(vStartPoints, Vector3f(oPlayer:GetStartingPosition()))
     	end
     end
 	
@@ -311,9 +306,7 @@ function PlayerInfo:GetBuildingID(sType)
 end
 
 function PlayerInfo:TraceInfo()
-        if g_bAITrace == false then
-           return
-        end
+
 	-- Trace player ID
 	aitrace("--------------------------------------------------")
 	aitrace("Player ID: "..tostring(self.oPlayer:GetPlayerID()))

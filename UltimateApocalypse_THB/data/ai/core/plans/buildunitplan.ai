@@ -32,8 +32,7 @@ function BuildUnitPlan:ObtainBuilder()
 	
 	--find a build channel 
 	local builder = nil
-        local uManager = build_manager:GetUnlockedBuildChannelAIs()
-	for build_channel in uManager do
+	for build_channel in build_manager:GetUnlockedBuildChannelAIs() do
 
 		-- Don't queue
 		if (build_channel:IsBuilding() == 0) then
