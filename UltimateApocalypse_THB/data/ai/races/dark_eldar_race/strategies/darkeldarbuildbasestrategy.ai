@@ -224,6 +224,25 @@ function DarkEldarBuildBaseStrategy:UpdateTierLevel()
 	end
 end
 
+function DarkEldarBuildBaseStrategy:CheckTech()
+        if self.tierLevel == 1 then
+        self.techongotype = "addon"
+        self.techongoname = "addon_dark_eldar_hq_1"
+        elseif self.tierLevel == 2 then
+        self.techongotype = "addon"
+        self.techongoname = "addon_dark_eldar_hq_2"
+        elseif self.tierLevel == 3 then
+        self.techongotype = "research"
+        self.techongoname = "dark_eldar_tier3_research"
+        elseif self.tierLevel == 4 then
+        self.techongotype = "research"
+        self.techongoname = "dark_eldar_tier4_research"
+        elseif self.tierLevel == 5 then
+        self.techongotype = "research"
+        self.techongoname = "dark_eldar_apocalypse_research"
+        end
+end
+
 function DarkEldarBuildBaseStrategy:BuildFlexible()
   
 	-- Locales
@@ -486,76 +505,30 @@ function DarkEldarBuildBaseStrategy:BuildFlexible()
 	
 		-- Dynamic buildings
 		-- Item-Syntax: BuildingName, BuildingCount, MinTier, MinRequisition, MinPower, MinSquadCap, MinSupportCap
-		self:DynamicBuild("dark_eldar_hq", 2, 1, 700, 150, 0, 0)
-		self:DynamicBuild("dark_eldar_plasma_generator", 6 * self:GetBuildingCountByName("dark_eldar_hq"), 3, 500, 0, 0, 0)
+                self:DynamicBuild("dark_eldar_plasma_generator", 6 * self:GetBuildingCountByName("dark_eldar_hq"), 2, 500, 0, 0, 0)
+              local Numpoint = resource_manager:GetNumOwnedStrategicPoints()
+              if iRequisition >= 100 and iPower >= 100 then
+		self:DynamicAddon("addon_dark_eldar_list_post_1", 1*Numpoint, 1, 0, 0, 0, 0, nil, nil, false)
+              end
+              if iRequisition >= 500 and iPower >= 700 then
+		self:DynamicAddon("addon_dark_eldar_list_post_2", 1*Numpoint, 2, 0, 0, 0, 0, nil, nil, false)
+              end
 
-		-- Dynamically regulate quantity of defensive buildings based on how many strats/crits/relics we have through the tiers so we avoid cluttering/bottlenecking on maps with limited points
-		if (self.tierLevel >= 2 and (iRequisition >= 1500 and iPower >= 1500)) then
-    			if (resource_manager:GetNumOwnedStrategicPoints() < 4) or (resource_manager:GetNumOwnedStrategicPoints() < 3 and self:HasCriticalLocation()) or (resource_manager:GetNumOwnedStrategicPoints() < 3 and self:HasRelic()) then
-				self:DynamicBuild("dark_eldar_turret", 2, 2, 600, 500, 0, 0)
-				self:DynamicBuild("dark_eldar_mine_field", 2, 2, 500, 400, 0, 0)
-				self:DynamicBuild("dark_eldar_portal", 1, 2, 500, 500, 0, 0)
-				self:DynamicBuild("dark_eldar_turret", 3, 3, 600, 500, 0, 0)
-				self:DynamicBuild("dark_eldar_mine_field", 3, 3, 500, 400, 0, 0)
-				self:DynamicBuild("dark_eldar_portal", 2, 3, 500, 500, 0, 0)
-				self:DynamicBuild("dark_eldar_wall", 2, 3, 500, 100, 0, 0)
-   			end
-		else
-   			if (resource_manager:GetNumOwnedStrategicPoints() > 3) or (resource_manager:GetNumOwnedStrategicPoints() > 2 and self:HasCriticalLocation()) or (resource_manager:GetNumOwnedStrategicPoints() > 2 and self:HasRelic()) then
-				self:DynamicBuild("dark_eldar_turret", 3, 2, 600, 500, 0, 0)
-				self:DynamicBuild("dark_eldar_mine_field", 2, 2, 500, 400, 0, 0)
-				self:DynamicBuild("dark_eldar_portal", 1, 2, 500, 500, 0, 0)
-				self:DynamicBuild("dark_eldar_wall", 3, 3, 500, 100, 0, 0)
-				self:DynamicBuild("dark_eldar_turret", 6, 3, 600, 500, 0, 0)
-				self:DynamicBuild("dark_eldar_mine_field", 6, 3, 500, 400, 0, 0)
-				self:DynamicBuild("dark_eldar_portal", 2, 3, 500, 500, 0, 0)
-				self:DynamicBuild("dark_eldar_wall", 6, 3, 700, 300, 0, 0)
-			end
-		end
+              local num_hq = self:GetBuildingCountByName(self:GetBuildingName("HQ"))
+		                self:DynamicBuild("dark_eldar_hq", Numpoint/3 , 2, 700 + 200*(num_hq), 150*(num_hq), 0, 0, false)
+                if iRequisition >= 2000 and iPower >= 2000 then
+				self:DynamicBuild("dark_eldar_hall_of_blood", num_hq-1, 1, 500, 0, 0, 0)
+				self:DynamicBuild("dark_eldar_skimmer_shop", num_hq-1, 2, 300, 100, 0, 0)
+				self:DynamicBuild("dark_eldar_hq_sp_dxp3", num_hq-1, 4, 3000, 3000, 0, 0)
+				self:DynamicBuild("dark_eldar_corruptedgate", num_hq-1, 4, 4000, 4000, 0, 0)
+                end
 
-		if (self.tierLevel >= 4 and (iRequisition >= 2500 and iPower >= 2500)) then
-    			if (resource_manager:GetNumOwnedStrategicPoints() > 4) or (resource_manager:GetNumOwnedStrategicPoints() > 3 and self:HasCriticalLocation()) or (resource_manager:GetNumOwnedStrategicPoints() > 3 and self:HasRelic()) then
-				self:DynamicBuild("dark_eldar_turret", 8, 4, 600, 500, 0, 0)
-				self:DynamicBuild("dark_eldar_mine_field", 8, 4, 500, 400, 0, 0)
-				self:DynamicBuild("dark_eldar_portal", 3, 4, 500, 500, 0, 0)
-				self:DynamicBuild("dark_eldar_wall", 8, 4, 500, 100, 0, 0)
-				self:DynamicBuild("dark_eldar_turret", 10, 5, 600, 500, 0, 0)
-				self:DynamicBuild("dark_eldar_mine_field", 10, 5, 500, 400, 0, 0)
-				self:DynamicBuild("dark_eldar_portal", 4, 5, 500, 500, 0, 0)
-				self:DynamicBuild("dark_eldar_wall", 10, 5, 500, 100, 0, 0)
-				self:DynamicBuild("dark_eldar_turret", 12, 6, 600, 500, 0, 0)
-				self:DynamicBuild("dark_eldar_mine_field", 12, 6, 500, 400, 0, 0)
-				self:DynamicBuild("dark_eldar_wall", 12, 6, 500, 100, 0, 0)
-			end
-		end
-
-		-- Build additional support buildings as tiers progress
-		if (self.tierLevel >= 2) then
-			if (iRequisition >= 2000 and iPower >= 2000) then
-				self:DynamicBuild("dark_eldar_hall_of_blood", 2, 2, 1500, 0, 0, 0) 
-				self:DynamicBuild("dark_eldar_skimmer_shop", 2, 3, 500, 1000, 0, 0)
-				self:DynamicBuild("dark_eldar_hq", 3, 4, 1000, 500, 0, 0)
-				self:DynamicBuild("dark_eldar_hq", 4, 5, 2000, 1000, 0, 0)
-				self:DynamicBuild("dark_eldar_hq_sp_dxp3", 2, 5, 10000, 10000, 0, 0)
-			end
-		end
-
-		-- Build additional uber buildings in later tiers
-		if (self.tierLevel >= 6) then
-			if (iRequisition >= 3000 and iPower >= 3000) then
-				self:DynamicBuild("dark_eldar_hall_of_blood", 3, 6, 3000, 0, 0, 0) 
-				self:DynamicBuild("dark_eldar_skimmer_shop", 3, 6, 3500, 2000, 0, 0)
-				self:DynamicBuild("dark_eldar_corruptedgate", 2, 6, 7000, 7000, 0, 0)
-				self:DynamicBuild("dark_eldar_hq_sp_dxp3", 3, 6, 15000, 15000, 0, 0)
-			end
-		end
-
-		-- Build additional Superweapons if we have excess resources
-		if (iRequisition >= 12000 and iPower >= 12000) then
-			self:DynamicBuild("dark_eldar_hq_sp_dxp3", 4, 6, 16000, 16000, 0, 0)
-			self:DynamicBuild("dark_eldar_hq_sp_dxp3", 5, 6, 17000, 17000, 0, 0)
-			self:DynamicBuild("dark_eldar_hq_sp_dxp3", 6, 6, 18000, 18000, 0, 0)
-		end
+                if iRequisition >= 2000 and iPower >= 2000 then
+				self:DynamicBuild("dark_eldar_turret", 2*num_hq, 2, 0, 0, 0, 0)
+				self:DynamicBuild("dark_eldar_mine_field", 2*num_hq, 2, 0, 0, 0, 0)
+				self:DynamicBuild("dark_eldar_portal", num_hq, 2, 0, 0, 0, 0)
+                                self:DynamicBuild("dark_eldar_wall", num_hq, 2, 0, 0, 0, 0)
+                end
 	end
 
 	-- At this stage, every structure is free
@@ -630,7 +603,18 @@ function DarkEldarBuildBaseStrategy:BuildSoulSlaves()
 		end
 	end
 end
-
+function DarkEldarBuildBaseStrategy:ForceTechCheck(name)
+         local iID = cpu_manager.stats:GetAddOnID(name)
+	 if (self:PlanExists("Build AddOn Plan", iID)) then
+	 	return
+	 end
+	 local tBuildType = CpuBuildType()
+	 tBuildType.name = name
+	 tBuildType.btype = CpuPrerequisites.BT_AddOn
+	 if (self:TryBuild( tBuildType )) then
+	 	aitrace("BuildController: Build of addon "..name)
+	 end
+end
 -- Method to check if force tech should be computed
 function DarkEldarBuildBaseStrategy:ForceTech()
 
@@ -648,27 +632,38 @@ function DarkEldarBuildBaseStrategy:ForceTech()
 	if (iTierLevel == 1) then
 	
 		-- Check resources
-		if (iRequisition > 600 and iPower > 200) then
-			return false
-		end
-		return not self.m_bHQAddon1
-		
-	elseif (iTierLevel == 2) then
-	
-		-- Check for wych cult arena
-		if (self:GetBuildingCountByName("dark_eldar_wych_cult_arena", false) < 1) then
+		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier1 or (iRequisition > 600 and iPower > 600)) then
+                        self:ForceTechCheck("addon_dark_eldar_hq_1")
 			return true
 		end
-
+		
+	elseif (iTierLevel == 2) then
+		
 		-- Check time
-		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier2 and (iRequisition < 600 or iPower < 600)) then
+		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier2 or (iRequisition > 900 and iPower > 600)) then
+                        self:ForceTechCheck("addon_dark_eldar_hq_2")
 			return true
 		end
 		
 	elseif (iTierLevel == 3) then	
 
 		-- Check time
-		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier3 and (iRequisition < 1100 or iPower < 1100)) then
+		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier3 or (iRequisition > 1500 and iPower > 1500)) then
+			self:DynamicResearch("dark_eldar_tier3_research", 3, 0, 0, 0, 0, nil, 0, false)
+			return true
+		end
+	elseif (iTierLevel == 4) then	
+
+		-- Check time
+		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier4 or (iRequisition > 2000 and iPower > 2000)) then
+			self:DynamicResearch("dark_eldar_tier4_research", 4, 0, 0, 0, 0, nil, 0, false)
+			return true
+		end
+	elseif (iTierLevel == 5) then	
+
+		-- Check time
+		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier5 or (iRequisition > 4000 and iPower > 4000)) then
+			self:DynamicResearch("dark_eldar_apocalypse_research", 5, 0, 0, 0, 0, nil, 0, false)
 			return true
 		end
 	end

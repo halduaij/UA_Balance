@@ -32,7 +32,8 @@ function BuildUnitPlan:ObtainBuilder()
 	
 	--find a build channel 
 	local builder = nil
-	for build_channel in build_manager:GetUnlockedBuildChannelAIs() do
+        local uManager = build_manager:GetUnlockedBuildChannelAIs()
+	for build_channel in uManager do
 
 		-- Don't queue
 		if (build_channel:IsBuilding() == 0) then
@@ -132,7 +133,7 @@ function BuildUnitPlan:BuildUnit()
 		cpu_manager:OnEvent( CpuManager.Events.BuildSquad, self.item_id )
 
 		--change state
-		Plan.SetState( self, "Building a "..self.item_name, BuildPlan.BuildingState, true )
+		Plan.SetState( self, "Building a "..self.item_name, BuildPlan.BuildingStateAddon, true )
 		return
 	end
 	

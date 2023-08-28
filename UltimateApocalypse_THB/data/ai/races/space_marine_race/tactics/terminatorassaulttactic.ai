@@ -52,10 +52,6 @@ function TerminatorAssaultTactic:Upgrade()
 		return
 	end
 	
-	-- If there are no ressources available, don't upgrade!
-	if (not Tactic.Options.can_reinforce) then
-		return
-	end
   
 	-- Only upgrade if not reinforcing
 	if (not self.squad_ai:IsReinforcing()) then

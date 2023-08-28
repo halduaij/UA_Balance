@@ -313,6 +313,26 @@ function DaemonhuntBuildBaseStrategy:UpdateTierLevel()
 	end
 end
 
+function DaemonhuntBuildBaseStrategy:CheckTech()
+        if self.tierLevel == 1 then
+        self.techongotype = "addon"
+        self.techongoname = "inquisition_tower_addon"
+        elseif self.tierLevel == 2 then
+        self.techongotype = "research"
+        self.techongoname = "inquisition_temporal_power"
+        elseif self.tierLevel == 3 then
+        self.techongotype = "research"
+        self.techongoname = "inquisition_ultimate_forces"
+        elseif self.tierLevel == 4 then
+        self.techongotype = "research"
+        self.techongoname = "inquisition_begin_purification"
+        elseif self.tierLevel == 5 then
+        self.techongotype = "research"
+        self.techongoname = "inquisition_absolute_purification"
+        end
+end
+
+
 function DaemonhuntBuildBaseStrategy:BuildFlexible()
   
 	-- Locales
@@ -497,10 +517,6 @@ function DaemonhuntBuildBaseStrategy:BuildFlexible()
 				self:DynamicResearch("inquisition_tome_alacrity_2", 2, 200, 60, 0, 0, nil, 0)
 			end
 
-			-- Compute HQ Tier2 Addons for future HQs
-			if (self:GetBuildingCountByName("inquisition_tower_hq") > 1) and (iRequisition >= 3500 and iPower >= 3500) then
-				self:DynamicAddon("inquisition_tower_addon", 100, 2, 1000, 1000, 0, 0, nil, nil, false)
-			end
 		end
 
 		-- Compute tier 3 researches
@@ -624,90 +640,32 @@ function DaemonhuntBuildBaseStrategy:BuildFlexible()
 	
 		-- Dynamic buildings
 		-- Item-Syntax: BuildingName, BuildingCount, MinTier, MinRequisition, MinPower, MinSquadCap, MinSupportCap
-		self:DynamicBuild("inquisition_tower_hq", 2, 2, 700, 150, 0, 0)
 		self:DynamicBuild("inquisition_warp_generator", 6 * self:GetBuildingCountByName("inquisition_tower_hq"), 3, 500, 0, 0, 0)
-		self:DynamicBuild("inquisition_purification_decree", 4 * self:GetBuildingCountByName("inquisition_tower_hq"), 2, 300, 0, 0, 0)
 
-		-- Dynamically regulate quantity of defensive buildings based on how many strats/crits/relics we have through the tiers so we avoid cluttering/bottlenecking on maps with limited points
-		if (self.tierLevel >= 2 and (iRequisition >= 1500 and iPower >= 1500)) then
-    			if (resource_manager:GetNumOwnedStrategicPoints() < 4) or (resource_manager:GetNumOwnedStrategicPoints() < 3 and self:HasCriticalLocation()) or (resource_manager:GetNumOwnedStrategicPoints() < 3 and self:HasRelic()) then
-				self:DynamicBuild("inquisition_turret_heavy_bolter", 2, 2, 500, 100, 0, 0)
-				self:DynamicBuild("inquisition_purification_decree", 2, 2, 600, 0, 0, 0)
-				self:DynamicBuild("inquisition_mines", 2, 2, 500, 250, 0, 0)
-				self:DynamicBuild("inquisition_tanktrap", 2, 2, 500, 0, 0, 0)
-				self:DynamicBuild("inquisition_wall", 2, 3, 700, 0, 0, 0)
-				self:DynamicBuild("inquisition_turret_heavy_bolter", 4, 3, 500, 100, 0, 0)
-				self:DynamicBuild("inquisition_purification_decree", 4, 3, 600, 0, 0, 0)
-				self:DynamicBuild("inquisition_mines", 4, 3, 500, 250, 0, 0)
-				self:DynamicBuild("inquisition_tanktrap", 4, 3, 500, 0, 0, 0)
-				self:DynamicBuild("inquisition_wall", 4, 3, 900, 0, 0, 0)
-   			end
-		else
-   			if (resource_manager:GetNumOwnedStrategicPoints() > 3) or (resource_manager:GetNumOwnedStrategicPoints() > 2 and self:HasCriticalLocation()) or (resource_manager:GetNumOwnedStrategicPoints() > 2 and self:HasRelic()) then
-				self:DynamicBuild("inquisition_turret_heavy_bolter", 3, 2, 500, 100, 0, 0)
-				self:DynamicBuild("inquisition_purification_decree", 3, 2, 600, 0, 0, 0)
-				self:DynamicBuild("inquisition_mines", 3, 2, 500, 250, 0, 0)
-				self:DynamicBuild("inquisition_tanktrap", 3, 2, 500, 0, 0, 0)
-				self:DynamicBuild("inquisition_wall", 3, 3, 700, 0, 0, 0)
-				self:DynamicBuild("inquisition_turret_heavy_bolter", 6, 3, 500, 100, 0, 0)
-				self:DynamicBuild("inquisition_purification_decree", 6, 3, 600, 0, 0, 0)
-				self:DynamicBuild("inquisition_mines", 6, 3, 500, 250, 0, 0)
-				self:DynamicBuild("inquisition_tanktrap", 6, 3, 500, 0, 0, 0)
-				self:DynamicBuild("inquisition_wall", 6, 3, 900, 0, 0, 0)
-			end
-		end
+              local Numpoint = resource_manager:GetNumOwnedStrategicPoints()
+              if iRequisition >= 100 and iPower >= 100 then
+		self:DynamicAddon("inquisition_imperial_icon_addon_1", 1*Numpoint, 1, 0, 0, 0, 0, nil, nil, false)
+              end
+              if iRequisition >= 500 and iPower >= 700 then
+		self:DynamicAddon("inquisition_imperial_icon_addon_2", 1*Numpoint, 2, 0, 0, 0, 0, nil, nil, false)
+              end
 
-		if (self.tierLevel >= 4 and (iRequisition >= 2500 and iPower >= 2500)) then
-    			if (resource_manager:GetNumOwnedStrategicPoints() > 4) or (resource_manager:GetNumOwnedStrategicPoints() > 3 and self:HasCriticalLocation()) or (resource_manager:GetNumOwnedStrategicPoints() > 3 and self:HasRelic()) then
-				self:DynamicBuild("inquisition_turret_heavy_bolter", 8, 4, 500, 100, 0, 0)
-				self:DynamicBuild("inquisition_purification_decree", 8, 4, 600, 0, 0, 0)
-				self:DynamicBuild("inquisition_mines", 8, 4, 500, 250, 0, 0)
-				self:DynamicBuild("inquisition_tanktrap", 8, 4, 500, 0, 0, 0)
-				self:DynamicBuild("inquisition_wall", 8, 4, 700, 0, 0, 0)
-				self:DynamicBuild("inquisition_turret_heavy_bolter", 10, 5, 500, 100, 0, 0)
-				self:DynamicBuild("inquisition_purification_decree", 10, 5, 600, 0, 0, 0)
-				self:DynamicBuild("inquisition_mines", 10, 5, 500, 250, 0, 0)
-				self:DynamicBuild("inquisition_tanktrap", 10, 5, 500, 0, 0, 0)
-				self:DynamicBuild("inquisition_wall", 10, 5, 900, 0, 0, 0)
-				self:DynamicBuild("inquisition_turret_heavy_bolter", 12, 6, 500, 100, 0, 0)
-				self:DynamicBuild("inquisition_purification_decree", 12, 6, 600, 0, 0, 0)
-				self:DynamicBuild("inquisition_mines", 12, 6, 500, 250, 0, 0)
-				self:DynamicBuild("inquisition_tanktrap", 12, 6, 500, 0, 0, 0)
-				self:DynamicBuild("inquisition_wall", 12, 6, 900, 0, 0, 0)
-			end
-		end
-
-		-- Build additional support buildings as tiers progress
-		if (self.tierLevel >= 2) then
-			if (iRequisition >= 2000 and iPower >= 2000) then
-				self:DynamicBuild("inquisition_watch", 2, 2, 1000, 500, 0, 0)
-				self:DynamicBuild("inquisition_grey_knights_teleporter", 2, 3, 1200, 600, 0, 0)
+              local num_hq = self:GetBuildingCountByName(self:GetBuildingName("HQ"))
+		                self:DynamicBuild("inquisition_tower_hq", Numpoint/3 , 2, 700 + 200*(num_hq), 150*(num_hq), 0, 0, false)
+                if iRequisition >= 1000 and iPower >= 1000 then
+				self:DynamicBuild("inquisition_watch", num_hq, 1, 300, 100, 0, 0)
+				self:DynamicBuild("inquisition_grey_knights_teleporter", num_hq, 3, 300, 100, 0, 0)
 				self:DynamicBuild("inquisition_librarium", 2, 3, 1000, 1500, 0, 0)
-				self:DynamicBuild("inquisition_tower_hq", 3, 3, 1000, 500, 0, 0)
-				self:DynamicBuild("inquisition_tower_hq", 4, 5, 2000, 1000, 0, 0)
-				self:DynamicBuild("inquisition_astra_telepathica", 2, 5, 2000, 1500, 0, 0)
+				self:DynamicBuild("inquisition_astra_telepathica", num_hq-1, 3, 300, 100, 0, 0)
+				self:DynamicBuild("inquisition_nuclear_facility", num_hq, 4, 3000, 2000, 0, 0)
 				self:DynamicBuild("inquisition_tower_mechanicum", 2, 5, 3000, 3000, 0, 0)
-				self:DynamicBuild("inquisition_nuclear_facility", 2, 5, 4000, 4000, 0, 0)
-			end
-		end
+                end
 
-		-- Build additional uber buildings in later tiers
-		if (self.tierLevel >= 5) then
-			if (iRequisition >= 3000 and iPower >= 3000) then
-				self:DynamicBuild("inquisition_watch", 3, 5, 1000, 500, 0, 0)
-				self:DynamicBuild("inquisition_grey_knights_teleporter", 3, 5, 1200, 600, 0, 0)
-				self:DynamicBuild("inquisition_astra_telepathica", 3, 5, 3000, 3500, 0, 0)
-				self:DynamicBuild("inquisition_tower_mechanicum", 3, 5, 4000, 4000, 0, 0)
-				self:DynamicBuild("inquisition_nuclear_facility", 3, 5, 6000, 6000, 0, 0)
-			end
-		end
-
-		-- Build additional Superweapons if we have excess resources
-		if (iRequisition >= 15000 and iPower >= 15000) then
-			self:DynamicBuild("inquisition_nuclear_facility", 4, 5, 7500, 7500, 0, 0)
-			self:DynamicBuild("inquisition_nuclear_facility", 5, 5, 10000, 10000, 0, 0)
-			self:DynamicBuild("inquisition_nuclear_facility", 6, 5, 12000, 12000, 0, 0)
-		end
+                if iRequisition >= 2000 and iPower >= 2000 then
+				self:DynamicBuild("inquisition_turret_heavy_bolter", 6*num_hq, 2, 0, 0, 0, 0)
+				self:DynamicBuild("inquisition_mines", 4*num_hq, 2, 0, 0, 0, 0)
+				self:DynamicBuild("inquisition_purification_decree", 4*num_hq, 2, 0, 0, 0, 0)
+                end
 	end
 	
 	-- Build workers for additional resources
@@ -791,6 +749,19 @@ function DaemonhuntBuildBaseStrategy:BuildCivilianBunkers()
 	end
 end
 
+function DaemonhuntBuildBaseStrategy:ForceTechCheck(name)
+         local iID = cpu_manager.stats:GetAddOnID(name)
+	 if (self:PlanExists("Build AddOn Plan", iID)) then
+	 	return
+	 end
+	 local tBuildType = CpuBuildType()
+	 tBuildType.name = name
+	 tBuildType.btype = CpuPrerequisites.BT_AddOn
+	 if (self:TryBuild( tBuildType )) then
+	 	aitrace("BuildController: Build of addon "..name)
+	 end
+end
+
 -- Arkhan 01.2006: Method to check if force tech should be computed
 function DaemonhuntBuildBaseStrategy:ForceTech()
 
@@ -798,7 +769,7 @@ function DaemonhuntBuildBaseStrategy:ForceTech()
 	if (g_iGMT < 60 * CpuManager.ForceTech.StartTier1) then
 		return false
 	end
-	
+
 	-- Check resources
 	local iRequisition = resource_manager:GetResourceAmount():Get( ResourceAmount.RT_Requisition )
 	local iPower = resource_manager:GetResourceAmount():Get( ResourceAmount.RT_Power )
@@ -806,45 +777,40 @@ function DaemonhuntBuildBaseStrategy:ForceTech()
 	-- Check tier
 	local iTierLevel = self:GetTierLevel()
 	if (iTierLevel == 1) then
-
-		-- Check resources
-		if (iRequisition > 600 and iPower > 200) then
-			return false
-		end
 	
-		-- Check for librarium
-		if (self:GetBuildingCountByName("inquisition_librarium", false) >= 1) then
-			return false
-		end	
-		return true
-
-	elseif (iTierLevel == 2) then
-
-		-- Check build channel for teleporter
-		iID = cpu_manager.stats:GetBuildingID("inquisition_grey_knights_teleporter")
-		iID2 = cpu_manager.stats:GetBuildingID("inquisition_astra_telepathica")
-		local bHasVehicleBuilding = false
-		for oBuildChannel in build_manager:GetBuildChannelAIs() do
-		
-			-- Check building ID
-			if (oBuildChannel:GetBlueprintID() == iID2) then
-				bHasVehicleBuilding = true
-				break
-			end
-		end
-		if (not bHasVehicleBuilding) then
+		-- Check resources
+		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier1 or (iRequisition > 600 and iPower > 600)) then
+                        self:ForceTechCheck("inquisition_tower_addon")
 			return true
 		end
 		
+	elseif (iTierLevel == 2) then
+		
 		-- Check time
-		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier2 and (iRequisition < 800 or iPower < 800)) then
+		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier2 or (iRequisition > 900 and iPower > 600)) then
+                        self:DynamicResearch("inquisition_temporal_power", 1, 500, 500, 0, 0, nil, 0, false)
 			return true
 		end
 		
 	elseif (iTierLevel == 3) then	
 
 		-- Check time
-		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier3 and (iRequisition < 1450 or iPower < 800)) then
+		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier3 or (iRequisition > 1500 and iPower > 1500)) then
+                        self:DynamicResearch("inquisition_ultimate_forces", 1, 1000, 1000, 0, 0, nil, 0, false)
+			return true
+		end
+	elseif (iTierLevel == 4) then	
+
+		-- Check time
+		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier4 or (iRequisition > 2000 and iPower > 2000)) then
+			self:DynamicResearch("inquisition_begin_purification", 1, 1000, 1000, 0, 0, nil, 0, false)
+			return true
+		end
+	elseif (iTierLevel == 5) then	
+
+		-- Check time
+		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier5 or (iRequisition > 3000 and iPower > 3000)) then
+                        self:DynamicResearch("inquisition_absolute_purification", 1, 1000, 1000, 0, 0, nil, 0, false)
 			return true
 		end
 	end
@@ -860,14 +826,14 @@ function DaemonhuntBuildBaseStrategy:GetPlacementType(iBuildingID)
 		local friend = cpu_manager:FindClosestFriendPlayer()
 		if friend == nil then
 			-- Lone Player
-                	if count == 0 and not cpu_manager:HQThreat() then
+                	if not cpu_manager:HQThreat() then
                     		return "HQ"
                 	else
                     		return "Safeplace"
                 	end
         	else
         		-- Has allies
-                	if count > 2 or cpu_manager:HQThreat() then
+                	if count > 0 or cpu_manager:HQThreat() then
  				return "HQ"
                 	else
 				return "Safeplace"

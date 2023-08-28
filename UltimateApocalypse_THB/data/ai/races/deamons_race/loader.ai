@@ -198,7 +198,7 @@ function deamons_race:GetInfo(sType)
 	elseif (sType == "AttackModifier") then
 		return 10
 	elseif (sType == "CriticalRangeIncreasePerTier") then
-		return 15
+		return 10
 	elseif (sType == "MinArmyStrengthPerTier") then
 		return 300
 	elseif (sType == "AttackRatio") then

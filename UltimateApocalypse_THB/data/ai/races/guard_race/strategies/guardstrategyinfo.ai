@@ -11,7 +11,7 @@ BuildBaseStrategyInfo =
 		flag_capture = 3,
 
 		-- Reserve this amount for building units, reinforcing and upgrading
-		req_reserve = 350,
+		req_reserve = 150,
 		
 		-- need at least this at all times
 		squad_cap_threshold = 3,
@@ -23,7 +23,12 @@ BuildBaseStrategyInfo =
 		Engineers =
 		{
 			--number of engineers we're aiming for
-			want = 5,
+			want = 3,
+			tier1 = 3,
+			tier2 = 5,
+			tier3 = 8,
+			tier4 = 8,
+                        max = 8,
 		},
 		
 		-- Is used to modify the army strength in the build programs (Allows faster balancing adjustments)
@@ -45,9 +50,6 @@ BuildBaseStrategyInfo =
 				{ 1, 90, 80, 0, 50,	"TurretAddon",	"addon_guard_list_post_1" },
 				{ 1, 175, 50, 500, 1,	"Building",	"guard_tactica" },
 				{ 1, 90, 125, 0, 1,	"Building",	"guard_turret_heavy_bolter" },
-				{ 1, 90, 80, 0, 100,	"TurretAddon",	"addon_guard_list_post_1" },
-				{ 1, 400, 130, 900, 1,  "Addon",	"addon_guard_hq_1" },
-				{ 1, 135, 0, 0, 5,	"Building",	"guard_plasma_generator" },
 
 				{ 2, 100, 180, 0, 1,	"Unit",		"guard_squad_sentinel" },
 				{ 2, 110, 110, 0, 1,	"Unit",		"guard_squad_chimera" },
@@ -58,9 +60,6 @@ BuildBaseStrategyInfo =
 			        { 2, 50, 0, 0, 10,	"Addon",	"addon_guard_ministorum_temple" },
 			        { 2, 50, 0, 0, 10,	"Addon",	"addon_guard_telepathica_temple" },
 			        { 2, 50, 0, 600, 65,	"TurretAddon",	"addon_guard_turret" },
-				{ 2, 135, 0, 0, 6,	"Building",	"guard_plasma_generator" },
-				{ 2, 500, 500, 1000, 1,	"Addon",	"addon_guard_hq_2" },
-				{ 2, 240, 160, 0, 100,  "TurretAddon",	"addon_guard_list_post_2" },
 
 				{ 3, 200, 50, 0, 1,	"Unit",		"guard_squad_guardsmen_specialweapons" },
 				{ 3, 190, 350, 0, 1,	"Unit",		"guard_squad_lemanruss" },

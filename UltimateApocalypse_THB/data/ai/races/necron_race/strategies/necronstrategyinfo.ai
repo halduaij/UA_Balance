@@ -23,7 +23,12 @@ BuildBaseStrategyInfo =
 		Engineers =
 		{
 			--number of engineers we're aiming for
-			want = 6,
+			want = 10,
+			tier1 = 10,
+			tier2 = 10,
+			tier3 = 10,
+			tier4 = 10,
+                        max = 10,
 		},
 
 		-- Is used to modify the army strength in the build programs (Allows faster balancing adjustments)
@@ -42,12 +47,8 @@ BuildBaseStrategyInfo =
 				{ 1, 0, 125, 0, 2,	"Building",	"necron_plasma_generator" },
 				{ 1, 0, 60, 200, 100,   "TurretAddon",  "addon_necron_list_post_1" },
 				{ 1, 0, 125, 0, 3,	"Building",	"necron_plasma_generator" },
-				{ 1, 0, 100, 0, 1,	"Building",	"necron_turret" },
-				{ 1, 0, 125, 700, 4,	"Building",	"necron_plasma_generator" },
-				{ 1, 0, 100, 800, 3,	"Building",	"necron_turret" },
-				{ 1, 0, 400, 950, 1,	"Addon", 	"addon_necron_hq_1" },
-				{ 1, 0, 125, 0, 5,	"Building",	"necron_plasma_generator" },
 
+				{ 2, 0, 0, 0, 0,	"Restrict",	"necron_scarab_air_squad" },
 				{ 2, 0, 165, 0, 1,	"Unit",		"necron_immortal_squad" },
 				{ 2, 0, 240, 0, 1,	"Unit",		"necron_destroyer_squad" },
 				{ 2, 0, 250, 0, 85,	"TurretAddon",	"addon_necron_list_post_2" },
@@ -55,7 +56,6 @@ BuildBaseStrategyInfo =
 			        { 2, 0, 125, 0, 6,	"Building",	"necron_plasma_generator" },
 				{ 2, 0, 250, 400, 1,	"Building",	"necron_greater_summoning_core" },
 				{ 2, 0, 400, 800, 2,	"Building",	"monolith" },
-				{ 2, 0, 750, 900, 1,	"Addon",	"addon_necron_hq_2" },
 
 				{ 3, 0, 200, 0, 1,	"Unit",		"necron_deathmark_squad" },
 				{ 3, 0, 360, 0, 1,	"Unit",		"necron_heavy_destroyer_squad" },
@@ -63,7 +63,7 @@ BuildBaseStrategyInfo =
 				{ 3, 0, 125, 0, 10,	"Building",	"necron_plasma_generator" },
 			        { 3, 0, 250, 0, 100,	"TurretAddon",	"addon_necron_list_post_2" },
 				{ 3, 0, 800, 500, 3,	"Building",	"monolith" },
-				{ 3, 0, 1500, 1000, 1,	"Building",	"necron_summoning_core_big" },
+				{ 3, 0, 1500, 0, 1,	"Building",	"necron_summoning_core_big" },
 				{ 3, 0, 150, 0, 1,	"Building",	"necron_turret_missile_sp" },
 			        { 3, 0, 200, 0, 50,	"TurretAddon",	"addon_necron_wall" },
 
@@ -73,7 +73,7 @@ BuildBaseStrategyInfo =
 				{ 4, 0, 400, 0, 1,	"Building",	"necron_turret_battery" },
 				{ 4, 0, 125, 0, 15,	"Building",	"necron_plasma_generator" },
 				{ 4, 0, 150, 0, 3,	"Building",	"necron_turret_missile_sp" },
-				{ 4, 0, 2000, 1250, 1,	"Building",	"necron_energy_core" },
+				{ 4, 0, 2000, 0, 1,	"Building",	"necron_energy_core" },
 				{ 4, 0, 65, 0, 100,	"TurretAddon",	"addon_necron_turret" },
 				
 				{ 5, 0, 360, 0, 1,	"Unit",		"necron_lychguard_squad" },
@@ -81,7 +81,7 @@ BuildBaseStrategyInfo =
 				{ 5, 0, 4000, 500, 1,	"Building",	"monolith_super" },
 			        { 5, 0, 200, 0, 100,	"TurretAddon",	"addon_necron_wall" },
 				{ 5, 0, 150, 0, 4,	"Building",	"necron_turret_missile_sp" },
-			        { 5, 0, 6000, 1500, 1,	"Research",	"necron_apocalypse_research" },
+			        { 5, 0, 6000, 0, 1,	"Research",	"necron_apocalypse_research" },
 
 				{ 6, 0, 150, 0, 1,	"Unit",		"necron_overseer_squad" },
 				{ 6, 0, 200, 0, 1,	"Unit",		"necron_lord_squad" },
@@ -232,6 +232,6 @@ AttackStrategyInfo =
 {
 	necron_race =
 	{
-		MinArmyStrength = 350,
+		MinArmyStrength = 0,
 	},
 }

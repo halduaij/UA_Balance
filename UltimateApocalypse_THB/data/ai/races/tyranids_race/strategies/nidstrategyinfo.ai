@@ -7,7 +7,7 @@ BuildBaseStrategyInfo =
 	tyranids_race =
 	{
 		post_builder = 2,
-		flag_capture = 2,
+		flag_capture = 4,
 
 		--reserve this amount for building units/buildings (not for use in upgrading/ reinforcing)
 		req_reserve = 100,
@@ -23,6 +23,11 @@ BuildBaseStrategyInfo =
 		{
 			--number of engineers we're aiming for
 			want = 3,
+			tier1 = 3,
+			tier2 = 5,
+			tier3 = 8,
+			tier4 = 8,
+                        max = 8,
 		},
 
 		-- Is used to modify the army strength in the build programs (Allows faster balancing adjustments)
@@ -42,12 +47,10 @@ BuildBaseStrategyInfo =
 				{ 1, 140, 0, 650, 1,	"Building",	"tyranids_turret" },
 				{ 1, 150, 0, 700, 1,	"Building",	"tyranids_biomorph_hive" },
 				{ 1, 170, 0, 750, 2,	"Building",	"tyranids_gaunt_hive" },
-				{ 1, 250, 130, 800, 1,	"Addon",	"tyranids_hq_addon_1" },
 				
 				{ 2, 400, 0, 200, 1,	"Building",	"tyranids_carnifex_hive" },
 				{ 2, 0, 60, 500, 50,	"TurretAddon",	"tyranids_turret_bioacid_addon" },
 				{ 2, 0, 320, 750, 25,	"TurretAddon",	"tyranids_list_post_addon_2" },
-				{ 2, 600, 400, 900, 1,	"Addon",	"tyranids_hq_addon_2" },
 				
 				{ 3, 290, 0, 0, 1,	"Building",	"tyranids_xeno_hive" },
 				{ 3, 0, 320, 500, 50,	"TurretAddon",	"tyranids_list_post_addon_2" },

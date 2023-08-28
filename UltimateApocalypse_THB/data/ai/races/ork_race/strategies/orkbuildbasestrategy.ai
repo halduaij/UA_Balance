@@ -217,6 +217,11 @@ function OrkBuildBaseStrategy:UpdateTierLevel()
 	end
 end
 
+function OrkBuildBaseStrategy:CheckTech()
+        self.techongo = true
+        return
+end
+
 function OrkBuildBaseStrategy:BuildFlexible()
 
 	-- Choose Ork research pattern
@@ -464,9 +469,18 @@ function OrkBuildBaseStrategy:BuildFlexible()
 
 		-- Dynamic buildings
 		-- Item-Syntax: BuildingName, BuildingCount, MinTier, MinRequisition, MinPower, MinSquadCap, MinSupportCap
-		self:DynamicBuild("ork_hq", 2, 1, 1000, 400, 0, 0)
+		-- Item-Syntax: BuildingName, BuildingCount, MinTier, MinRequisition, MinPower, MinSquadCap, MinSupportCap
 		self:DynamicBuild("ork_generator", 6 * self:GetBuildingCountByName("ork_hq"), 3, 150, 0, 0, 0)
 
+              local Numpoint = resource_manager:GetNumOwnedStrategicPoints()
+              if iRequisition >= 100 and iPower >= 100 then
+		self:DynamicAddon("ork_gork_totem_addon_1", 1*Numpoint, 1, 0, 0, 0, 0, nil, nil, false)
+              end
+              if iRequisition >= 300 and iPower >= 300 then
+		self:DynamicAddon("ork_gork_totem_addon_2", 1*Numpoint, 2, 0, 0, 0, 0, nil, nil, false)
+              end
+              local num_hq = self:GetBuildingCountByName(self:GetBuildingName("HQ"))
+	      self:DynamicBuild("ork_hq", Numpoint/3 , 2, 700 + 200*(num_hq), 150*(num_hq), 0, 0, false)
 		-- Dynamically regulate quantity of defensive buildings based on how many strats/crits/relics we have through the tiers so we avoid cluttering/bottlenecking on maps with limited points
 		if (self.tierLevel >= 2 and (iRequisition >= 1500 and iPower >= 1500)) then
     			if (resource_manager:GetNumOwnedStrategicPoints() < 4) or (resource_manager:GetNumOwnedStrategicPoints() < 3 and self:HasCriticalLocation()) or (resource_manager:GetNumOwnedStrategicPoints() < 3 and self:HasRelic()) then

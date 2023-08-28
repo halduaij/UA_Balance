@@ -8,13 +8,13 @@ BuildBaseStrategyInfo =
 	eldar_race =
 	{
 		post_builder = 2,
-		flag_capture = 2,
+		flag_capture = 3,
 
 		-- Reserve this amount for building units, reinforcing and upgrading
 		req_reserve = 150,
 		
 		--need at least this at all times
-		squad_cap_threshold = 2,
+		squad_cap_threshold = 3,
 
 		--need at least this at all times
 		support_cap_threshold = 3,
@@ -23,7 +23,12 @@ BuildBaseStrategyInfo =
 		Engineers =
 		{
 			--number of engineers we're aiming for
-			want = 2,
+			want = 3,
+			tier1 = 3,
+			tier2 = 5,
+			tier3 = 8,
+			tier4 = 8,
+                        max = 8,
 		},
 		
 		-- Is used to modify the army strength in the build programs (Allows faster balancing adjustments)
@@ -48,8 +53,6 @@ BuildBaseStrategyInfo =
 				{ 1, 90, 80, 0, 100,	"TurretAddon",	"eldar_list_post_addon_1" },
 			        { 1, 70, 100, 0, 1,	"Building",	"eldar_support_platform_scatterlaser" },
 				{ 1, 150, 0, 700, 4,	"Building",	"eldar_warp_generator" },
-				{ 1, 160, 80, 750, 1,	"Building",	"eldar_support_platform_cannon_sp" },
-				{ 1, 150, 0, 800, 5,	"Building",	"eldar_warp_generator" },
 				{ 1, 400, 130, 950, 1,	"Building",	"eldar_soul_shrine" },
 
 			        { 2, 300, 60, 0, 1,	"Unit",		"eldar_squad_farseer" },
@@ -164,18 +167,15 @@ BuildOrderStrategyInfo =
 	{
 		Basic =
 		{
-			{ "flag_capture" }, { "flag_capture" },
-			{ "flag_capture" }, 
-			{ "squad", "eldar_squad_bonesinger" },
-			{ "squad", "eldar_storm_guardian_squad" },
+                        { "flag_capture" }, { "flag_capture" },
+			{ "squad", "eldar_guardian_squad" },
 			{ "squad", "eldar_guardian_squad" },
 			{ "squad", "eldar_storm_guardian_squad" },
-			{ "squad", "eldar_guardian_squad" },
 			{ "squad", "eldar_squad_bonesinger" },
-			{ "post_builder" }, { "post_builder" },
-			{ "building", "eldar_aspect_portal", true },
-			{ "building", "eldar_warp_generator", true },
-			{ "building", "eldar_webway_gate", true }
+                        { "post_builder" },{ "post_builder" },
+			{ "building", "eldar_aspect_portal", false },
+			{ "building", "eldar_warp_generator", false },
+			{ "building", "eldar_webway_gate", false }
 		},
 		
 		QuickStart =
@@ -198,17 +198,15 @@ BuildOrderStrategyInfo =
 		LargeMap =
 		{
 			{ "flag_capture" }, { "flag_capture" },
-			{ "flag_capture" },
 			{ "squad", "eldar_squad_bonesinger" },
 			{ "squad", "eldar_guardian_squad" },
 			{ "squad", "eldar_storm_guardian_squad" },
 			{ "squad", "eldar_guardian_squad" },
 			{ "squad", "eldar_squad_bonesinger" },
-			{ "squad", "eldar_storm_guardian_squad" },
 			{ "post_builder" }, { "post_builder" },
-			{ "building", "eldar_aspect_portal", true },
-			{ "building", "eldar_warp_generator", true },
-			{ "building", "eldar_webway_gate", true }
+			{ "building", "eldar_aspect_portal", false },
+			{ "building", "eldar_warp_generator", false },
+			{ "building", "eldar_webway_gate", false }
 		}
 	}
 }
@@ -216,6 +214,6 @@ AttackStrategyInfo =
 {
 	eldar_race =
 	{
-		MinArmyStrength = 550,
+		MinArmyStrength = 450,
 	},
 }

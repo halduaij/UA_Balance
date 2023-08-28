@@ -32,6 +32,7 @@ function InitCapturingList()
 	-- Get start positions
 	local aAllyStartPositions = {}
 	local aEnemyStartPositions = {}
+        local biHaveAlly = false
 	for oPlayer in cpu_manager.stats:GetPlayerStats() do
 
 		-- Check player
@@ -42,16 +43,17 @@ function InitCapturingList()
 				table.insert(aEnemyStartPositions, oPlayer:GetStartingPosition())
 			else
 				table.insert(aAllyStartPositions, oPlayer:GetStartingPosition())
+                                biHaveAlly = true
 			end
 		end
 	end
-
 	-- Find best strategic point to capture
-	for oStrategicPoint in resource_manager:GetStrategicPointAIs() do
+        local uManager = resource_manager:GetStrategicPointAIs()
+	for oStrategicPoint in uManager do
 		
 		-- Get position of strategic point
 		local vStratPos = oStrategicPoint:GetPosition()
-		
+
 		-- Get shortest pathing distance to my base
 		local iPathingDistanceToMyBase = cpu_manager:GetShortestPathingDistance(cpu_manager.start_pos, vStratPos, false)
 		
@@ -98,14 +100,13 @@ function InitCapturingList()
 			-- Relic points get a malus
 			if (oStrategicPoint:IsRelic()) then
 				iModifiedPathingDistance = iModifiedPathingDistance + 15
-			end
-			
-			-- Store strategic point
-			table.insert(CapturePlan.OrderedStratPoints, { oStrategicPoint, iModifiedPathingDistance, iPathingDistanceToMyBase,
+                        end
+			  -- Store strategic point
+			  table.insert(CapturePlan.OrderedStratPoints, { oStrategicPoint, iModifiedPathingDistance, iPathingDistanceToMyBase,
 														   iPathingDistanceToEnemyBase, iPathingDistanceToAllyBase })
 		end
 	end
-	
+        
 	-- Sort strat points
 	if (table.getn(CapturePlan.OrderedStratPoints) > 1) then
 	
@@ -137,7 +138,39 @@ function CapturePlan:__init( base_location ) super( CpuPlayer.CT_Resourcing )
 	
 	self.m_iNextUpdate = 0
 end
-
+function CapturePlan:TakeRelic()
+        local biHaveRelic = false
+        local bTakeRelic = true
+        local bfriendhaverelic = {}
+	-- Find best strategic point to capture
+        local uManager = resource_manager:GetStrategicPointAIs()
+          for oStrategicPoint in uManager do
+            if (oStrategicPoint:IsRelic() and AI_GetPlayerID()==oStrategicPoint:Owner()) then
+               biHaveRelic = true
+               break
+            end
+          end
+          for oPlayer in cpu_manager.stats:GetPlayerStats() do
+           if (oPlayer:GetPlayerID() ~= cpu_manager.player_id and not oPlayer:IsPlayerDead()) and not cpu_manager.player_stats:IsEnemy(oPlayer) then
+            for oStrategicPoint in uManager do
+             if (oStrategicPoint:IsRelic() and AI_GetPlayerID()~=oStrategicPoint:Owner() and cpu_manager:IsFriendly(oStrategicPoint:Owner())) then
+               bfriendhaverelic[oPlayer:GetPlayerID()-1000]=true
+             end
+            end
+            if bfriendhaverelic[oPlayer:GetPlayerID()-1000]~=true then
+               bfriendhaverelic[oPlayer:GetPlayerID()-1000]=false
+            end
+           end
+          end
+          if biHaveRelic then
+            for i in bfriendhaverelic do
+               if bfriendhaverelic[i]==false then
+                  bTakeRelic=false
+               end
+            end
+          end
+          return bTakeRelic
+end
 function CapturePlan:IsEqual( plan_name, plan_id )
 	return self:GetName() == plan_name
 end
@@ -283,13 +316,36 @@ function CapturePlan:FindFreeStrategicPoint()
 		end
 		CapturePlan.LastStratUpdate = g_iGMT
 	end
+        local bTakeRelic = true
+        local bfriendhaverelic = {}
+	for oPlayer in cpu_manager.stats:GetPlayerStats() do
+
+		-- Check player
+		if (oPlayer:GetPlayerID() ~= cpu_manager.player_id and not oPlayer:IsPlayerDead()) then
+		
+			-- Check for allies and enemies
+			if (not cpu_manager.player_stats:IsEnemy(oPlayer)) then
+                                biHaveAlly = true
+                                break
+			end
+		end
+	end
+        		if biHaveAlly then
+           		bTakeRelic = self:TakeRelic()
+        		end
 	-- Get closest strat point without threat
 	local iStratCount = table.getn(CapturePlan.StratPoints)
 	for iLoop1 = iStratCount, 1, -1 do
 	
 		-- Check only unlocked strategic points
 		local oStrategicPoint = CapturePlan.StratPoints[iLoop1]
-		if (not oStrategicPoint:IsLocked()) then
+--[[               if g_iGMT<90 then
+                local ShDis = oStrategicPoint:ShouldDisown(oStrategicPoint:GetPosition(),cpu_manager.player_stats:GetPlayerTeam(),60)
+               else
+                local ShDis = oStrategicPoint:ShouldDisown(oStrategicPoint:GetPosition(),cpu_manager.player_stats:GetPlayerTeam(),40)
+               end]]
+
+		if (not oStrategicPoint:IsLocked()) and ((bTakeRelic and oStrategicPoint:IsRelic()) or (not oStrategicPoint:IsRelic())) then 
 	
 			-- Get position
 			local vStratPos = oStrategicPoint:GetPosition()
@@ -310,6 +366,12 @@ function CapturePlan:FindFreeStrategicPoint()
 				-- Check capturer paths
 				for iLoop2 in aCapturers do
                                    if  (not cpu_manager:HasThreatOnPath(aCapturers[iLoop2][3], vStratPos, 30)) or (cpu_manager:HasThreatOnPath(aCapturers[iLoop2][3], vStratPos, 30) and aCapturers[iLoop2][2]>=200) then
+						self.capturing_squad = aCapturers[iLoop2][1]
+						table.remove(aCapturers, iLoop2)
+                                   end
+				end
+				for iLoop2 in aCapturers do
+                                   if self.capturing_squad==nil and (vPosThreat==0 or vPosThreat<iAlliedStrength) then
 						self.capturing_squad = aCapturers[iLoop2][1]
 						table.remove(aCapturers, iLoop2)
                                    end
@@ -452,7 +514,7 @@ function CapturePlan:FightBack()
 		local iRequisition = resource_manager:GetResourceAmount():Get( ResourceAmount.RT_Requisition )
 
 	   	-- Reinforce basic trooper while fighting for SP at gamestart
-		if (iRequisition > 200 and g_iGMT < DefendChokePointPlan.HarassingTime * 60) then
+		if (iRequisition > 110) then
 
 	   		if (not self.capturing_squad:IsReinforcing()) then
 		  

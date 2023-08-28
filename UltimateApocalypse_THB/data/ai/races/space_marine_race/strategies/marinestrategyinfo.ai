@@ -8,10 +8,10 @@ BuildBaseStrategyInfo =
 	space_marine_race =
 	{
 		post_builder = 2,
-		flag_capture = 2,
+		flag_capture = 3,
 
 		-- Reserve this amount for building units, reinforcing and upgrading
-		req_reserve = 150,
+		req_reserve = 100,
 		
 		--need at least this at all times
 		squad_cap_threshold = 2,
@@ -23,7 +23,12 @@ BuildBaseStrategyInfo =
 		Engineers =
 		{
 			--number of engineers we're aiming for
-			want = 4,
+			want = 3,
+			tier1 = 3,
+			tier2 = 5,
+			tier3 = 8,
+			tier4 = 8,
+                        max = 8,
 		},
 		
 		-- Is used to modify the army strength in the build programs (Allows faster balancing adjustments)
@@ -44,22 +49,17 @@ BuildBaseStrategyInfo =
 				{ 1, 135, 0, 0, 3,	"Building",	"space_marine_generator" },
 				{ 1, 90, 0, 0, 60,	"TurretAddon",	"space_marine_list_post_addon_1" },
 				{ 1, 75, 110, 0, 1,	"Building",	"space_marine_turret_bolter" },
-				{ 1, 175, 50, 250, 1,	"Building",     "space_marine_armoury" },
-				{ 1, 90, 0, 250, 100,	"TurretAddon",	"space_marine_list_post_addon_1" },
-				{ 1, 135, 0, 0, 5,	"Building",	"space_marine_generator" },
-				{ 1, 400, 130, 950, 1,	"Addon",	"space_marine_hq_addon_1" },
+				{ 1, 175, 50, 500, 1,	"Building",     "space_marine_armoury" },
 
 				{ 2, 130, 100, 0, 1,	"Unit",		"space_marine_squad_land_speeder" },
 				{ 2, 170, 140, 0, 1,	"Unit",		"space_marine_squad_razorback" },
 				{ 2, 280, 40, 0, 1,	"Unit",		"space_marine_squad_devastator" },
 				{ 2, 300, 70, 0, 1,	"Unit",		"space_marine_squad_chaplain" },
 				{ 2, 200, 125, 250, 1,	"Building",	"space_marine_vehicle_building" },
-				{ 2, 135, 0, 0, 6,	"Building",	"space_marine_generator" },
 				{ 2, 25, 90, 500, 35,	"TurretAddon",	"space_marine_turret_addon" },
-				{ 2, 240, 150, 500, 100,"TurretAddon",	"space_marine_list_post_addon_2" },
 				{ 2, 125, 50, 0, 1,	"Building",	"space_marine_ability_building" },
-				{ 2, 500, 500, 1500, 1,	"Addon",	"space_marine_hq_addon_2" },
 
+				{ 3, 0, 0, 0, 0,	"Restrict",	"space_marine_squad_thunderfire_cannon" },
 				{ 3, 195, 315, 0, 1,	"Unit",		"space_marine_squad_vindicator" },
 				{ 3, 200, 335, 0, 1,	"Unit",		"space_marine_squad_dreadnought_ironclad" },
 				{ 3, 210, 340, 0, 1,	"Unit",		"space_marine_squad_whirlwind" },
@@ -67,7 +67,6 @@ BuildBaseStrategyInfo =
 				{ 3, 340, 60, 0, 1,	"Unit",		"space_marine_squad_sternguard_veteran" },
 				{ 3, 340, 60, 0, 1,	"Unit",		"space_marine_squad_vanguard_veteran" },
 				{ 3, 175, 100, 0, 1,	"Building",	"space_marine_orbital_relay" },
-				{ 3, 700, 150, 500, 2,	"Building",	"space_marine_hq" },
 				{ 3, 1000, 1000, 2000, 1,"Research",	"marine_heavy_armor_deployment" },
 
 				{ 4, 230, 410, 0, 1,	"Unit",		"space_marine_squad_predator" },
@@ -107,7 +106,7 @@ BuildBaseStrategyInfo =
 			{
 				space_marine_squad_scout = 2,
 				space_marine_squad_tactical = 3,
-				space_marine_squad_tactical_bike = 3,
+				space_marine_squad_tactical_bike = 1,
 				space_marine_squad_assault = 3,
 				space_marine_squad_devastator = 3,
 				space_marine_squad_servitor_weapons = 2,
@@ -157,16 +156,13 @@ BuildOrderStrategyInfo =
 		 
 		Basic =
 		{
-			{ "flag_capture" }, { "post_builder" },
-			{ "flag_capture" }, { "post_builder" },
+			{ "flag_capture" }, { "flag_capture" },
 			{ "squad", "space_marine_squad_servitor" },
 			{ "squad", "space_marine_squad_scout" },
-			{ "flag_capture" }, { "post_builder" },
 			{ "squad", "space_marine_squad_scout" },
 			{ "squad", "space_marine_squad_scout" },
-			{ "squad", "space_marine_squad_servitor" },
-			{ "squad", "space_marine_squad_scout" },
-			{ "building", "space_marine_barracks", true },
+			{ "post_builder" }, { "post_builder" },
+			{ "building", "space_marine_barracks", false },
 			{ "building", "space_marine_generator" }
 		},		 
 		 
@@ -174,32 +170,26 @@ BuildOrderStrategyInfo =
 		QuickStart =
 		{
 			{ "flag_capture" }, { "flag_capture" }, 
-			{ "flag_capture" },
 			{ "squad", "space_marine_squad_servitor" },
 			{ "squad", "space_marine_squad_scout" },
-			{ "squad", "space_marine_squad_servitor" },
 			{ "squad", "space_marine_squad_scout" },
 			{ "squad", "space_marine_squad_scout" },
 			{ "squad", "space_marine_squad_scout" },
 			{ "post_builder" }, { "post_builder" },
-			{ "building", "space_marine_barracks", true },
-			{ "building", "space_marine_barracks", true },
+			{ "building", "space_marine_barracks", false },
+			{ "building", "space_marine_barracks", false },
 			{ "building", "space_marine_generator" }
 		},
 		 
 		LargeMap =
 		{
 			{ "flag_capture" }, { "flag_capture" }, 
-			{ "flag_capture" },
 			{ "squad", "space_marine_squad_servitor" },
 			{ "squad", "space_marine_squad_scout" },
-			{ "squad", "space_marine_squad_scout" },
-			{ "squad", "space_marine_squad_scout" },
-			{ "squad", "space_marine_squad_servitor" },
 			{ "squad", "space_marine_squad_scout" },
 			{ "squad", "space_marine_squad_scout" },
 			{ "post_builder" }, { "post_builder" },
-			{ "building", "space_marine_barracks", true },
+			{ "building", "space_marine_barracks", false },
 			{ "building", "space_marine_generator" }
 		}
 	}
@@ -209,6 +199,6 @@ AttackStrategyInfo =
 {
 	space_marine_race =
 	{
-		MinArmyStrength = 550,
+		MinArmyStrength = 250,
 	},
 }

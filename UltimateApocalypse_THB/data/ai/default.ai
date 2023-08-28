@@ -14,7 +14,7 @@ military_module 	= nil
 debug_display 		= nil
 
 --for assertions
-iCurrentPlayer = 0
+iCurrentPlayer = 1002
 ai_assert = false
 
 function DebugDisplay()
@@ -120,6 +120,11 @@ local cpu = AI_GetCpuPlayerFromID( AI_GetPlayerID() )
 cpu:NetSay(550001, false)
 end
 
+function think()
+cpu_manager.cpu_player:Enable(true)
+Rule_AddInterval(AI_Think, 0.124)
+end
+
 function InitializeAI()
 
 	player_id = AI_GetPlayerID()
@@ -130,8 +135,8 @@ function InitializeAI()
 	
 		dbAssert( build_manager ~= nil )
 		dbAssert( debug_display ~= nil )
-
-		Rule_AddInterval(AI_Think, 0.05)
+                cpu_manager.cpu_player:Enable(false)
+                Rule_AddOneShot(think, (cpu_manager.player_id-1000)*0.125)
 --		Rule_AddInterval(UpdateManagersCPU, 0.25)
 --		Rule_AddInterval(chat, 0.25)
 		Rule_AddInterval(UpdateStats, 1+(cpu_manager.player_id-1000)*0.125)

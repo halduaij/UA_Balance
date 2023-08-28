@@ -11,7 +11,7 @@ BuildBaseStrategyInfo =
 		flag_capture = 3,
 
 		--reserve this amount for building units/buildings (not for use in upgrading/ reinforcing)
-		req_reserve = 200,
+		req_reserve = 150,
 		
 		--need at least this at all times
 		squad_cap_threshold = 3,
@@ -23,7 +23,12 @@ BuildBaseStrategyInfo =
 		Engineers =
 		{
 			--number of engineers we're aiming for
-			want = 4,
+			want = 3,
+			tier1 = 3,
+			tier2 = 5,
+			tier3 = 8,
+			tier4 = 8,
+                        max = 8,
 		},
 		
 		-- Is used to modify the army strength in the build programs (Allows faster balancing adjustments)
@@ -46,8 +51,6 @@ BuildBaseStrategyInfo =
 				{ 1, 100, 40, 0, 1,	"Building",	"inquisition_civilian_bunker" },
 				{ 1, 140, 0, 0, 2,	"Building",	"inquisition_purification_decree" },
 				{ 1, 110, 110, 0, 1,	"Unit",		"inquisition_squad_chimera_transport" },
-				{ 1, 90, 80, 500, 100,	"TurretAddon",	"inquisition_imperial_icon_addon_1" },
-				{ 1, 135, 0, 500, 4,	"Building",	"inquisition_warp_generator" },
 			
 				
 				{ 2, 245, 40, 0, 1,	"Unit",		"inquisition_squad_inquisitor_lord" },
@@ -154,7 +157,6 @@ BuildOrderStrategyInfo =
 			{ "squad", "inquisition_squad_stormtroopers" },
 			{ "squad", "inquisition_squad_archivist" },
 			{ "squad", "inquisition_squad_archivist" },
-			{ "squad", "inquisition_squad_archivist" },
 			{ "squad", "inquisition_squad_stormtroopers" },
 			{ "squad", "inquisition_squad_stormtroopers" },
 			{ "building", "inquisition_watch", true },
@@ -200,6 +202,6 @@ AttackStrategyInfo =
 {	
 	inquisition_daemonhunt_race =
 	{
-		MinArmyStrength = 750,
+		MinArmyStrength = 500,
 	},
 }

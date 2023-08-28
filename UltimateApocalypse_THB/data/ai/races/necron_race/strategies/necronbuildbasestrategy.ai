@@ -211,6 +211,25 @@ function NecronBuildBaseStrategy:UpdateTierLevel()
 	end
 end
 
+function NecronBuildBaseStrategy:CheckTech()
+        if self.tierLevel == 1 then
+        self.techongotype = "addon"
+        self.techongoname = "addon_necron_hq_1"
+        elseif self.tierLevel == 2 then
+        self.techongotype = "addon"
+        self.techongoname = "addon_necron_hq_2"
+        elseif self.tierLevel == 3 then
+        self.techongotype = "building"
+        self.techongoname = "necron_summoning_core_big"
+        elseif self.tierLevel == 4 then
+        self.techongotype = "building"
+        self.techongoname = "necron_energy_core"
+        elseif self.tierLevel == 5 then
+        self.techongotype = "research"
+        self.techongoname = "necron_apocalypse_research"
+        end
+end
+
 function NecronBuildBaseStrategy:BuildFlexible()
   
 	-- Locales
@@ -273,11 +292,6 @@ function NecronBuildBaseStrategy:BuildFlexible()
 			
 			-- Compute turret upgrades research
 			self:DynamicResearch("necron_turret_upgrade1", 2, 0, 200, 0, 0, nil, 0)
-	
-			-- Compute HQ Tier2 Addons for future HQs
-			if (self:GetBuildingCountByName("monolith") > 1 and (iPower >= 2000)) then
-				self:DynamicAddon("addon_necron_hq_1", 100, 2, 0, 400, 0, 0, nil, nil, false)
-			end
 		end
 
 		-- Compute tier 3 researches
@@ -309,11 +323,6 @@ function NecronBuildBaseStrategy:BuildFlexible()
 				self:DynamicResearch("necron_heavy_destroyer_boost", 3, 0, 150, 0, 0, "necron_heavy_destroyer_squad", 1)
 				self:DynamicResearch("necron_vehicle_armor_research", 3, 0, 200, 0, 0, nil, 0)
 				self:DynamicResearch("necron_destroyer_boost_2", 3, 0, 200, 0, 0, "necron_destroyer_squad", 1)
-			end
-
-			-- Compute HQ Tier3 Addons for future HQs
-			if (self:GetBuildingCountByName("monolith") > 1 and (iPower >= 4000)) then
-				self:DynamicAddon("addon_necron_hq_2", 50, 3, 0, 600, 0, 0, nil, nil, false)
 			end
 		end
 
@@ -436,114 +445,50 @@ function NecronBuildBaseStrategy:BuildFlexible()
 		
 		-- Dynamic buildings
 		-- Item-Syntax: BuildingName, BuildingCount, MinTier, MinRequisition, MinPower, MinSquadCap, MinSupportCap
-		self:DynamicBuild("monolith", 2, 2, 0, 700, 0, 0)
-	        self:DynamicBuild("necron_plasma_generator", 5 * self:GetBuildingCountByName("monolith"), 2, 0, 200, 0, 0)
-		self:DynamicBuild("necron_amplification_generator", 10 * self:GetBuildingCountByName("monolith"), 2, 0, 500, 0, 0)
+	        self:DynamicBuild("necron_plasma_generator", 6 * self:GetBuildingCountByName("monolith"), 2, 0, 200, 0, 0)
+		self:DynamicBuild("necron_amplification_generator", 10 * self:GetBuildingCountByName("monolith"), 2, 0, 200, 0, 0)
 
-		-- Dynamically regulate quantity of defensive buildings based on how many strats/crits/relics we have through the tiers so we avoid cluttering/bottlenecking on maps with limited points
-		if (self.tierLevel >= 2 and (iPower >= 1500)) then
-    			if (resource_manager:GetNumOwnedStrategicPoints() < 4) or (resource_manager:GetNumOwnedStrategicPoints() < 3 and self:HasCriticalLocation()) or (resource_manager:GetNumOwnedStrategicPoints() < 3 and self:HasRelic()) then
-				self:DynamicBuild("necron_turret", 2, 2, 0, 200, 0, 0)
-				self:DynamicBuild("necron_turret_missile_sp", 2, 2, 0, 300, 0, 0)
-				self:DynamicBuild("necron_wall", 2, 3, 0, 400, 0, 0)
-				self:DynamicBuild("necron_turret", 4, 3, 0, 300, 0, 0)
-				self:DynamicBuild("necron_turret_missile_sp", 4, 3, 0, 400, 0, 0)
-				self:DynamicBuild("necron_wall", 4, 3, 0, 500, 0, 0)
-   			end
-		else
-   			if (resource_manager:GetNumOwnedStrategicPoints() > 3) or (resource_manager:GetNumOwnedStrategicPoints() > 2 and self:HasCriticalLocation()) or (resource_manager:GetNumOwnedStrategicPoints() > 2 and self:HasRelic()) then
-				self:DynamicBuild("necron_turret", 3, 2, 0, 200, 0, 0)
-				self:DynamicBuild("necron_turret_missile_sp", 3, 2, 0, 300, 0, 0)
-				self:DynamicBuild("necron_wall", 3, 3, 0, 400, 0, 0)
-				self:DynamicBuild("necron_turret", 6, 3, 0, 300, 0, 0)
-				self:DynamicBuild("necron_turret_missile_sp", 6, 3, 0, 400, 0, 0)
-				self:DynamicBuild("necron_wall", 6, 3, 0, 500, 0, 0)
-			end
-		end
+              local Numpoint = resource_manager:GetNumOwnedStrategicPoints()
+              if iPower >= 100 then
+		self:DynamicAddon("addon_necron_list_post_1", 1*Numpoint, 1, 0, 0, 0, 0, nil, nil, false)
+              elseif iPower >= 300 then
+		self:DynamicAddon("addon_necron_list_post_2", 1*Numpoint, 3, 0, 0, 0, 0, nil, nil, false)
+              end
 
-		if (self.tierLevel >= 4 and (iPower >= 2500)) then
-    			if (resource_manager:GetNumOwnedStrategicPoints() > 4) or (resource_manager:GetNumOwnedStrategicPoints() > 3 and self:HasCriticalLocation()) or (resource_manager:GetNumOwnedStrategicPoints() > 3 and self:HasRelic()) then
-				self:DynamicBuild("necron_turret_battery", 1, 4, 0, 400, 0, 0)
-				self:DynamicBuild("necron_turret", 8, 4, 0, 200, 0, 0)
-				self:DynamicBuild("necron_turret_missile_sp", 8, 4, 0, 300, 0, 0)
-				self:DynamicBuild("necron_wall", 8, 4, 0, 400, 0, 0)
-				self:DynamicBuild("necron_turret_battery", 2, 5, 0, 400, 0, 0)
-				self:DynamicBuild("necron_turret", 10, 5, 0, 300, 0, 0)
-				self:DynamicBuild("necron_turret_missile_sp", 10, 5, 0, 400, 0, 0)
-				self:DynamicBuild("necron_wall", 10, 5, 0, 500, 0, 0)
-				self:DynamicBuild("necron_turret_battery", 3, 5, 0, 800, 0, 0)
-				self:DynamicBuild("necron_turret", 12, 6, 0, 300, 0, 0)
-				self:DynamicBuild("necron_turret_missile_sp", 12, 6, 0, 400, 0, 0)
-				self:DynamicBuild("necron_wall", 12, 6, 0, 500, 0, 0)
-				self:DynamicBuild("necron_turret_battery", 5, 6, 0, 1000, 0, 0)
-			end
-		end
+              local num_hq = self:GetBuildingCountByName(self:GetBuildingName("HQ"))
+		                self:DynamicBuild("monolith", Numpoint/2 , 2, 0, 400 + 250*(num_hq), 0, 0)
+                if iPower >= 1800 then
+				self:DynamicBuild("necron_resurrection_beacon", 2*num_hq, 3, 0, 200, 0, 0)
+				self:DynamicBuild("necron_sterilization_obelisk", num_hq, 4, 0, 200, 0, 0)
+				self:DynamicBuild("monolith_super", num_hq, 4, 0, 4000, 0, 0)
+				self:DynamicBuild("necron_summoning_core_big", num_hq/2, 4, 0, 3000, 0, 0)
+                end
 
-		-- Build additional support buildings as tiers progress
-		if (self.tierLevel >= 2) then
-			if (iPower >= 2000) then
-				self:DynamicBuild("monolith", 3, 3, 0, 1000, 0, 0)
-				self:DynamicBuild("monolith", 4, 5, 0, 2000, 0, 0)
-				self:DynamicBuild("monolith_super", 2, 5, 0, 4000, 0, 0)
-				self:DynamicBuild("monolith_super", 3, 5, 0, 8000, 0, 0)
-				self:DynamicBuild("necron_summoning_core_big", 2, 5, 0, 5000, 0, 0)
-			end
-		end
-
-		-- Build additional uber buildings in later tiers
-		if (self.tierLevel >= 6) then
-			if (iPower >= 3000) then
-				self:DynamicBuild("necron_summoning_core_big", 3, 6, 0, 8000, 0, 0)
-			end
-		end
-
-		-- Ensure Greater Summoning Core is re-built quickly if destroyed or if AI stagnates
-		if (self.tierLevel >= 3 and iPower >= 3000) then
-			if (self:GetBuildingCountByName("necron_summoning_core_big") < 1) then
-				self:DynamicBuild("necron_summoning_core_big", 1, 3, 0, 1500, 0, 0)
-			end
-		end
-
-		-- Ensure Energy Core is re-built quickly if destroyed or if AI stagnates
-		if (self.tierLevel >= 4 and iPower >= 4000) then
-			if (self:GetBuildingCountByName("necron_energy_core") < 1) then
-				self:DynamicBuild("necron_energy_core", 1, 4, 0, 2000, 0, 0)
-			end
-		end
-
-		-- Build only Resurrection Beacons if the Death Lord is on the battlefield
-		local i_deathlordsquad = self:CountSquads("necron_lord_death_squad")
-		if (i_deathlordsquad >= 1) then
-			self:DynamicBuild("necron_resurrection_beacon", 1, 4, 0, 200, 0, 0)
-			self:DynamicBuild("necron_resurrection_beacon", 2, 4, 0, 400, 0, 0)
-			self:DynamicBuild("necron_resurrection_beacon", 3, 5, 0, 600, 0, 0)
-			self:DynamicBuild("necron_resurrection_beacon", 4, 5, 0, 800, 0, 0)
-			self:DynamicBuild("necron_resurrection_beacon", 5, 6, 0, 1000, 0, 0)
-			self:DynamicBuild("necron_resurrection_beacon", 6, 6, 0, 1500, 0, 0)
-		end
-
-		-- Build the max # of Sterilization Obelisks allowed if we have a Relic
-		if self:HasRelic() then
-			self:DynamicBuild("necron_sterilization_obelisk", 1, 4, 0, 350, 0, 0)
-			self:DynamicBuild("necron_sterilization_obelisk", 2, 4, 0, 450, 0, 0)
-			self:DynamicBuild("necron_sterilization_obelisk", 3, 4, 0, 550, 0, 0)
-			self:DynamicBuild("necron_sterilization_obelisk", 4, 5, 0, 650, 0, 0)
-			self:DynamicBuild("necron_sterilization_obelisk", 5, 5, 0, 750, 0, 0)
-		end
+                if iPower >= 2300 then
+				self:DynamicBuild("necron_turret", 2*Numpoint, 2, 0, 0, 0, 0)
+				self:DynamicBuild("necron_turret_missile_sp", 2*Numpoint, 2, 0, 0, 0, 0)
+				self:DynamicBuild("necron_turret_battery", Numpoint, 4, 0, 0, 0, 0)
+                end
 
 		-- Build an extra big powa plant if we need dat POWA!
 		local iPowRate = resource_manager:GetResourceRate( ResourceAmount.RT_Power )
 		if (iPowRate <= 1300) then
 			self:DynamicBuild("necron_heavy_thermoplasma_generator", 2, 5, 0, 7000, 0, 0)
 		end
-
-		-- Build additional Pyramids if we have lots of excess power
-		if (iPower >= 12000) then
-			self:DynamicBuild("monolith_super", 4, 6, 0, 8000, 0, 0)
-			self:DynamicBuild("monolith_super", 5, 6, 0, 12000, 0, 0)
-			self:DynamicBuild("monolith_super", 6, 6, 0, 14000, 0, 0)
-		end
 	end
+end
+
+function NecronBuildBaseStrategy:ForceTechCheck(name)
+         local iID = cpu_manager.stats:GetAddOnID(name)
+	 if (self:PlanExists("Build AddOn Plan", iID)) then
+	 	return
+	 end
+	 local tBuildType = CpuBuildType()
+	 tBuildType.name = name
+	 tBuildType.btype = CpuPrerequisites.BT_AddOn
+	 if (self:TryBuild( tBuildType )) then
+	 	aitrace("BuildController: Build of addon "..name)
+	 end
 end
 
 -- Arkhan 01.2006: Method to check if force tech should be computed
@@ -562,23 +507,38 @@ function NecronBuildBaseStrategy:ForceTech()
 	if (iTierLevel == 1) then
 	
 		-- Check resources
-		if (iPower >= 500) then
-			return false
+		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier1 or (iPower > 600)) then
+			self:ForceTechCheck("addon_necron_hq_1")
+			return true
 		end
-		return not self.m_bHQAddon1
-	
+		
 	elseif (iTierLevel == 2) then
-
-		-- Check resources
-		if (iPower >= 800) then
-			return false
+		
+		-- Check time
+		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier2 or (iPower > 600)) then
+			self:ForceTechCheck("addon_necron_hq_2")
+			return true
 		end
-		return not self.m_bHQAddon2
 		
 	elseif (iTierLevel == 3) then	
 
-		-- Check for large summoning core
-		if (self:GetBuildingCountByName("necron_summoning_core_big", false) < 1) and iPower <= 1500 then
+		-- Check time
+		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier3 or (iPower > 1500)) then
+			self:DynamicBuild("necron_summoning_core_big", 1, 2, 0, 0, 0, 0, false)
+			return true
+		end
+	elseif (iTierLevel == 4) then	
+
+		-- Check time
+		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier4 or (iPower > 2000)) then
+                        self:DynamicBuild("necron_energy_core", 1, 2, 0, 0, 0, 0, false)
+			return true
+		end
+	elseif (iTierLevel == 5) then	
+
+		-- Check time
+		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier5 or (iPower > 4000)) then
+			self:DynamicResearch("necron_apocalypse_research", 5, 4000, 0, 0, 0, nil, 0, false)
 			return true
 		end
 	end
@@ -594,14 +554,14 @@ function NecronBuildBaseStrategy:GetPlacementType(iBuildingID)
 		local friend = cpu_manager:FindClosestFriendPlayer()
 		if friend == nil then
 			-- Lone Player
-                	if count == 0 and not cpu_manager:HQThreat() then
+                	if not cpu_manager:HQThreat() then
                     		return "HQ"
                 	else
                     		return "Safeplace"
                 	end
         	else
         		-- Has allies
-                	if count > 2 or cpu_manager:HQThreat() then
+                	if count > 0 or cpu_manager:HQThreat() then
  				return "HQ"
                 	else
 				return "Safeplace"

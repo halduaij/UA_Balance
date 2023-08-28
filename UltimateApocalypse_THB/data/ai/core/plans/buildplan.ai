@@ -74,7 +74,38 @@ function BuildPlan:BuildingState()
 	else
 	
 		self.time_out = self.time_out + 1
-		if (self.time_out > 1) then
+		if (self.time_out > 25) then
+			self:Retry()
+			self.time_out = 0
+		end
+		aitrace("BuildPlan: Still waiting to begin building "..self.item_name)
+	end
+end
+
+function BuildPlan:BuildingStateAddon()
+
+	dbAssert( self.builder ~= nil )
+	dbAssert( self.item_name ~= nil )
+
+	-- Am i building yet?
+	if (self.builder:IsBuilding() == self.item_id) then
+		
+		aitrace("BuildPlan: Currently building a "..self.item_name)
+		
+		if (self.started_building == false) then
+			self.started_building = true
+			self:OnEvent( Plan.Events.OnPlanStart )
+		end
+		
+	elseif (self.started_building == true) then
+		
+		-- Done building!
+		aitrace("BuildPlan: Building completed! End build plan for "..self.item_name)
+		Plan.SetComplete(self, true)
+	else
+	
+		self.time_out = self.time_out + 1
+		if (self.time_out > 3) then
 			self:Retry()
 			self.time_out = 0
 		end

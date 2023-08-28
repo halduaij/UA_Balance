@@ -7,7 +7,7 @@ BuildBaseStrategyInfo =
 	dark_eldar_race =
 	{
 		post_builder = 1,
-		flag_capture = 1,
+		flag_capture = 3,
 
 		-- Reserve this amount for building units, reinforcing and upgrading
 		req_reserve = 150,
@@ -22,7 +22,12 @@ BuildBaseStrategyInfo =
 		Engineers =
 		{
 			--number of engineers we're aiming for
-			want = 8,
+			want = 1,
+			tier1 = 3,
+			tier2 = 5,
+			tier3 = 6,
+			tier4 = 8,
+                        max = 8,
 		},
 		
 		-- Is used to modify the army strength in the build programs (Allows faster balancing adjustments)
@@ -49,8 +54,6 @@ BuildBaseStrategyInfo =
 				{ 1, 100, 0, 0, 1,	"Building",	"dark_eldar_portal" },
 				{ 1, 75, 110, 0, 1,	"Building",	"dark_eldar_turret" },
 			        { 1, 0, 0, 0, 100,	"Addon",	"addon_dark_eldar_gruesome_display_building" },
-				{ 1, 150, 0, 0, 4,	"Building",	"dark_eldar_plasma_generator" },
-				{ 1, 400, 130, 950, 1,	"Addon",	"addon_dark_eldar_hq_1" },
 				
 				{ 2, 75, 125, 0, 1,	"Unit",		"dark_eldar_squad_haemonculus" },
 				{ 2, 240, 40, 0, 1,	"Unit",		"dark_eldar_squad_archon" },
@@ -63,7 +66,6 @@ BuildBaseStrategyInfo =
 				{ 2, 50, 25, 500, 75,	"TurretAddon",	"addon_dark_eldar_list_post_dark_lance" },
 				{ 2, 240, 160, 0, 50,	"TurretAddon",	"addon_dark_eldar_list_post_2" },
 				{ 2, 700, 150, 1000, 2,	"Building",	"dark_eldar_hq" },
-				{ 2, 500, 500, 1000, 1,	"Addon",	"addon_dark_eldar_hq_2" },
 				
 				{ 3, 75, 0, 0, 8,	"Unit",		"dark_eldar_squad_slave" },
 				{ 3, 240, 105, 0, 1,	"Unit",		"dark_eldar_squad_incubus" },
@@ -136,13 +138,11 @@ BuildOrderStrategyInfo =
 		{
 			{ "flag_capture" }, { "flag_capture" },
 			{ "squad", "dark_eldar_squad_mandrake" },
+			{ "squad", "dark_eldar_squad_mandrake" },
 			{ "squad", "dark_eldar_squad_slave" },
 			{ "squad", "dark_eldar_squad_mandrake" },
-			{ "squad", "dark_eldar_squad_mandrake" },
-			{ "squad", "dark_eldar_squad_mandrake" },
-			{ "squad", "dark_eldar_squad_mandrake" },
 			{ "post_builder" },
-			{ "building", "dark_eldar_hall_of_blood", true },
+			{ "building", "dark_eldar_hall_of_blood", false },
 			{ "building", "dark_eldar_slave_caravel_ai"},
 			{ "building", "dark_eldar_plasma_generator"}
 		},
@@ -167,16 +167,13 @@ BuildOrderStrategyInfo =
 		LargeMap =
 		{
 			{ "flag_capture" }, { "flag_capture" }, 
-			{ "flag_capture" },
+			{ "squad", "dark_eldar_squad_mandrake" },
 			{ "squad", "dark_eldar_squad_mandrake" },
 			{ "squad", "dark_eldar_squad_slave" },
 			{ "squad", "dark_eldar_squad_mandrake" },
-			{ "squad", "dark_eldar_squad_mandrake" },
-			{ "squad", "dark_eldar_squad_mandrake" },
-			{ "squad", "dark_eldar_squad_mandrake" },
 			{ "post_builder" }, { "post_builder" },
-			{ "building", "dark_eldar_hall_of_blood", true },
-			{ "building", "dark_eldar_plasma_generator", true },
+			{ "building", "dark_eldar_hall_of_blood", false },
+			{ "building", "dark_eldar_plasma_generator", false },
 			{ "building", "dark_eldar_plasma_generator" }
 		}
 	}

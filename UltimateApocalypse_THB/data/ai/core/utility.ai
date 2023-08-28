@@ -3,7 +3,9 @@
 -- Edited by Thudmeizer @ 31.10.2007
 -- Edited by LarkinVB   @ 25.04.2005
 -- Edited by Arkhan     @ 06.01.2006
-
+--self.m_oAttackPlan,i
+---- equalVector3f
+--for i=1,AttackStrategy.iMaxAttackPoints do
 VALUE_NEVER_BUILD		= -400000
 VALUE_LOCK_BUILD		= -200000
 
@@ -29,18 +31,20 @@ tracing = {}
 
 -- ATTENTION : these have to be set to false for release, otherwise there will be lag !!!
 g_bAITrace = false
+g_bAITracet = false
 g_bDebugMode = false
 
 function aitrace( msg, bAILog, bReset )
-
+        if msg==nil then
+           return
+        end
 	if (g_bAITrace or (bAILog and g_bDebugMode)) then
 	
 		for i = 0, stack_trace_num-1 do
 			msg = ("   "..msg)
 		end
 	
-		table.insert(tracing, msg)
-		
+		table.insert(tracing, msg)	
 	    local gmt = g_iGMT
 	    local mint = math.floor( gmt / 60 )
 	    local sec = math.mod( gmt, 60 )
@@ -70,7 +74,46 @@ function aitrace( msg, bAILog, bReset )
 		end
 	end
 end
-
+function aitracet( msg, bAILog, bReset )
+        if msg==nil then
+           return
+        end
+	if (g_bAITracet or (bAILog and g_bDebugMode)) then
+	
+		for i = 0, stack_trace_num-1 do
+			msg = ("   "..msg)
+		end
+	
+		table.insert(tracing, msg)	
+	    local gmt = g_iGMT
+	    local mint = math.floor( gmt / 60 )
+	    local sec = math.mod( gmt, 60 )
+	    local timestr = string.format("%02.0f",mint)..":"..string.format("%02.0f",sec)
+		local txt = timestr.." "..msg
+		
+		if (g_bAITracet) then
+			local log = io.open("Ai_Extended"..tostring(player_id)..".log", "a+")
+			if (log) then
+				log:write("AI"..tostring(player_id), " ", txt, "\n")
+				log:close()
+			end
+		else
+			if (bReset) then
+				local log = io.open("AI_Log.txt", "w+")
+				if (log) then
+					log:write("AI"..tostring(player_id), " ", txt, "\n")
+					log:close()
+				end
+			else
+				local log = io.open("AI_Log.txt", "a+")
+				if (log) then
+					log:write("AI"..tostring(player_id), " ", txt, "\n")
+					log:close()
+				end		
+			end
+		end
+	end
+end
 function aitraceinit( msg )
 
 	if g_bAITrace then
@@ -79,8 +122,7 @@ function aitraceinit( msg )
 			msg = ("   "..msg)
 		end
 	
-		table.insert(tracing, msg)
-		
+		table.insert(tracing,msg)	
 	    local gmt = cpu_manager.cpu_player:GetGameTime() / 8
 	    local mint = math.floor( gmt / 60 )
 	    local sec = math.mod( gmt, 60 )
@@ -187,7 +229,6 @@ function foreach_bindCount( tbl, func, ... )
 
 end
 
-
 function distance( vec1, vec2 )
 	return (vec1 - vec2):Length()
 end
@@ -219,7 +260,7 @@ function profile_start( name )
     if g_profile then
 	   aiprofile_start( cpu_manager.cpu_player, name )
 	elseif a_profile then
-	   aitimelog("f:\\logs\\trace.log", "START "..name )  
+	   aitimelog("f:\\games\\trace.log", "START "..name )  
 	end
 
 end
@@ -328,19 +369,19 @@ end
 
 function blg( squad, msg )
 
-   if true then
-      return
-   end
+--   if true then
+--      return
+--   end
       
    if squad == nil then
 	  aitimelog( "d:\\logs\\prereq"..player_id..".txt", msg )
 	  return
    end
 
-   --only log single AI
+   --[[only log single AI
    if true or cpu_manager.player_id ~= iCurrentPlayer then
 	  return
-   end
+   end]]
       
    local is_eng = squad:IsEngineer()   
    local tactic = squad:GetTactic()
@@ -439,6 +480,7 @@ function GenerateUnitEffectiveness( light_low, light_med, light_high, heavy_med,
 	effectiveness[ UnitStatsAI.UC_AirLow ]		 	= air_low
 	effectiveness[ UnitStatsAI.UC_AirMed ] 			= air_med
 	effectiveness[ UnitStatsAI.UC_AirHigh ] 		= air_high
+--        effectiveness[ UnitStatsAI.UC_Count ] 		        = count
 
 	return effectiveness
 end
@@ -500,4 +542,33 @@ function ModIsPresent(module_file, iswa)
     else
         return false
     end
+end
+
+function equalVector3f(vector1, vector2, radius)
+  if vector1.x==vector2.x and vector1.y==vector2.y and vector1.z==vector2.z then
+   return true
+  end
+  if radius~=nil then
+   if distance(vector1, vector2)<radius then
+    return true
+   end
+  end
+ return false
+end
+
+function getTableSize(t)
+    local count = 0
+    for _, __ in pairs(t) do
+        count = count + 1
+    end
+    return count
+end
+
+function getTableSizeRound(t)
+    local count = 0
+    for _, __ in pairs(t) do
+        count = count + 1
+    end
+    count=count+1
+    return count
 end

@@ -44,7 +44,8 @@ function DefendChokePointPlan:CheckHarassingMode()
 	
 	-- Try to get the leader
 	local sLeaderName = cpu_manager:GetHarassingLeader()
-	for oSquad in military_manager:GetUnlockedSquads() do
+        local uManager = military_manager:GetUnlockedSquads()
+	for oSquad in uManager do
 
 		-- Check for valid squad
 		if (oSquad:IsValid() and not oSquad:IsEngineer() and not oSquad:IsCapturing() and oSquad:GetTactic():IsDefender()) then
@@ -159,8 +160,8 @@ function DefendChokePointPlan:Defending()
 	-- Grab an idle dude
 	local iMinStrength = 60 * cpu_manager:GetTierLevel()
 	local iRangeSqr = sqr(35)
-
-	for squad_ai in military_manager:GetUnlockedSquads() do
+        local uManager = military_manager:GetUnlockedSquads()
+	for squad_ai in uManager do
 	
 		-- Check for valid squad
 		if (squad_ai:IsValid() and not squad_ai:IsEngineer()) then

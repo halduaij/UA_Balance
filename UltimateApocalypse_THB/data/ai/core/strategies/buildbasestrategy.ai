@@ -8,6 +8,11 @@
 -- Edited by Dark40k    @ 14.10.2008
 -- Edited by Aliaska_RuS
 
+----
+
+
+
+
 class 'BuildBaseStrategy' (Strategy)
 
 BuildBaseStrategy.iBuildProgram = 1
@@ -38,6 +43,8 @@ function BuildBaseStrategy:__init( baseinfo ) super( baseinfo )
         self.m_iCurrentBuildProgram = 0
         if (CpuManager.AISettings.bAlternativeStrategies) then
 		self.m_iCurrentBuildProgram = self:ChooseBuildProgram()
+                BuildBaseStrategy.iBuildProgram = self.m_iCurrentBuildProgram
+                print("CPU PLAYER"..cpu_manager.player_id.." Set Strategy:"..BuildBaseStrategy.iBuildProgram)
 	end
 
 	self.debug_effectiveness = false
@@ -69,7 +76,12 @@ function BuildBaseStrategy:__init( baseinfo ) super( baseinfo )
     if level == CpuPlayer.AD_Insane then
         self.info.Engineers.want = self.info.Engineers.want + 1    
     end
-
+    
+    if map_size=="small" then
+    CpuManager.ForceTech.StartTier1 = CpuManager.ForceTech.StartTier1 + 2
+    CpuManager.ForceTech.StartTier2 = CpuManager.ForceTech.StartTier2 + 2
+    CpuManager.ForceTech.StartTier3 = CpuManager.ForceTech.StartTier3 + 2
+    end
         self.post_builder = self.info.post_builder
 	--put a cap on tactics spendage
 	Tactic.ResourceFloor.requisition = self.info.req_reserve
@@ -198,21 +210,22 @@ function BuildBaseStrategy:GetTierLevel()
 end
 
 function BuildBaseStrategy:AddDetectorUnit(sUnitName)
-	table.insert(self.m_aDetectors, sUnitName)
+	table.insert(self.m_aDetectors,sUnitName)
 end
 
 function BuildBaseStrategy:CheckTechBufer()
-        if self.techongotype == addon then
+        self.techongo = false
+        if self.techongotype == "addon" then
         local iTechID = cpu_manager.stats:GetAddOnID(self.techongoname)
 	  if (self:PlanExists("Build AddOn Plan", iTechID) == true) then 
 		self.techongo = true
           end
-        elseif self.techongotype == research then
+        elseif self.techongotype == "research" then
         local iTechID = cpu_manager.stats:GetResearchID(self.techongoname)
 	  if (self:PlanExists("Build Research Plan", iTechID) == true) then 
 		self.techongo = true
           end
-        elseif self.techongotype == building then
+        elseif self.techongotype == "building" then
         local iTechID = cpu_manager.stats:GetBuildingID(self.techongoname)
 	  if (self:PlanExists("Build Building Plan", iTechID) == true) then 
 		self.techongo = true
@@ -330,17 +343,17 @@ function BuildBaseStrategy:CalculateAll( enemy_id )
 
 		local differenceEffectivness = self_eff - enemy_class_rating
 		local differenceEffectivnessBad = enemy_class_rating - self_eff
-                differenceEffectivnessBad = differenceEffectivnessBad / 3
+                differenceEffectivnessBad = differenceEffectivnessBad / 2
 
 		local differenceClass = enemy_eff - self_class_rating
 		local differenceClassBed = max_enemy_eff - enemy_eff
-                differenceClassBed = differenceClassBed / 3
+                differenceClassBed = differenceClassBed / 2
 
 		self:IncEffectivenessDemand( class, differenceEffectivness )
-		self:IncEffectivenessDemand( class, differenceEffectivnessBad )
+		--self:IncEffectivenessDemand( class, differenceEffectivnessBad )
 
 		self:IncClassDemand( class, differenceClass )
-		self:IncClassDemand( class, differenceClassBed )
+		--self:IncClassDemand( class, differenceClassBed )
 	end
 end
 
@@ -366,7 +379,7 @@ function BuildBaseStrategy:CalculateEngineerDemand()
 	if (self.tierLevel == 5 and self.info.Engineers.tier4~=nil) then
         limit = self.info.Engineers.tier4
         end
-        if iRequisition > 1000 then
+        if iRequisition > 2000 then
         limit = 10
         end
 
@@ -387,7 +400,7 @@ function BuildBaseStrategy:CalculateEngineerDemand()
 		end
 		
 		-- Check that the main base isn't under attack
-		if (cpu_manager:GetCriticalSituation() > 0) then
+		if (cpu_manager:GetCriticalSituation() > 0) and num_engineers~=0 then
 			return
 		end
 		
@@ -412,7 +425,7 @@ function BuildBaseStrategy:CalculateDetectorDemand()
 		-- Check if we already have this unit
 		local iUnitID = cpu_manager.stats:GetSquadID(self.m_aDetectors[iLoop1])	
 		local iUnitCount = cpu_manager.player_stats:GetNumSquadsByBPID(iUnitID)
-		if (iUnitCount > 0) then
+		if (iUnitCount > 1) then
 			return
 		end
 		
@@ -526,14 +539,15 @@ end
 function BuildBaseStrategy:CheckSupportCap(iMinRequisition, iMinPower)
 
 	-- Check support cap only if we have a vehicle building
-	if (self:GetBuildingCountByName(self:GetBuildingName("VehicleBuilding", true)) <= 0) then
-		return false
-	end
+	--if (self:GetBuildingCountByName(self:GetBuildingName("VehicleBuilding", true)) <= 0) then
+	--	return false
+	--end
 
 	-- Check squad cap
 	local iSupportCapTotalMax	= build_manager:GetSupportCapTotalMax()
 	local iSupportCapCurrentMax	= build_manager:GetSupportCapCurrentMax()
 	local iSupportCapLeft		= build_manager:GetSupportCapLeft()
+
 	if (iSupportCapLeft > self.info.support_cap_threshold or iSupportCapCurrentMax >= iSupportCapTotalMax) then
 		return false
 	end
@@ -581,7 +595,8 @@ function BuildBaseStrategy:CountSquads(sUnitName, oFunctor)
 end
 
 function BuildBaseStrategy:DeepStrikeAndRallyGo()
-        local vTargetPosAttack = AttackStrategy.m_vAttackPosition
+        local vTargetPosAttack = Vector3f(0,0,0)
+	vTargetPosAttack = AttackStrategy.m_vAttackPosition
         local vTargetPosDefend = DefendStrategy.m_vDefendPosition
         local vTargetPos = Vector3f(0,0,0)
         if (vTargetPosDefend.x ~= 0 or vTargetPosDefend.y ~= 0 or vTargetPosDefend.z ~= 0) then
@@ -589,22 +604,38 @@ function BuildBaseStrategy:DeepStrikeAndRallyGo()
         elseif (vTargetPosAttack.x ~= 0 or vTargetPosAttack.y ~= 0 or vTargetPosAttack.z ~= 0) then
         vTargetPos = vTargetPosAttack
         end
+        if (vTargetPos.x == 0 and vTargetPos.y == 0 and vTargetPos.z == 0) then
+	-- Try to get the leader
+	 local sLeaderName = cpu_manager:GetHarassingLeader()
+         local uManager = military_manager:GetSquads()
+	 for oSquad in uManager do
 
+		-- Check for valid squad
+		if (oSquad:IsValid() and not oSquad:IsEngineer()) then
+		
+			-- Check for leader
+			if (oSquad:GetSquadName() == sLeaderName or (oSquad:IsAttached() and oSquad:HasSquadAttached(sLeaderName))) then
+                                vTargetPos=oSquad:GetPosition()
+				break
+			end
+		end
+	 end
+        end
         if (vTargetPos.x ~= 0 or vTargetPos.y ~= 0 or vTargetPos.z ~= 0) then
-          if g_iGMT == Strategy.RallyPoint then
+           if g_iGMT >= Strategy.RallyPoint then
     	     for build_channel in build_manager:GetBuildChannelAIs() do
-                 if not cpu_manager:IsHQ(build_channel:GetBlueprintID()) and build_channel:ConstructionDone() and build_channel:IsBuilding()~=0 then
-                    if cpu_manager.stats:GetUnitStatsFromBPID(build_channel:IsBuilding())~=nil then
+                 if (build_channel:ConstructionDone() and build_channel:IsBuilding()~=0) and (not cpu_manager:IsHQ(build_channel:GetBlueprintID()) or vTargetPosDefend.x ~= 0) then
 		    build_channel:SetRallyPoint( vTargetPos )
-                    end
                  end
 	     end
+             Strategy.RallyPoint = g_iGMT + 2
           end
-         for build_channel in build_manager:GetBuildChannelAIs() do
+
+          for build_channel in build_manager:GetBuildChannelAIs() do
 
                        local name = build_channel:GetEntity()
 
-			if (build_channel:CanDeepStrike() and cpu_manager:MilitaryDeepStrike(build_channel:GetBlueprintID())) then
+		if (build_channel:CanDeepStrike() and cpu_manager:MilitaryDeepStrike(build_channel:GetBlueprintID())) then
 	                  local oDeepStrikeBuilding = name:GetPosition()
                            	if (build_channel:CanOnlyDeepStrikeToEntity()) then
 					
@@ -646,9 +677,10 @@ function BuildBaseStrategy:DeepStrikeAndRallyGo()
 		        elseif (CpuManager:GetShortestPathingDistance(oDeepStrikeBuilding, vTargetPos, false)<100) then
 					build_channel:DoDeepStrikeToPos(vTargetPos)
 				end			
-			end	
-         end	
-        else
+		end	
+          end	
+          return
+        end
          for build_channel in build_manager:GetBuildChannelAIs() do
                         if (build_channel:CanDeepStrike() and not build_channel:CanOnlyDeepStrikeToEntity()) then
                         local name = build_channel:GetEntity()
@@ -659,7 +691,6 @@ function BuildBaseStrategy:DeepStrikeAndRallyGo()
 				build_channel:DoDeepStrikeToPos(pos)
                         end
          end	
-        end
 end
 
 -- Arkhan 10.2005: Changed to fit the new build program concept
@@ -676,11 +707,11 @@ function BuildBaseStrategy:Update()
         end
 
 	aitrace("BuildBaseStrategy: 1", true)
-
+         if g_iGMT> 2 then
 	  if (self:PlanCount( "Resource Plan" ) < self.post_builder) then
 		self:AddPlan( ResourcePlan() )	
 	  end
-
+         end
 	-- Check my army strength
 --	self.m_iArmyStrength = cpu_manager:GetArmyStrength()
 --	aitrace("BuildController: Current army strength = "..tostring(self.m_iArmyStrength))
@@ -689,19 +720,20 @@ function BuildBaseStrategy:Update()
 	-- Set capture plans
         local level = cpu_manager.cpu_player:GetDifficultyLevel()
 	local iCapturePlans = self.info.flag_capture
-	if (cpu_manager:GetArmyStrength() > 2500) then
+        local iCapPlansCount = self:PlanCount( "Capture Plan" )
+	if (cpu_manager:GetArmyStrength() > 2500) and iCapPlansCount<4 and iCapPlansCount==2 then
 		iCapturePlans = iCapturePlans + 2
 	end
-        if (level == CpuPlayer.AD_Insane and g_iGMT<120 and cpu_manager.player_stats:GetPlayerRaceName() ~= "necron_race") then 
+        if (level == CpuPlayer.AD_Insane and g_iGMT<120 and cpu_manager.player_stats:GetPlayerRaceName() ~= "necron_race") and iCapPlansCount<4 and iCapPlansCount==2 then 
                 iCapturePlans = iCapturePlans + 2  
         end
-        if (level == CpuPlayer.AD_Advanced and g_iGMT<120 and cpu_manager.player_stats:GetPlayerRaceName() ~= "necron_race") then 
+        if (level == CpuPlayer.AD_Advanced and g_iGMT<120 and cpu_manager.player_stats:GetPlayerRaceName() ~= "necron_race") and iCapPlansCount<4 then 
                 iCapturePlans = iCapturePlans + 1  
         end
-        if g_iGMT < 300 and cpu_manager.player_stats:GetPlayerRaceName() ~= "necron_race" then
-		iCapturePlans = iCapturePlans + 4
+        if g_iGMT < 200 and cpu_manager.player_stats:GetPlayerRaceName() ~= "necron_race" and iCapPlansCount<4 and iCapPlansCount==1then
+		iCapturePlans = iCapturePlans + 2
         end
-        if g_iGMT > 60 and cpu_manager.player_stats:GetPlayerRaceName() == "necron_race" then
+        if g_iGMT > 60 and cpu_manager.player_stats:GetPlayerRaceName() == "necron_race"  and iCapPlansCount<3 and iCapPlansCount==1then
 		iCapturePlans = iCapturePlans + 2
         end
 	aitrace("BuildBaseStrategy: 3", true)
@@ -731,18 +763,19 @@ function BuildBaseStrategy:Update()
 	
         if self.techongo == true then
         self.m_bSpendMoney = true
+        Tactic.Options.can_reinforce = true
         end
 
 	local iRequisition = resource_manager:GetResourceAmount():Get( ResourceAmount.RT_Requisition )
 	local iPower = resource_manager:GetResourceAmount():Get( ResourceAmount.RT_Power )
 	-- Additional builders at higher tiers
-	if (self.tierLevel == 1 and (iRequisition > 500 and iPower > 1000)) then
+	if (self.tierLevel == 1 and (iRequisition > 500 and iPower > 700)) then
         self.m_bSpendMoney = true
         end
-	if (self.tierLevel == 2 and (iRequisition > 1000 and iPower > 1500)) then
+	if (self.tierLevel == 2 and (iRequisition > 850 and iPower > 850)) then
         self.m_bSpendMoney = true
         end
-	if (self.tierLevel == 3 and (iRequisition > 1500 and iPower > 2000)) then
+	if (self.tierLevel == 3 and (iRequisition > 1400 and iPower > 1400)) then
         self.m_bSpendMoney = true
         end
 	if (self.tierLevel == 4 and (iRequisition > 2500 and iPower > 3000) or (self.tierLevel == 4 and cpu_manager.player_stats:GetPlayerRaceName() == "inquisition_daemonhunt_race")) then
@@ -754,12 +787,12 @@ function BuildBaseStrategy:Update()
 
 	aitrace("BuildBaseStrategy: 8", true)
 	-- Check if we need more cap !
-	  if (not cpu_manager:HQThreat() and self.m_bSpendMoney) then 
+	  if (not cpu_manager:HQThreat() and self.m_bSpendMoney) or self.techongo then 
 		self:EvaluateSquadCap()
 	  end
 	aitrace("BuildBaseStrategy: 9", true)
 	-- Check last update
-	if (g_iGMT > self.m_iNextUpdate) then
+--[[	if (g_iGMT > self.m_iNextUpdate) and g_iGMT>300 then
 
 	        -- Build LP's if possible (Necessary because of DC 1.2 bug)
 		local sPostName = self:GetBuildingName("ListeningPost")
@@ -780,11 +813,11 @@ function BuildBaseStrategy:Update()
 		end
 
                 self.m_iNextUpdate = g_iGMT + 2
-	end
+	end]]
 	aitrace("BuildBaseStrategy: 10", true)
+--        if g_iGMT> DefendChokePointPlan.HarassingTime*60 then
 	self:DoBuildUnits()
-
-
+--        end
           if g_iGMT > (CpuManager.ForceTech.StartTier1-0.3)*60 then
 	aitrace("BuildBaseStrategy: 11", true)
 		-- Build generators
@@ -804,13 +837,14 @@ function BuildBaseStrategy:Update()
 	aitrace("BuildBaseStrategy: 14", true)
 		self:BuildFlexible()
 
-                self.m_iNextUpdateBuilding = g_iGMT + 5
+                self.m_iNextUpdateBuilding = g_iGMT + 3
 	end
 
 
        	aitrace("BuildBaseStrategy: 15", true)
 	-- Either defend or check if I should attack
 	self.military_stance( self )
+        self:ClearBuildDump()
 end
 
 function BuildBaseStrategy:BuildHighSpeedPriority()
@@ -877,14 +911,9 @@ function BuildBaseStrategy:DoBuildGenerators()
          return
         end
 
-	-- Check requisition
-	if (iRequisition < 300 and self.tierLevel<2) then
-		return
-	end
-
 	-- Check power
 	local iPower = resource_manager:GetResourceAmount():Get( ResourceAmount.RT_Power )
-	if (iPower > 300 and g_iGMT < 5*60) then
+	if (iPower > 200 and g_iGMT < 5*60) then
 		return
 	end
 	
@@ -956,7 +985,7 @@ function BuildBaseStrategy:DoBuildGenerators()
 				--only close slag heaps at low tier levels
 				if dist > 0 and dist <= max_dist then
 					local can_build = engineer:CanBuildAt(iBiggerGeneratorID, slag_pos )
-					table.insert( slag_table, {slag_pos, engineer, dist, can_build} ) 
+					 table.insert(slag_table, {slag_pos, engineer, dist, can_build})
 				end
 			end
 		end
@@ -978,7 +1007,7 @@ function BuildBaseStrategy:DoBuildGenerators()
 	
 			-- Add the plan to build, can_build is true
 			aitrace("BuildManager: Dynamic build of bigger generator at "..tostring(slag_table[1][1].x)..", "..tostring(slag_table[1][1].z))
-			self:AddPlan( BuildBuildingPlan(iBiggerGeneratorID, slag_table[1][1]) )
+                        slag_table[1][2]:DoBuildBuilding( iBiggerGeneratorID, slag_table[1][1] )
 		else
 	  
 			-- Send engineer to slag position
@@ -1020,21 +1049,12 @@ function BuildBaseStrategy:CalculateSquadDemand( unit_id, unit_stats )
 	
 	-- Modify for certain squads we like/dislike
 	local squad_mod = self:ModifySquadDemand(unit_id)
-	--aitrace ("    "..string.format("%-30.30s",unit_stats:GetSquadName()))
+	aitracet ("    "..string.format("%-30.30s",unit_stats:GetSquadName()))
 	
 	-- get class demand
 	local class_demand = self:GetClassDemand( unit_stats:GetClass() )
-	--aitrace ("      class demand: "..string.format("%7.2f",class_demand))
---[[	if class_demand < 0 then
-		--inverse scale for bigger units
-		class_demand = ( 10 - unit_stats:GetClassRating() ) * class_demand
-	else
-		class_demand = class_demand
-	end]]
-	if (class_demand < 0.0) then
-		class_demand = -(1.0 / class_demand)
-	end
-	class_demand = unit_stats:GetClassRating() * (class_demand + 1.0)
+	aitracet ("      class demand: "..string.format("%7.2f",class_demand))
+	class_demand = unit_stats:GetClassRating() * (class_demand)
   
 	-- get standard effectiveness demand
 	local effect_demand = 0	
@@ -1042,19 +1062,11 @@ function BuildBaseStrategy:CalculateSquadDemand( unit_id, unit_stats )
 	  
 		effect_demand = effect_demand + 
 			self:GetEffectivenessDemand( class ) * unit_stats:GetEffectivenessRating( class )
-		--aitrace ("      Class: "..string.format("%02.0f",class).." General Eff Dmd: "..string.format("%06.2f",self:GetEffectivenessDemand( class ))..
-			--" Unit Eff Rat: "..string.format("%06.2f",unit_stats:GetEffectivenessRating( class )))
-		--aitrace ("      Cumulative eff dmd : "..string.format("%08.2f",effect_demand))
 	end
-	--aitrace ("      effect demand: "..string.format("%7.2f",effect_demand))
+
 	
-	--effect_demand = effect_demand / UnitStatsAI.UC_Count commented by Kaiser Soze: reduces too much the effectiveness
-	if effect_demand > 0 then
-   		effect_demand = math.sqrt(effect_demand)
- 	else
-   		effect_demand = effect_demand / 3
-   	end	
- 	
+	effect_demand = effect_demand / (UnitStatsAI.UC_Count - 1)
+        aitracet ("      effect demand: "..string.format("%7.2f",effect_demand))
    	--depress rating according to tier
    	--we depress according squad_mod
 	if squad_mod == 0 then
@@ -1068,82 +1080,14 @@ function BuildBaseStrategy:CalculateSquadDemand( unit_id, unit_stats )
    	end	
 	demand = demand + deval
 	
---	aitrace ("      "..string.format("%-30.30s",squad_name).." Total Demand: "..string.format("%6.2f",demand))
+	aitracet ("      "..string.format("%-30.30s",squad_name).." Total Demand: "..string.format("%6.2f",demand))
    
 	--if I can't build it right now because I don't have the money
 	--figure out how long it'll take, and factor that in
---[[	local power_needed = unit_stats:GetCost( ResourceAmount.RT_Power ) - 
-		  resource_manager:GetResourceAmount():Get( ResourceAmount.RT_Power )
-	local req_needed = unit_stats:GetCost( ResourceAmount.RT_Requisition ) - 
-		  resource_manager:GetResourceAmount():Get( ResourceAmount.RT_Requisition )
-	local req_weight = 0
-	local power_weight = 0
-	local ticks_per_second = 8
-	
-	if power_needed > 0 then
-		  
-	   --rate is measured in rate per minute. we want it per second
-	   local power_rate = resource_manager:GetResourceRate( ResourceAmount.RT_Power ) / 60
-	   
-	   --if no power coming in, don't try to build stuff with power prereqs!
-	   if power_rate == 0 then
-		  return VALUE_RESOURCE_RATE
-	   else
-		  
-		  power_weight = power_needed / power_rate		 
-	   end	  
-	end
-	
-	if req_needed > 0 then
-	   
-	   --rate is measured in rate per minute. we want it per second
-	   local req_rate = resource_manager:GetResourceRate( ResourceAmount.RT_Requisition ) / 60
-	   
-	   if req_rate == 0 then
-		  return VALUE_RESOURCE_RATE
-	   else
-		  req_weight = req_needed / req_rate
-	   end
-	end
-	
-	--how many seconds before I can build this thing
-	local resource_time = 0
-	if power_weight > req_weight then
-	   resource_time = power_weight
-	else
-	   resource_time = req_weight
-	end
-	
-	--check time cap
-	if resource_time > 180 then
-	   return VALUE_BUILD_TIME
-	end
-   
-	-- Arkhan 11.2005: Check ressources
-	local iRequisition = resource_manager:GetResourceAmount():Get( ResourceAmount.RT_Requisition )
-	local iPower = resource_manager:GetResourceAmount():Get( ResourceAmount.RT_Power )
-
-	-- Arkhan 11.2005: Check squad and support cap
-	local iSquadCap	  = self:GetCurrentSquadCap()
-	local iSupportCap = build_manager:GetSupportCapCurrentMax() - build_manager:GetSupportCapLeft()
-   
-	-- Arkhan 11.2005: Force the build of vehicles if power is available and requisition rare
-	if (iSquadCap >= 6) then
-		if (unit_stats:GetSupportCapReq() > 0) then
-			demand = demand * 2
-		end
-	end
-	
-	-- Arkhan 01.2006: Force the build of squads if requisition is available and power rare
-	if (iSupportCap >= 6) then
-		if (unit_stats:GetSquadCapReq() > 0) then
-			demand = demand * 2
-		end
-	end]]
 
 	-- Arkhan 12.2005: Decrease squad demand for every already existing unit of this type by 20%, to increase unit diversity
 	demand = math.max(demand * (100 - 20 * squad_count) / 100, demand / 2)   
---	aitrace ("      "..string.format("%-30.30s",squad_name).." Final Demand: "..string.format("%6.2f",demand))
+	aitracet ("      "..string.format("%-30.30s",squad_name).." Final Demand: "..string.format("%6.2f",demand))
 	return demand   
 end
 
@@ -1179,8 +1123,8 @@ function BuildBaseStrategy:BuildUnits()
 		self:TryBuild( build_type )
 	end
 
-	if (hightableitem.iUnitIDNoLimitTANK ~= nil) and iSupportCap>10 then
-	
+	if (hightableitem.iUnitIDNoLimitTANK ~= nil) then
+	--supportcap>10
 		local build_type = CpuBuildType()
 		build_type.btype = CpuPrerequisites.BT_Squad
 		build_type.name = cpu_manager.stats:GetSquadName( hightableitem.iUnitIDNoLimitTANK )
@@ -1199,8 +1143,8 @@ function BuildBaseStrategy:BuildUnits()
 		self:TryBuild( build_type )
 	end
 
-	if (hightableitem.iUnitIDNoLimit ~= nil) and iSquadCap>12 then
-	
+	if (hightableitem.iUnitIDNoLimit ~= nil) then
+	--Squadcap>10
 		local build_type = CpuBuildType()
 		build_type.btype = CpuPrerequisites.BT_Squad
 		build_type.name = cpu_manager.stats:GetSquadName( hightableitem.iUnitIDNoLimit )
@@ -1215,12 +1159,6 @@ function BuildBaseStrategy:DoBuildUnits()
 
 	self:CalculateEngineerDemand()
 	self:CalculateDetectorDemand()
-
-	-- Don't build units if a building, research or addon is more important
-	if (not self.m_bSpendMoney and not self.techongo) then
-		aitrace("BuildController: No ressources for units available")
-		return
-	end
         
         if Strategy.NextUpdateUnitDoProd==0 then
         self.unitupdate_enemy = cpu_manager:FindClosestEnemyPlayer()
@@ -1263,8 +1201,13 @@ function BuildBaseStrategy:DoBuildUnits()
 	    end  
 	  end
         end
-        self:BuildUnits()	
-        Strategy.NextUpdateUnitDoProd = Strategy.NextUpdateUnitDoProd + 1	
+        Strategy.NextUpdateUnitDoProd = Strategy.NextUpdateUnitDoProd + 1
+	-- Don't build units if a building, research or addon is more important
+	if (not self.m_bSpendMoney and not self.techongo) then
+		aitrace("BuildController: No ressources for units available")
+		return
+	end
+        self:BuildUnits()		
 end
 
 --Corsix Added
@@ -1291,7 +1234,7 @@ function BuildBaseStrategy:ComputeBuildProgram()
 	local iSquadCap			= self:GetCurrentSquadCap()
 	local iSupportCapLeft	= build_manager:GetSupportCapLeft()
 	local iSupportCap		= build_manager:GetSupportCapCurrentMax() - iSupportCapLeft
-	
+
 	-- Get current tier
 	local iTier = self:GetTierLevel()
 	aitrace("BuildController: Current tier = "..tostring(iTier))
@@ -1358,8 +1301,12 @@ function BuildBaseStrategy:ComputeBuildProgram()
               self.m_bSpendMoney = true
               end
               aitrace("BuildController: 1.4", true)
+                if bForceTech and not self.techongo then
+                   self.m_bSpendMoney = false
+                end
                 if self.techongo == true then
                    self.m_bSpendMoney = true
+                   Tactic.Options.can_reinforce = true
                 end
 	end
         aitrace("BuildController: 1.4.1", true)
@@ -1454,6 +1401,7 @@ function BuildBaseStrategy:ComputeBuildProgram()
 		local iCount			= self.info.BuildPrograms[BuildBaseStrategy.iBuildProgram][iLoop1][5]
 		local sType				= self.info.BuildPrograms[BuildBaseStrategy.iBuildProgram][iLoop1][6]
 		local sName				= self.info.BuildPrograms[BuildBaseStrategy.iBuildProgram][iLoop1][7]
+                local sTypePlace                        = self.info.BuildPrograms[BuildBaseStrategy.iBuildProgram][iLoop1][9]
 		--print ( "After "..self.info.BuildPrograms[BuildBaseStrategy.iBuildProgram][iLoop1][6].." - "..self.info.BuildPrograms[BuildBaseStrategy.iBuildProgram][iLoop1][7] ) 
 		
 		-- dark40k 10.2008 -- 8th parameter added true if to be used only for this tier (was already the case for sType="Unit")
@@ -1518,7 +1466,7 @@ function BuildBaseStrategy:ComputeBuildProgram()
 				iID = cpu_manager.stats:GetBuildingID(sName)
 				
 				-- Check building list for current building
-				iCurrentInstances = self:GetBuildingCountByBPID(iID, false)
+				iCurrentInstances = self:GetBuildingCountByBPID(iID, false) + self:GetBuildingCountByBPID(id, true) + self:PlanCount("Build Building Plan", iID)
 				
 				-- Check build plans for current building
 				local oBuildPlan = self:GetPlan("Build Building Plan", iID)
@@ -1748,7 +1696,11 @@ function BuildBaseStrategy:ComputeBuildProgram()
 
 			-- Restrict squad limit and remove entry
 			aitrace("BuildController: Restrict squad limit for "..sName.." to "..tostring(iCount))
-			build_manager:SetSquadLimit(sName, math.floor(iCount * fArmyCapModifier + 0.5))
+			-- Check tier level
+			if (iTier >= iMinTier) and (iArmyStrength >= iMinArmyStrength) and (iRequisition >= iMinRequisition and iPower >= iMinPower) then
+			     build_manager:SetSquadLimit(sName, math.floor(iCount * fArmyCapModifier + 0.5))
+			end
+			
 			-- removing is nonsense as it it reset at start of this function
 			-- table.remove(self.info.BuildPrograms[BuildBaseStrategy.iBuildProgram], iLoop1)
 			-- iBuildProgramSize = iBuildProgramSize - 1
@@ -1791,6 +1743,30 @@ function BuildBaseStrategy:ComputeBuildProgram()
 			local bUpdateRessources = false
 			if (sType == "Building") then
 			
+                              if sTypePlace~=nil then
+                                 if sTypePlace=="RushTurret" then
+                                  local vPlace = Vector3f(0,0,0)
+                                   local oTargetPoint = Vector3f(0,0,0)
+                                   local enemy = cpu_manager:FindClosestEnemyPlayer()
+                                   local enemy_pos = enemy:GetStartingPosition()
+                                   local diffdist=0
+		                   for oStrategicPoint in resource_manager:GetStrategicPointAIs() do
+		 
+		                   	-- Check distance
+		                   	local iDistance = distance(cpu_manager.start_pos, oStrategicPoint:GetPosition())
+			                local enemyally = distance(oStrategicPoint:GetPosition(), enemy_pos)
+		                   	-- Take this strategic point if it is closer than the previous points
+		                   	if (iDistance < (enemyally) and iDistance >30) and enemyally<diffdist then
+-- and ((oStrategicPoint:GetCaptureProgress()>0) or (oStrategicPoint:IsBeingCaptured())) then
+                                                diffdist = enemyally
+		                   		oTargetPoint = oStrategicPoint:GetPosition()
+		                   	end
+		                   end
+		                        vPlace = oTargetPoint
+                                  end
+                                 local iBuildingID = cpu_manager.stats:GetBuildingID(sName)
+                                 self:AddPlan(BuildBuildingPlan(iBuildingID, vPlace))
+                              else
 				-- Build building
 				local tBuildType = CpuBuildType()
 				tBuildType.name = sName
@@ -1801,6 +1777,7 @@ function BuildBaseStrategy:ComputeBuildProgram()
 				else
 					aitrace("BuildController: Building failed => "..sName)
 				end
+                               end
 				
 			elseif (sType == "Research") then
 			
@@ -2156,7 +2133,7 @@ function BuildBaseStrategy:DynamicBuild(sBuildingName, iBuildingCount, iMinTier,
 --	end
 
 	-- Check how many instances of this building exist
-	local iInstances = self:GetBuildingCountByBPID(iID, false) + self:PlanCount("Build Building Plan", iID)
+	local iInstances = self:GetBuildingCountByBPID(iID, false) + self:GetBuildingCountByBPID(id, true) + self:PlanCount("Build Building Plan", iID)
 	
 	-- Return if enough instances exist
 	if (iInstances >= iBuildingCount) then

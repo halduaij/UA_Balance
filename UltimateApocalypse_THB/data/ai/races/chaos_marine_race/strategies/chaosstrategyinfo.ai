@@ -8,10 +8,10 @@ BuildBaseStrategyInfo =
 	chaos_marine_race =
 	{
 		post_builder = 2,
-		flag_capture = 2,
+		flag_capture = 3,
 
 		-- Reserve this amount for building units, reinforcing and upgrading
-		req_reserve = 250,
+		req_reserve = 100,
 		
 		--need at least this at all times
 		squad_cap_threshold = 2,
@@ -23,7 +23,12 @@ BuildBaseStrategyInfo =
 		Engineers =
 		{
 			--number of engineers we're aiming for
-			want = 4,
+			want = 3,
+			tier1 = 3,
+			tier2 = 5,
+			tier3 = 8,
+			tier4 = 8,
+                        max = 8,
 		},
 		
 		-- Is used to modify the army strength in the build programs (Allows faster balancing adjustments)
@@ -45,20 +50,15 @@ BuildBaseStrategyInfo =
 				{ 1, 135, 0, 0, 3,	"Building",	"chaos_plasma_generator" },
 				{ 1, 90, 80, 0, 60,	"TurretAddon",	"chaos_list_post_addon_1" },
 				{ 1, 75, 110, 0, 1,	"Building",	"chaos_turret_bolter" },
-				{ 1, 175, 50, 250, 1,	"Building",	"chaos_armoury" },
-				{ 1, 90, 80, 250, 100,	"TurretAddon",	"chaos_list_post_addon_1" },
-				{ 1, 135, 0, 0, 5,	"Building",	"chaos_plasma_generator" },
-				{ 1, 400, 130, 950, 1,	"Addon",	"chaos_hq_addon_1" },
+				{ 1, 175, 50, 550, 1,	"Building",	"chaos_armoury" },
 				
+				{ 2, 200, 125, 0, 1,	"Building",	"chaos_machine_pit" },
 				{ 2, 280, 40, 0, 1,	"Unit",		"chaos_havoc_marine_squad" },
 				{ 2, 180, 290, 0, 1,	"Unit",		"chaos_squad_dreadnought" },
 				{ 2, 195, 315, 0, 1,	"Unit",		"chaos_squad_vindicator" },
-				{ 2, 200, 125, 250, 1,	"Building",	"chaos_machine_pit" },
-				{ 2, 135, 0, 0, 6,	"Building",	"chaos_plasma_generator" },
 				{ 2, 25, 90, 500, 40,	"TurretAddon",	"chaos_turret_addon" },
 				{ 2, 240, 150, 500, 75,	"TurretAddon",	"chaos_list_post_addon_2" },
 				{ 2, 150, 50, 0, 1,	"Building",	"chaos_sacrificial_circle" },
-				{ 2, 500, 500, 1500, 1,	"Addon",	"chaos_hq_addon_2" },
 
 				{ 3, 230, 390, 0, 1,	"Unit",		"chaos_squad_predator" },
 				{ 3, 495, 90, 0, 1,	"Unit",		"chaos_squad_possessed_marine" },
@@ -100,7 +100,7 @@ BuildBaseStrategyInfo =
 				chaos_squad_khorne_berserker = 3,
 				chaos_squad_possessed_marine = 3,
 				chaos_havoc_marine_squad = 3,
-				chaos_marine_bike_squad = 3,
+				chaos_marine_bike_squad = 1,
 				chaos_plague_marine_squad = 3,
 				chaos_rubric_marine_squad = 3,
 				chaos_noise_marine_squad = 3,
@@ -139,16 +139,14 @@ BuildOrderStrategyInfo =
 	{
 		Basic =
 		{
-			{ "flag_capture" }, { "flag_capture" },
-			{ "flag_capture" }, 
 			{ "squad", "chaos_squad_slave" },
 			{ "squad", "chaos_squad_cultist" },
+                        { "flag_capture" }, 
 			{ "squad", "chaos_squad_cultist" },
+                        { "flag_capture" }, 
 			{ "squad", "chaos_squad_cultist" },
-			{ "squad", "chaos_squad_cultist" },
-			{ "squad", "chaos_squad_slave" },
 			{ "post_builder" }, { "post_builder" },
-			{ "building", "chaos_temple", true },
+			{ "building", "chaos_temple", false },
 			{ "building", "chaos_plasma_generator" }
 		},
 		
@@ -169,15 +167,15 @@ BuildOrderStrategyInfo =
 		
 		LargeMap =
 		{
-			{ "flag_capture" }, { "flag_capture" }, 
 			{ "squad", "chaos_squad_cultist" },
 			{ "squad", "chaos_squad_slave" },
 			{ "squad", "chaos_squad_cultist" },
+			{ "flag_capture" }, 
 			{ "squad", "chaos_squad_cultist" },
+			{ "flag_capture" }, 
 			{ "squad", "chaos_squad_cultist" },
-			{ "flag_capture" }, { "flag_capture" },
 			{ "post_builder" }, 
-			{ "building", "chaos_temple", true },
+			{ "building", "chaos_temple", false },
 			{ "building", "chaos_plasma_generator" }
 		}
 	}

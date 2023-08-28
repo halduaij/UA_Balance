@@ -1,3 +1,8 @@
+
+----
+
+
+
 class 'DefaultTactic' (Tactic)
 
 function DefaultTactic:__init( squad_ai ) super( squad_ai )

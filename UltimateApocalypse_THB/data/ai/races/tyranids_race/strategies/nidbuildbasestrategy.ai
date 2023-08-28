@@ -249,6 +249,25 @@ function TyranidBuildBaseStrategy:UpdateTierLevel()
 	end
 end
 
+function TyranidBuildBaseStrategy:CheckTech()
+        if self.tierLevel == 1 then
+        self.techongotype = "addon"
+        self.techongoname = "tyranids_hq_addon_1"
+        elseif self.tierLevel == 2 then
+        self.techongotype = "addon"
+        self.techongoname = "tyranids_hq_addon_2"
+        elseif self.tierLevel == 3 then
+        self.techongotype = "research"
+        self.techongoname = "tyranids_arrival3_research"
+        elseif self.tierLevel == 4 then
+        self.techongotype = "research"
+        self.techongoname = "tyranids_assimilation_research"
+        elseif self.tierLevel == 5 then
+        self.techongotype = "research"
+        self.techongoname = "tyranids_apocalypse_research"
+        end    
+end
+
 function TyranidBuildBaseStrategy:BuildFlexible()
 
 	-- Locales
@@ -335,11 +354,6 @@ function TyranidBuildBaseStrategy:BuildFlexible()
 			-- Compute Carnifex Researches
 			if (num_carnifex_squads >= 2) then
 				self:DynamicResearch("tyranids_carnifex_ext_carapace_research", 2, 0, 200, 0, 0, nil, 0)
-			end
-
-			-- Compute HQ Tier2 Addons for future HQs
-			if (self:GetBuildingCountByName("tyranids_hq") > 1) and (iRequisition >= 1000 and iPower >= 500) then
-				self:DynamicAddon("tyranids_hq_addon_1", 100, 2, 250, 130, 0, 0, nil, nil, false)
 			end
 		end
 
@@ -470,83 +484,51 @@ function TyranidBuildBaseStrategy:BuildFlexible()
 	
 		-- Dynamic buildings
 		-- Item-Syntax: BuildingName, BuildingCount, MinTier, MinRequisition, MinPower, MinSquadCap, MinSupportCap
-		self:DynamicBuild("tyranids_hq", 2, 1, 1000, 0, 0, 0)
-		self:DynamicBuild("tyranids_digest_pool", 6 * self:GetBuildingCountByName("tyranids_hq"), 3, 500, 0, 0, 0)
+		self:DynamicBuild("tyranids_digest_pool", 6 * self:GetBuildingCountByName("tyranids_hq"), 2, 500, 0, 0, 0)
 
-		-- Dynamically regulate quantity of defensive buildings based on how many strats/crits/relics we have through the tiers so we avoid cluttering/bottlenecking on maps with limited points
-		if (self.tierLevel >= 2 and (iRequisition >= 1500 and iPower >= 1500)) then
-    			if (resource_manager:GetNumOwnedStrategicPoints() < 4) or (resource_manager:GetNumOwnedStrategicPoints() < 3 and self:HasCriticalLocation()) or (resource_manager:GetNumOwnedStrategicPoints() < 3 and self:HasRelic()) then
-				self:DynamicBuild("tyranids_turret", 2, 2, 200, 0, 0, 0)
-				self:DynamicBuild("tyranids_mines", 2, 2, 300, 0, 0, 0)
-				self:DynamicBuild("tyranids_turret", 4, 3, 200, 0, 0, 0)
-				self:DynamicBuild("tyranids_mines", 4, 3, 300, 0, 0, 0)
-   			end
-		else
-   			if (resource_manager:GetNumOwnedStrategicPoints() > 3) or (resource_manager:GetNumOwnedStrategicPoints() > 2 and self:HasCriticalLocation()) or (resource_manager:GetNumOwnedStrategicPoints() > 2 and self:HasRelic()) then
-				self:DynamicBuild("tyranids_turret", 3, 2, 200, 0, 0, 0)
-				self:DynamicBuild("tyranids_mines", 3, 2, 300, 0, 0, 0)
-				self:DynamicBuild("tyranids_turret", 6, 3, 200, 0, 0, 0)
-				self:DynamicBuild("tyranids_mines", 6, 3, 300, 0, 0, 0)
-			end
-		end
+              local Numpoint = resource_manager:GetNumOwnedStrategicPoints()
+              if iRequisition >= 100 and iPower >= 100 then
+		self:DynamicAddon("tyranids_list_post_addon_1", 1*Numpoint, 1, 0, 0, 0, 0, nil, nil, false)
+              end
+              if iRequisition >= 300 and iPower >= 300 then
+		self:DynamicAddon("tyranids_list_post_addon_2", 1*Numpoint, 2, 0, 0, 0, 0, nil, nil, false)
+              end
 
-		if (self.tierLevel >= 4 and (iRequisition >= 2500 and iPower >= 2500)) then
-    			if (resource_manager:GetNumOwnedStrategicPoints() > 4) or (resource_manager:GetNumOwnedStrategicPoints() > 3 and self:HasCriticalLocation()) or (resource_manager:GetNumOwnedStrategicPoints() > 3 and self:HasRelic()) then
-				self:DynamicBuild("tyranids_turret_bioacid", 1, 4, 600, 0, 0, 0)
-				self:DynamicBuild("tyranids_turret", 8, 4, 200, 0, 0, 0)
-				self:DynamicBuild("tyranids_mines", 8, 4, 300, 0, 0, 0)
-				self:DynamicBuild("tyranids_turret_bioacid", 2, 4, 700, 0, 0, 0)
-				self:DynamicBuild("tyranids_turret", 10, 5, 200, 0, 0, 0)
-				self:DynamicBuild("tyranids_mines", 10, 5, 300, 0, 0, 0)
-				self:DynamicBuild("tyranids_turret_bioacid", 3, 5, 800, 0, 0, 0)
-				self:DynamicBuild("tyranids_turret", 12, 6, 200, 0, 0, 0)
-				self:DynamicBuild("tyranids_mines", 12, 6, 300, 0, 0, 0)
-				self:DynamicBuild("tyranids_turret_bioacid", 4, 6, 900, 0, 0, 0)
-				self:DynamicBuild("tyranids_turret_bioacid", 6, 6, 1500, 0, 0, 0)
-			end
-		end
+              local num_hq = self:GetBuildingCountByName(self:GetBuildingName("HQ"))
+		                self:DynamicBuild("tyranids_hq", Numpoint/3 , 2, 700 + 200*(num_hq), 150*(num_hq), 0, 0, false)
 
-		-- Build additional support buildings as tiers progress
-		if (self.tierLevel >= 2) then
-			if (iRequisition >= 2000 and iPower >= 2000) then
-				self:DynamicBuild("tyranids_gaunt_hive", 2, 2, 900, 0, 0, 0)
-				self:DynamicBuild("tyranids_warrior_hive", 2, 2, 1000, 0, 0, 0)
-				self:DynamicBuild("tyranids_carnifex_hive", 2, 3, 1500, 0, 0, 0)
-				self:DynamicBuild("tyranids_hq", 3, 3, 1500, 0, 0, 0)
-				self:DynamicBuild("tyranids_capillary_vein", 1, 3, 300, 500, 0, 0)
-				self:DynamicBuild("tyranids_capillary_vein", 2, 3, 500, 700, 0, 0)
-				self:DynamicBuild("tyranids_capillary_vein", 3, 4, 700, 900, 0, 0)
-				self:DynamicBuild("tyranids_capillary_vein", 4, 4, 800, 1000, 0, 0)
-				self:DynamicBuild("tyranids_hq", 4, 5, 2000, 0, 0, 0)
-				self:DynamicBuild("tyranids_capillary_tower", 2, 5, 4000, 0, 0, 0)
-				self:DynamicBuild("tyranids_relic_hive", 2, 5, 3000, 0, 0, 0)
-				self:DynamicBuild("tyranids_biotitan_hive", 2, 5, 4000, 0, 0, 0)
-			end
-		end
+                if iPower > 600 then
+				self:DynamicBuild("tyranids_capillary_vein", 2*num_hq, 2, 0, 0, 0, 0)
+                end
 
-		-- Build additional uber buildings in later tiers
-		if (self.tierLevel >= 6) then
-			if (iRequisition >= 3000 and iPower >= 3000) then
-				self:DynamicBuild("tyranids_gaunt_hive", 3, 6, 900, 0, 0, 0)
-				self:DynamicBuild("tyranids_warrior_hive", 3, 6, 1000, 0, 0, 0)
-				self:DynamicBuild("tyranids_carnifex_hive", 3, 6, 1500, 0, 0, 0)
-				self:DynamicBuild("tyranids_relic_hive", 3, 6, 3000, 0, 0, 0)
-				self:DynamicBuild("tyranids_biotitan_hive", 3, 6, 4000, 0, 0, 0)
-				self:DynamicBuild("tyranids_capillary_vein", 5, 6, 300, 500, 0, 0)
-				self:DynamicBuild("tyranids_capillary_vein", 6, 6, 500, 700, 0, 0)
-				self:DynamicBuild("tyranids_capillary_vein", 7, 6, 700, 900, 0, 0)
-				self:DynamicBuild("tyranids_capillary_vein", 8, 6, 900, 1000, 0, 0)
-				self:DynamicBuild("tyranids_capillary_tower", 3, 6, 6000, 0, 0, 0)
-			end
-		end
+                if iRequisition >= 2000 and iPower >= 2000 then
+				self:DynamicBuild("tyranids_gaunt_hive", num_hq, 1, 150, 0, 0, 0)
+				self:DynamicBuild("tyranids_warrior_hive", num_hq, 2, 300, 100, 0, 0)
+				self:DynamicBuild("tyranids_carnifex_hive", num_hq, 3, 400, 300, 0, 0)
+				self:DynamicBuild("tyranids_capillary_tower", num_hq, 4, 2000, 0, 0, 0)
+				self:DynamicBuild("tyranids_relic_hive", num_hq/2, 4, 2000, 0, 0, 0)
+				self:DynamicBuild("tyranids_biotitan_hive", num_hq/2, 5, 4000, 0, 0, 0)
+                end
 
-		-- Build additional Superweapons if we have excess resources
-		if (iRequisition >= 14000) then
-			self:DynamicBuild("tyranids_capillary_tower", 4, 6, 14000, 0, 0, 0)
-			self:DynamicBuild("tyranids_capillary_tower", 5, 6, 16000, 0, 0, 0)
-			self:DynamicBuild("tyranids_capillary_tower", 6, 6, 20000, 0, 0, 0)
-		end
+                if iRequisition >= 2000 and iPower >= 2000 then
+				self:DynamicBuild("tyranids_turret", 6*num_hq, 2, 0, 0, 0, 0)
+				self:DynamicBuild("tyranids_mines", 3*num_hq, 2, 0, 0, 0, 0)
+				self:DynamicBuild("tyranids_turret_bioacid", num_hq, 4, 0, 0, 0, 0)
+                end
 	end
+end
+
+function TyranidBuildBaseStrategy:ForceTechCheck(name)
+         local iID = cpu_manager.stats:GetAddOnID(name)
+	 if (self:PlanExists("Build AddOn Plan", iID)) then
+	 	return
+	 end
+	 local tBuildType = CpuBuildType()
+	 tBuildType.name = name
+	 tBuildType.btype = CpuPrerequisites.BT_AddOn
+	 if (self:TryBuild( tBuildType )) then
+	 	aitrace("BuildController: Build of addon "..name)
+	 end
 end
 
 -- Arkhan 01.2006: Method to check if force tech should be computed
@@ -566,37 +548,44 @@ function TyranidBuildBaseStrategy:ForceTech()
 	if (iTierLevel == 1) then
 	
 		-- Check resources
-		if (iRequisition > 600 and iPower > 200) then
-			return false
-		end
-	
-		-- Check for warrior hive
-		if (self:GetBuildingCountByName("tyranids_warrior_hive", false) >= 1) then
-			return false
-		end
-		return true
-		
-	elseif (iTierLevel == 2) then
-
-		-- Check for large hive
-		if (self:GetBuildingCountByName("tyranids_carnifex_hive", false) < 1) then
+		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier1 or (iRequisition > 600 and iPower > 600)) then
+                        self:ForceTechCheck("tyranids_hq_addon_1")
 			return true
 		end
 		
+	elseif (iTierLevel == 2) then
+		
 		-- Check time
-		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier2 and (iRequisition < 700 or iPower < 500)) then
+		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier2 or (iRequisition > 900 and iPower > 600)) then
+                        self:ForceTechCheck("tyranids_hq_addon_2")
 			return true
 		end
 		
 	elseif (iTierLevel == 3) then	
 
 		-- Check time
-		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier3 and (iRequisition < 1300 or iPower < 900)) then
+		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier3 or (iRequisition > 1500 and iPower > 1500)) then
+			self:DynamicResearch("tyranids_arrival3_research", 3, 1000, 1000, 0, 0, nil, 0, false)
+			return true
+		end
+	elseif (iTierLevel == 4) then	
+
+		-- Check time
+		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier4 or (iRequisition > 2000 and iPower > 2000)) then
+			self:DynamicResearch("tyranids_assimilation_research", 4, 1500, 1500, 0, 0, nil, 0, false)
+			return true
+		end
+	elseif (iTierLevel == 5) then	
+
+		-- Check time
+		if (g_iGMT > 60 * CpuManager.ForceTech.StartTier5 or (iRequisition > 4000 and iPower > 4000)) then
+			self:DynamicResearch("tyranids_apocalypse_research", 5, 4000, 4000, 0, 0, nil, 0, false)
 			return true
 		end
 	end
 	return false
 end
+
 
 -- Arkhan 03.2006: Return placement type for buildings
 function TyranidBuildBaseStrategy:GetPlacementType(iBuildingID)
@@ -607,14 +596,14 @@ function TyranidBuildBaseStrategy:GetPlacementType(iBuildingID)
 		local friend = cpu_manager:FindClosestFriendPlayer()
 		if friend == nil then
 			-- Lone Player
-                	if count == 0 and not cpu_manager:HQThreat() then
+                	if not cpu_manager:HQThreat() then
                     		return "HQ"
                 	else
                     		return "Safeplace"
                 	end
         	else
         		-- Has allies
-                	if count > 2 or cpu_manager:HQThreat() then
+                	if count > 0 or cpu_manager:HQThreat() then
  				return "HQ"
                 	else
 				return "Safeplace"

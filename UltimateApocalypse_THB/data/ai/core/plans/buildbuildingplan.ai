@@ -13,7 +13,7 @@ function BuildBuildingPlan:__init( building_id, build_pos, wait_on_builder, fron
 	self.bestPosition = nil
 
 	-- Nil if you want to automatically quit out on failure
-	self.wait_on_builder = wait_on_builder
+	self.wait_on_builder = true
 
         self.front = front
 	
@@ -45,15 +45,16 @@ function BuildBuildingPlan:__init( building_id, build_pos, wait_on_builder, fron
 	
 		-- Check if building has a builder
 		local has_builder = false
-		for oSquad in military_manager:GetSquads() do
+        local uManager = military_manager:GetUnlockedSquads()
+		for oSquad in uManager do
+                      local autoconb = military_manager:GetBaseFromID(oBuilding:GetID())
+                      if autoconb then
 		       if oBuilding ~= nil then
-                        local autoconb = military_manager:GetBaseFromID(oBuilding:GetID())
-                        if autoconb then
                           if cpu_manager:AutoConstructBuildings() and autoconb:GetHealthPercentage() > 0.2 then
 				has_builder = true
 				break
 			  end
-                        end
+                       end
 
 			-- Check builder
 			if (oSquad:IsValid() and oSquad:IsEngineer() and oSquad:IsBuilding() == self.item_id) then
@@ -90,7 +91,8 @@ function BuildBuildingPlan:FindEngineerCloseToSP()
 
 	-- Get available engineers close to start point
 	local aEngineers = {}
-	for oSquad in military_manager:GetUnlockedSquads() do
+        local uManager = military_manager:GetUnlockedSquads()
+	for oSquad in uManager do
 	
 		-- Get a valid engineer
 		if (oSquad:IsValid() and oSquad:IsEngineer() and oSquad:CanBuild(self.item_id) == SquadAI.CANBUILD_Ok and (oSquad:IsBuilding() == 0)) then
@@ -108,7 +110,7 @@ function BuildBuildingPlan:FindEngineerCloseToSP()
 	table.sort(aEngineers, function(oItem1, oItem2) return oItem1[3] < oItem2[3] end)
 	
 	-- Get a save build position
-	for iLoop1 in aEngineers do
+	 for iLoop1 in aEngineers do
 	
 		-- Get a build pos close to engineer and start point
 		local vSquadPos = aEngineers[iLoop1][2]
@@ -116,13 +118,14 @@ function BuildBuildingPlan:FindEngineerCloseToSP()
 		if (vBasePos ~= nil) then
 
 			-- Set build pos
+                       if not self.front then
 			self.build_pos = Vector2f()
 			self.build_pos.x = vBasePos.x
 			self.build_pos.y = vBasePos.z
+	               end
 			return aEngineers[iLoop1][1]
 		end
-	end
-	
+	 end
 	-- Force HQ building
 	if (self.m_bEmergencyHQ and table.getn(aEngineers) > 0) then
 		return aEngineers[1][1]
@@ -155,7 +158,7 @@ function BuildBuildingPlan:ObtainBuilder()
 		-- Init functor
 		local functor = function( oSquad )
 			return oSquad:IsEngineer() and oSquad:CanBuild( self.item_id ) == SquadAI.CANBUILD_Ok and
-				   not cpu_manager:HasThreatOnPath(oSquad:GetPosition(), self.bestPosition, 20) and oSquad:IsIdle() and not oSquad:IsBuildProgressing() and not oSquad:GetTactic():IsBufer() and not oSquad:IsCapturing()
+				   not cpu_manager:HasThreatOnPath(oSquad:GetPosition(), self.bestPosition, 20) and not oSquad:IsBuildProgressing() and not oSquad:GetTactic():IsBufer() and not oSquad:IsCapturing()
 		end
 		
 		-- Find the closest engineer
@@ -165,8 +168,11 @@ function BuildBuildingPlan:ObtainBuilder()
 			return
 		end
 	end
-
-	-- Lock and save it!
+        if engineer:IsBuilding() ~= 0 then
+           engineer = nil
+           return
+        end
+	-- Lock and save it! 
 	BuildPlan.SetBuilder(self, engineer)
 
 	-- No needs
@@ -193,11 +199,12 @@ function BuildBuildingPlan:InitBestBuildingPosition()
 
 			-- Get strategic point positions
 			local aBuildPositions = {}
-			for oStrategicPoint in resource_manager:GetStrategicPointAIs() do
+                        local uManager = resource_manager:GetStrategicPointAIs()
+			for oStrategicPoint in uManager do
 			
 				-- Check owner
 				if (oStrategicPoint:Owner() == cpu_manager.player_id) then
-					table.insert(aBuildPositions, oStrategicPoint:GetPosition())
+					table.insert(aBuildPositions , oStrategicPoint:GetPosition())
 				end
 			end
 			local iBuildPosCount = table.getn(aBuildPositions)
@@ -265,35 +272,8 @@ function BuildBuildingPlan:InitBestBuildingPosition()
 				return false
 			end
 		else
-			
-			--Retry with deviation to fix build bug
-                        local bufer = math.random(1, 8)
-                        if bufer == 1 then
-			bias_pos.x = self.build_pos.x + math.random(-10, -10)
-			bias_pos.y = self.build_pos.y + math.random(0, 0)
-                        elseif bufer == 2 then
-			bias_pos.x = self.build_pos.x + math.random(0, 0)
-			bias_pos.y = self.build_pos.y + math.random(-10, -10)
-                        elseif bufer == 3 then
-			bias_pos.x = self.build_pos.x + math.random(10, 10)
-			bias_pos.y = self.build_pos.y + math.random(0, 0)
-                        elseif bufer == 4 then
-			bias_pos.x = self.build_pos.x + math.random(0, 0)
-			bias_pos.y = self.build_pos.y + math.random(10, 10)
-                        elseif bufer == 5 then
-			bias_pos.x = self.build_pos.x + math.random(10, 10)
-			bias_pos.y = self.build_pos.y + math.random(10, 10)
-                        elseif bufer == 6 then
-			bias_pos.x = self.build_pos.x + math.random(-10, -10)
-			bias_pos.y = self.build_pos.y + math.random(-10, -10)
-                        elseif bufer == 7 then
-			bias_pos.x = self.build_pos.x + math.random(-10, -10)
-			bias_pos.y = self.build_pos.y + math.random(10, 10)
-                        elseif bufer == 8 then
-			bias_pos.x = self.build_pos.x + math.random(10, 10)
-			bias_pos.y = self.build_pos.y + math.random(-10, -10)
-                        end
-
+			bias_pos.x = self.build_pos.x + math.random(-5, 5)
+			bias_pos.y = self.build_pos.y + math.random(5, 5)
 			local bSuccess = cpu_manager.terrain_analyzer:FindClosestFreePosition(self.item_id, bias_pos, bias, self.bestPosition)
 			if (not bSuccess) then
 				aitrace("BuildBuildingPlan: Cannot place building: "..self.item_name)
@@ -361,8 +341,9 @@ function BuildBuildingPlan:BuildBuilding()
 	end
 	
 	-- Don't build under threat
-	if (cpu_manager.terrain_analyzer:HasThreat(self.bestPosition, 35)) then
-	
+	local vPosThreat, iAlliedStrength = cpu_manager:GetArmyStrengthAtPos(self.bestPosition, 35, true)
+	if vPosThreat>iAlliedStrength then
+
 		-- Try to find a save build position
 		if (not self:SetSaveBuildPosition(self.builder)) then
 			aitrace("BuildBuildingPlan: Cannot build under threat : "..self.item_name)
@@ -413,7 +394,8 @@ function BuildBuildingPlan:BuildBuildingFast()
         end
 
 	-- Don't build under threat
-	if (cpu_manager.terrain_analyzer:HasThreat(self.bestPosition, 35)) then
+	local vPosThreat, iAlliedStrength = cpu_manager:GetArmyStrengthAtPos(self.bestPosition, 35, true)
+	if vPosThreat>iAlliedStrength then
 	
 		-- Try to find a save build position
 		if (not self:SetSaveBuildPosition(self.builder)) then
@@ -498,7 +480,8 @@ function BuildBuildingPlan:BuildingState()
 		-- Builder got stuck and wasn't able to finish building => Choose another builder
 		local oNewBuilder = nil
 		local iBuilderID = self.builder:GetID()
-		for oSquad in military_manager:GetUnlockedSquads() do
+                local uManager = military_manager:GetUnlockedSquads()
+		for oSquad in uManager do
 		
 			-- Get a valid engineer
 			if (oSquad:IsValid() and oSquad:IsEngineer() and oSquad:CanBuild(self.item_id) == SquadAI.CANBUILD_Ok and oSquad:GetID() ~= iBuilderID and (oSquad:IsBuilding() == 0) and not oSquad:GetTactic():IsBufer()) then
@@ -555,11 +538,12 @@ function BuildBuildingPlan:Retry()
 		local vEnemyPos = oEnemy:GetStartingPosition()
 		
 		-- Arkhan 12.2005: Retry with deviation to fix build bug
-		if (math.random(1, 2) == 1) then
+		if (math.random(1, 2) == 1) and not self.front then
 			
 			-- Get strategic point positions
 			local aBuildPositions = {}
-			for oStrategicPoint in resource_manager:GetStrategicPointAIs() do
+                        local uManager = resource_manager:GetStrategicPointAIs()
+			for oStrategicPoint in uManager do
 			
 				-- Check owner
 				if (oStrategicPoint:Owner() == cpu_manager.player_id) then
@@ -578,32 +562,9 @@ function BuildBuildingPlan:Retry()
 
 		local bias_pos = Vector2f()
 	                --Retry with deviation to fix build bug
-                        local bufer = math.random(1, 8)
-                        if bufer == 1 then
-			bias_pos.x = self.build_pos.x + math.random(-10, -5)
-			bias_pos.y = self.build_pos.y + math.random(0, 0)
-                        elseif bufer == 2 then
-			bias_pos.x = self.build_pos.x + math.random(0, 0)
-			bias_pos.y = self.build_pos.y + math.random(-10, -5)
-                        elseif bufer == 3 then
-			bias_pos.x = self.build_pos.x + math.random(5, 10)
-			bias_pos.y = self.build_pos.y + math.random(0, 0)
-                        elseif bufer == 4 then
-			bias_pos.x = self.build_pos.x + math.random(0, 0)
-			bias_pos.y = self.build_pos.y + math.random(5, 10)
-                        elseif bufer == 5 then
-			bias_pos.x = self.build_pos.x + math.random(5, 10)
-			bias_pos.y = self.build_pos.y + math.random(5, 10)
-                        elseif bufer == 6 then
-			bias_pos.x = self.build_pos.x + math.random(-10, -5)
-			bias_pos.y = self.build_pos.y + math.random(-10, -5)
-                        elseif bufer == 7 then
-			bias_pos.x = self.build_pos.x + math.random(-10, -5)
-			bias_pos.y = self.build_pos.y + math.random(5, 10)
-                        elseif bufer == 8 then
-			bias_pos.x = self.build_pos.x + math.random(5, 10)
-			bias_pos.y = self.build_pos.y + math.random(-10, -5)
-                        end
+
+			bias_pos.x = self.build_pos.x + math.random(-5, 5)
+			bias_pos.y = self.build_pos.y + math.random(5, 5)
 		self.bestPosition = Vector3f()
 		local bSuccess = cpu_manager.terrain_analyzer:FindClosestFreePosition( self.item_id, bias_pos, vEnemyPos, self.bestPosition )
 		if (self.builder:CanBuild(self.item_id) == SquadAI.CANBUILD_Ok) then
@@ -634,10 +595,11 @@ function BuildBuildingPlan:ObtainNewBuilder()
 	end
     
     -- Find an engineer
-    for oSquad in military_manager:GetUnlockedSquads() do
+--[[    local uManager = military_manager:GetUnlockedSquads()
+    for oSquad in uManager do
 
         -- Don't queue
-        if (oSquad:IsValid() and oSquad:IsEngineer() and oSquad:IsIdle() and not oSquad:IsBuildProgressing() and not oSquad:GetTactic():IsBufer()) then
+        if (oSquad:IsValid() and oSquad:IsEngineer() and oSquad:IsIdle() and oSquad:IsBuilding()==0 and not oSquad:IsBuildProgressing() and not oSquad:GetTactic():IsBufer()) then
             
             local squad_pos = oSquad:GetPosition()
             if not cpu_manager:HasThreatOnPath( squad_pos, build_pos, 20 ) then
@@ -650,7 +612,7 @@ function BuildBuildingPlan:ObtainNewBuilder()
                 return
             end
         end
-    end
+    end]]
 end
 
 function BuildBuildingPlan:FixState()
@@ -696,8 +658,7 @@ end
 
 function BuildBuildingPlan:Update()
 
-	aitrace("BuildBuildingPlan: Update building plan for "..self.item_name, true)
-	
+	aitrace("BuildBuildingPlan: Update building plan for "..self.item_name, true)        
 	-- Take into account if my builder dies
 	if (self.builder ~= nil and not self.builder:IsValid()) then
 	
@@ -714,42 +675,6 @@ function BuildBuildingPlan:Update()
 			Plan.SetState(self, "Wanting to build: "..self.item_name, BuildBuildingPlan.BuildBuilding)
 		end
 	end
-
---[[	-- Check for unfinished building without builder
-	local oBuilding = build_manager:FindUnfinishedBuilding( self.item_id )
-        local has_builderfast = false	
-	if (oBuilding) then
-	
-		-- Check if building has a builder
-		for oSquad in military_manager:GetSquads() do
-			
-			-- Check builder
-			if (oSquad:IsValid() and oSquad:IsEngineer() and oSquad:IsBuilding() == self.item_id and oSquad:IsBuildProgressing()) then
-				has_builderfast = true
-				break
-			end
-		end
-		
-		-- If building has no builder then finish it
-		if (not has_builderfast) then		
-			aitrace("BuildBuildingPlan: Finish building...")
-			self.started_building = true
-			self.copy_build_pos = Vector3f(oBuilding:GetPosition())
-			self.bestPosition = Vector3f(oBuilding:GetPosition())
-			self.build_pos = Vector2f()
-			self.build_pos.x = self.bestPosition.x
-			self.build_pos.z = self.bestPosition.z
-			Plan.SetNeeds( self, "Fixing building...", BuildBuildingPlan.ObtainNewBuilder )
-			Plan.SetState( self, "Try to fix building: "..self.item_name, BuildBuildingPlan.FixState )
-		end
-	end]]
-
-      --[[  if self.started_building and self.builder ~= nil then
-			Plan.UnlockResource( self, self.builder )
-			self.builder = nil
-			self:SetComplete(true)	
-        end]]
-
 	-- retry or quit building if big generator is not progressing
 	if (self.builder ~= nil and cpu_manager:IsBiggerGenerator(self.item_id) and 
 		self.started_building and g_iGMT > self.m_iPlanStart + 10 and self.builder:IsBuilding() == self.item_id and 
@@ -772,33 +697,7 @@ function BuildBuildingPlan:Update()
 			self.builder = nil
 			self:SetComplete(true)		
 		end
-
-	-- quit building if slag generator is not progressing
-	elseif (self.builder ~= nil and (cpu_manager:IsSlagGenerator(self.item_id) or cpu_manager:IsBiggerGenerator(self.item_id)) and 
-			self.started_building and g_iGMT > self.m_iPlanStart + 10 and self.builder:IsBuilding() == self.item_id and 
-			not self.builder:IsBuildProgressing() and not self.builder:GetTactic():IsMoving()) then
-		
-		local build_time = 100
-		if cpu_manager:IsSlagGenerator(self.item_id) then
-			build_time = 35 + cpu_manager:HasBuilding("necron_plasma_generator") * 15
-		end
-	
-		if (g_iGMT >= self.m_iPlanStart + build_time + 10) then
-			aitrace("BuildBuildingPlan: Builder stuck, shift position")
-			if (g_iGMT >= self.shift_move + 8) then 
-				aitrace("BuildBuildingPlan: Builder stuck, set shift state")
-				Plan.SetState(self, "Shifting builder for: "..self.item_name, BuildBuildingPlan.ShiftState)
-			end
-		elseif (self.building ~= nil) then
-			self.builder:DoFinishBuilding(self.building)
-		else
-			aitrace("BuildBuildingPlan: Builder stuck. Abort "..self.item_name, true)
-			Plan.UnlockResource( self, self.builder )
-			self.builder = nil
-			self:SetComplete(true)		
-		end
-
-	-- Check if builder is lazy
+        	-- Check if builder is lazy
 	elseif (self.builder ~= nil and self.builder:IsIdle() and self.started_building and self.m_iPlanStart > 5) then
 		
 		-- Reactivate builder
@@ -809,7 +708,7 @@ function BuildBuildingPlan:Update()
 
         elseif (self.builder ~= nil and self.started_building and self.builder:IsIdle() and not self.builder:IsBuildProgressing() and not self.builder:GetTactic():IsMoving()) then
 	local build_time = 60
-               if (g_iGMT < self.m_iPlanStart + build_time + 10) then
+               if (g_iGMT > self.m_iPlanStart + build_time + 10) then
 			aitrace("BuildBuildingPlan: Builder stuck, shift position")
 			if (g_iGMT >= self.shift_move + 8) then 
 				aitrace("BuildBuildingPlan: Builder stuck, set shift state")
