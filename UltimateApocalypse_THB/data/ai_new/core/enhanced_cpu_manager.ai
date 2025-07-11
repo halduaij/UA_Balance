@@ -63,7 +63,7 @@ function EnhancedCpuManager:CreateStrategyCoordinator()
     end
     
     function coordinator:RemoveStrategy(strategy)
-        for i, active_strategy in self.active_strategies do
+        for i, active_strategy in pairs(self.active_strategies) do
             if active_strategy == strategy then
                 table.remove(self.active_strategies, i)
                 break
@@ -133,7 +133,7 @@ function EnhancedCpuManager:CreateTacticCoordinator()
         self.coordination_timer = self.coordination_timer + delta_time
         
         -- Update all tactics
-        for unit, group in self.unit_groups do
+        for unit, group in pairs(self.unit_groups) do
             if group.tactic then
                 group.tactic:Update()
             end
@@ -150,7 +150,7 @@ function EnhancedCpuManager:CreateTacticCoordinator()
         -- Group units by role and coordinate movements
         local role_groups = {}
         
-        for unit, group in self.unit_groups do
+        for unit, group in pairs(self.unit_groups) do
             local role = group.tactic:GetUnitRole()
             if not role_groups[role] then
                 role_groups[role] = {}
@@ -159,7 +159,7 @@ function EnhancedCpuManager:CreateTacticCoordinator()
         end
         
         -- Apply formation movements for each role group
-        for role, units in role_groups do
+        for role, units in pairs(role_groups) do
             if table.getn(units) > 1 then
                 self:ApplyFormationToGroup(role, units)
             end
@@ -170,7 +170,7 @@ function EnhancedCpuManager:CreateTacticCoordinator()
         -- Coordinate attacks and defensive actions
         local enemy_squads = cpu_manager.stats:GetEnemySquads()
         
-        for unit, group in self.unit_groups do
+        for unit, group in pairs(self.unit_groups) do
             if group.tactic then
                 -- Let individual tactics handle their own combat
                 -- but provide coordination hints
@@ -198,7 +198,7 @@ function EnhancedCpuManager:CreateTacticCoordinator()
         local center_x, center_y, center_z = 0, 0, 0
         local count = table.getn(units)
         
-        for i, unit in units do
+        for i, unit in pairs(units) do
             local pos = unit:GetPosition()
             center_x = center_x + pos.x
             center_y = center_y + pos.y
@@ -215,7 +215,7 @@ function EnhancedCpuManager:CreateTacticCoordinator()
         local formation_positions = AI_Improvements.CalculateFormation(units, center_position, formation_type)
         
         -- Apply positions to units
-        for i, unit in units do
+        for i, unit in pairs(units) do
             if formation_positions[unit] then
                 local target_pos = formation_positions[unit]
                 unit:MoveTo(target_pos.x, target_pos.y, target_pos.z)
@@ -259,7 +259,7 @@ function EnhancedCpuManager:CreateLearningSystem()
         local sum = 0
         local count = 0
         
-        for _, record in self.performance_history[metric] do
+        for _, record in pairs(self.performance_history[metric]) do
             if current_time - record.time <= time_window then
                 sum = sum + record.value
                 count = count + 1
@@ -349,7 +349,7 @@ function EnhancedCpuManager:CreateThreatAnalyzer()
         local recent_threats = {}
         local current_time = cpu_manager.cpu_player:GetGameTime()
         
-        for _, record in self.threat_history do
+        for _, record in pairs(self.threat_history) do
             if current_time - record.time <= 60 then
                 table.insert(recent_threats, record.total_threat)
             end
@@ -364,7 +364,7 @@ function EnhancedCpuManager:CreateThreatAnalyzer()
             local spike_threshold = self:CalculateAverage(recent_threats) * 1.5
             local has_spike = false
             
-            for _, threat in recent_threats do
+            for _, threat in pairs(recent_threats) do
                 if threat > spike_threshold then
                     has_spike = true
                     break
@@ -386,7 +386,7 @@ function EnhancedCpuManager:CreateThreatAnalyzer()
         local sum_x2 = 0
         local n = table.getn(values)
         
-        for i, value in values do
+        for i, value in pairs(values) do
             sum_x = sum_x + i
             sum_y = sum_y + value
             sum_xy = sum_xy + i * value
@@ -399,7 +399,7 @@ function EnhancedCpuManager:CreateThreatAnalyzer()
     
     function threat_analyzer:CalculateAverage(values)
         local sum = 0
-        for _, value in values do
+        for _, value in pairs(values) do
             sum = sum + value
         end
         return sum / table.getn(values)
@@ -446,7 +446,7 @@ function EnhancedCpuManager:CreateResourceOptimizer()
         local recent_efficiencies = {}
         local current_time = cpu_manager.cpu_player:GetGameTime()
         
-        for _, record in self.resource_history do
+        for _, record in pairs(self.resource_history) do
             if current_time - record.time <= 120 then
                 table.insert(recent_efficiencies, record.efficiency.overall_efficiency)
             end
@@ -488,7 +488,7 @@ function EnhancedCpuManager:CreateResourceOptimizer()
     
     function resource_optimizer:CalculateAverage(values)
         local sum = 0
-        for _, value in values do
+        for _, value in pairs(values) do
             sum = sum + value
         end
         return sum / table.getn(values)
@@ -505,7 +505,7 @@ function EnhancedCpuManager:CreateResourceOptimizer()
         local sum_x2 = 0
         local n = table.getn(values)
         
-        for i, value in values do
+        for i, value in pairs(values) do
             sum_x = sum_x + i
             sum_y = sum_y + value
             sum_xy = sum_xy + i * value

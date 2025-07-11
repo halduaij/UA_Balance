@@ -199,15 +199,16 @@ function EnhancedStrategy:ApplyLearning(options, context)
     local adjusted_options = AI_Improvements.TableShallowCopy(options)
     
     -- Adjust weights based on success rate
-    for i, option in adjusted_options do
+    for i, option in pairs(adjusted_options) do
         local success_rate = self.success_rate[option.value] or 0.5
-        local adjustment = (success_rate - 0.5) * 0.3  -- ±30% adjustment
+        -- Adjust up to roughly 30 percent based on success
+        local adjustment = (success_rate - 0.5) * 0.3
         
         option.weight = math.max(1, option.weight * (1 + adjustment))
     end
     
     -- Apply adaptive parameters
-    for i, option in adjusted_options do
+    for i, option in pairs(adjusted_options) do
         if option.value == "attack" then
             option.weight = option.weight * self.adaptive_params.aggression_level
         elseif option.value == "defend" then
@@ -342,7 +343,7 @@ function EnhancedStrategy:StoreTacticalInfo(threats)
     local current_time = cpu_manager.cpu_player:GetGameTime()
     
     -- Store enemy patterns
-    for _, threat in threats do
+    for _, threat in pairs(threats) do
         local squad_name = threat.squad:GetSquadName()
         if not self.tactical_memory.enemy_patterns[squad_name] then
             self.tactical_memory.enemy_patterns[squad_name] = {}
