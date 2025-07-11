@@ -1285,10 +1285,6 @@ function VerifiedAI.SafeCall(func_name, ...)
     local args = { ... }
 
     -- Call function with error handling
-    local success, result = pcall(function()
-        return VerifiedAI[func_name](unpack(args))
-    end)
-
     if not success then
         aitrace("AI Error: " .. func_name .. " failed: " .. tostring(result))
         return nil
