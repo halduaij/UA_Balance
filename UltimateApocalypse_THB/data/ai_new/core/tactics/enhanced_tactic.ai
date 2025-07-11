@@ -261,7 +261,7 @@ function EnhancedTactic:EvaluateTarget(enemy_squad, friendly_position)
     end
     
     -- Specialization targeting
-    for _, spec in self.specialization do
+    for _, spec in pairs(self.specialization) do
         if spec == "anti_vehicle" and enemy_stats:GetClass() >= UnitStatsAI.UC_VehicleLow then
             score = score + 150
         elseif spec == "anti_infantry" and enemy_stats:GetClass() == UnitStatsAI.UC_Infantry then

@@ -76,6 +76,6 @@ function BroadsideBattlesuitTactic:DoEntrenchAbility()
 			self.squad_ai:DoEntrench(false)
 			self.m_iLastEntrenchTime = g_iGMT
 		end
-		]]--
-	end
+         end
 end
+--]]
