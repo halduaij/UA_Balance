@@ -1,0 +1,1064 @@
+-- Made by CannibalToast 2025
+class 'ChaosPsykerTactic' (ChaosMarineInfantryTactic)
+
+function ChaosPsykerTactic:__init(squad_ai)
+    super(squad_ai)
+
+    self:SetName("Chaos Psyker Tactic")
+end
+
+function ChaosPsykerTactic:IsAttacker()
+    return self:IsCommanderAttacker()
+end
+
+function ChaosPsykerTactic:IsDefender()
+    return self:IsCommanderDefender()
+end
+
+-- ChaosPsykerTactic DoAbilities
+function ChaosPsykerTactic:DoAbilities()
+    local abilities = {
+        [64] = { -- chaos_bolt_of_change_psyker
+            function()
+                local pos = Ability.Filters.CloseSquadEnemy(self.squad_ai:GetPosition(), 4)
+                if not pos then
+                    pos = Ability.Filters.CloseVehicleEnemy(self.squad_ai:GetPosition(), 1)
+                end
+                return pos
+            end
+        },
+        [120] = { -- chaos_doombolt_psyker
+            function()
+                local pos = Ability.Filters.CloseSquadEnemy(self.squad_ai:GetPosition(), 4)
+                if not pos then
+                    pos = Ability.Filters.CloseVehicleEnemy(self.squad_ai:GetPosition(), 1)
+                end
+                return pos
+            end
+        },
+        [1162] = { -- guard_psyker_strip_soul
+            function()
+                return Ability.Filters.CloseInfantryEnemy(self.squad_ai:GetPosition(), 1)
+            end
+        }
+    }
+
+    -- Execute abilities
+    for ability_id, data in pairs(abilities) do
+        if self.squad_ai:CanDoAbility(ability_id) then
+            local target = data[1]()
+            if target then
+                if type(target) == "userdata" then -- Vector3f position
+                    self.squad_ai:DoSpecialAbilityPos(ability_id, target)
+                else -- Target unit
+                    self.squad_ai:DoSpecialAbilityTarget(ability_id, target)
+                end
+            end
+        end
+    end
+
+    -- Call parent DoAbilities for common abilities
+    ChaosMarineInfantryTactic.DoAbilities(self)
+end
+
+function ChaosPsykerTactic:Update()
+    if self:IsComplete() then
+        return
+    end
+
+    --state machine
+    if not InfantryTactic.Update(self) then
+        return
+    end
+
+    --attach to squad
+    self:TryAttachSquad(false, false, 1000, 100, nil)
+end
+
+class 'ChaosLordAdvancedTactic' (ChaosMarineInfantryTactic)
+
+function ChaosLordAdvancedTactic:__init(squad_ai)
+    super(squad_ai)
+
+    self:SetName("Chaos Lord Advanced Tactic")
+
+    self.m_oTimedSpecialAbilities = Timer(ChaosLordAdvancedTactic.DoTimedSpecialAbilities, self, 7)
+end
+
+function ChaosLordAdvancedTactic:IsAttacker()
+    return self:IsCommanderAttacker()
+end
+
+function ChaosLordAdvancedTactic:IsDefender()
+    return self:IsCommanderDefender()
+end
+
+-- ChaosLordAdvancedTactic DoAbilities
+-- ChaosLordAdvancedTactic
+function ChaosLordAdvancedTactic:DoAbilities()
+    -- Check if we can possess
+    if self.squad_ai:CanPossess() and
+       (self.squad_ai:IsInCombat() or cpu_manager.terrain_analyzer:HasThreat(self.squad_ai:GetPosition(), 35)) then
+        self.squad_ai:DoPossess()
+    end
+
+    -- Call parent DoAbilities for common abilities
+    ChaosMarineInfantryTactic.DoAbilities(self)
+end
+
+function ChaosLordAdvancedTactic:DoTimedSpecialAbilities()
+    -- Try to use detection ability
+    if (self.squad_ai:CanDoAbility(ChaosLordAdvanced.detector_id)) then
+        -- Check for infiltrated enemy
+        local oEnemy = Ability.Filters.CloseInfiltratedEnemy(self.squad_ai:GetPosition(), 35, 1)
+        if (oEnemy ~= nil) then
+            -- Get distance to enemy unit
+            local vSquadPos = self.squad_ai:GetPosition()
+            local vEnemyPos = oEnemy:GetPosition()
+            local iDistance = distance(vSquadPos, vEnemyPos)
+
+            -- If target is too far away launch auspex in range
+            local vTargetPos = Vector3f(vSquadPos)
+            local iRange = self.squad_ai:GetAbilityRange(ChaosLordAdvanced.detector_id)
+            if (iDistance > iRange) then
+                local fThrowFactor = iRange / iDistance
+                vTargetPos.x = vTargetPos.x + (vEnemyPos.x - vSquadPos.x) * fThrowFactor
+                vTargetPos.z = vTargetPos.z + (vEnemyPos.z - vSquadPos.z) * fThrowFactor
+            else
+                vTargetPos = Vector3f(vEnemyPos)
+            end
+            self.squad_ai:DoSpecialAbilityPos(ChaosLordAdvanced.detector_id, vTargetPos)
+        end
+    end
+end
+
+function ChaosLordAdvancedTactic:Update()
+    if (self:IsComplete()) then
+        return
+    end
+
+    -- State machine
+    if (not InfantryTactic.Update(self)) then
+        return
+    end
+
+    -- Attach to melee in tier2+
+    if (cpu_manager:GetTierLevel() > 1) then
+        if (self:TryAttachSquad(true, true, 50, 150, nil) ~= nil) then
+            return
+        end
+    end
+    if (self:TryAttachSquad(false, true, 50, nil, self.m_fCommanderAttachHealth) == nil) then
+        self:TryAttachSquadMelee()
+    end
+end
+
+class 'ChaosLordsTactic' (ChaosMarineInfantryTactic)
+
+function ChaosLordsTactic:__init(squad_ai)
+    super(squad_ai)
+
+    self:SetName("Chaos Lords Tactic")
+
+    self.m_oTimedSpecialAbilities = Timer(ChaosLordsTactic.DoTimedSpecialAbilities, self, 7)
+end
+
+function ChaosLordsTactic:AutoBuildAddOn(addonSlot)
+    for e in self.squad_ai:GetEntities() do
+        local buildChannelChaosLords = build_manager:GetBuildChannelFromID(e:GetID())
+        if (buildChannelChaosLords ~= nil) then
+            local addOnID = buildChannelChaosLords:GetItemIDAt(BuildChannelAI.PQ_AddOn, addonSlot)
+            if (buildChannelChaosLords:IsBuilding() == 0 and buildChannelChaosLords:CanAddToQueue(BuildChannelAI.PQ_AddOn, addOnID) == BuildChannelAI.CANBUILD_Ok) then
+                buildChannelChaosLords:BuildAddOn(addOnID)
+                return
+            end
+        end
+    end
+    return
+end
+
+function ChaosLordsTactic:IsAttacker()
+    return self:IsCommanderAttacker()
+end
+
+function ChaosLordsTactic:IsDefender()
+    return self:IsCommanderDefender()
+end
+
+function ChaosLordsTactic:DoAbilities()
+    local abilities = {
+        [97] = { -- chaos_daemon_strength
+            function()
+                return self.squad_ai:IsInCombat()
+            end
+        },
+        [107] = { -- chaos_doom_siren
+            function()
+                local pos = Ability.Filters.CloseSquadEnemy(self.squad_ai:GetPosition(), 4)
+                if not pos then
+                    pos = Ability.Filters.CloseVehicleEnemy(self.squad_ai:GetPosition(), 1)
+                end
+                return pos
+            end
+        },
+        [26] = { -- UA_all_run!
+            function()
+                return (not self.squad_ai:IsInCombat() and self.squad_ai:IsInStateMove()) or self.stateID ~= Tactic.StateID.NoState
+            end
+        },
+        [148] = { -- chaos_furious_rage
+            function()
+                return not self:IsMoving() and
+                       ((not self.squad_ai:IsInCombat() and self.squad_ai:IsInStateMove()) or self.stateID ~= Tactic.StateID.NoState)
+            end
+        },
+        [105] = { -- chaos_detector (timed ability)
+            function()
+                local oEnemy = Ability.Filters.CloseInfiltratedEnemy(self.squad_ai:GetPosition(), 35, 1)
+                if oEnemy ~= nil then
+                    local vSquadPos = self.squad_ai:GetPosition()
+                    local vEnemyPos = oEnemy:GetPosition()
+                    local iDistance = distance(vSquadPos, vEnemyPos)
+                    local vTargetPos = Vector3f(vSquadPos)
+                    local iRange = self.squad_ai:GetAbilityRange(105)
+
+                    if (iDistance > iRange) then
+                        local fThrowFactor = iRange / iDistance
+                        vTargetPos.x = vTargetPos.x + (vEnemyPos.x - vSquadPos.x) * fThrowFactor
+                        vTargetPos.z = vTargetPos.z + (vEnemyPos.z - vSquadPos.z) * fThrowFactor
+                    else
+                        vTargetPos = Vector3f(vEnemyPos)
+                    end
+                    return vTargetPos
+                end
+                return nil
+            end
+        }
+    }
+
+    -- Execute abilities
+    for ability_id, data in pairs(abilities) do
+        if self.squad_ai:CanDoAbility(ability_id) then
+            local result = data[1]()
+            if type(result) == "boolean" and result then
+                self.squad_ai:DoSpecialAbility(ability_id)
+            elseif result then -- Vector3f position
+                self.squad_ai:DoSpecialAbilityPos(ability_id, result)
+            end
+        end
+    end
+end
+
+function ChaosLordsTactic:DoTimedSpecialAbilities()
+    -- Try to use detection ability (105)
+    if (self.squad_ai:CanDoAbility(105)) then
+        -- Check for infiltrated enemy
+        local oEnemy = Ability.Filters.CloseInfiltratedEnemy(self.squad_ai:GetPosition(), 35, 1)
+        if (oEnemy ~= nil) then
+            -- Get distance to enemy unit
+            local vSquadPos = self.squad_ai:GetPosition()
+            local vEnemyPos = oEnemy:GetPosition()
+            local iDistance = distance(vSquadPos, vEnemyPos)
+
+            -- If target is too far away launch auspex in range
+            local vTargetPos = Vector3f(vSquadPos)
+            local iRange = self.squad_ai:GetAbilityRange(105)
+            if (iDistance > iRange) then
+                local fThrowFactor = iRange / iDistance
+                vTargetPos.x = vTargetPos.x + (vEnemyPos.x - vSquadPos.x) * fThrowFactor
+                vTargetPos.z = vTargetPos.z + (vEnemyPos.z - vSquadPos.z) * fThrowFactor
+            else
+                vTargetPos = Vector3f(vEnemyPos)
+            end
+            self.squad_ai:DoSpecialAbilityPos(105, vTargetPos)
+        end
+    end
+end
+
+function ChaosLordsTactic:Upgrade()
+    if (cpu_manager:GetTierLevel() <= 4) then
+        local addon_random_commander_upgrades = math.random(0, 8) -- Randomize these addons
+        self:AutoBuildAddOn(addon_random_commander_upgrades)
+    end
+
+    if (cpu_manager:GetTierLevel() > 4) then
+        self:AutoBuildAddOn(2) -- Always build in late tiers to support the construction of Titans and late game ubers.
+    end
+end
+
+function ChaosLordsTactic:Update()
+    if (self:IsComplete()) then
+        return
+    end
+
+    -- State machine
+    if (not InfantryTactic.Update(self)) then
+        return
+    end
+
+    -- Attach to melee in tier2+
+    if (cpu_manager:GetTierLevel() > 1) then
+        if (self:TryAttachSquad(true, true, 50, 150, nil) ~= nil) then
+            return
+        end
+    end
+    if (self:TryAttachSquad(false, true, 50, nil, self.m_fCommanderAttachHealth) == nil) then
+        self:TryAttachSquadMelee()
+    end
+end
+
+class 'ChaosLordTactic' (ChaosMarineInfantryTactic)
+
+function ChaosLordTactic:__init(squad_ai)
+    super(squad_ai)
+
+    self:SetName("Chaos Lord Tactic")
+
+    self.m_oTimedSpecialAbilities = Timer(ChaosLordTactic.DoTimedSpecialAbilities, self, 7)
+end
+
+function ChaosLordTactic:AutoBuildAddOn(addonSlot)
+    for e in self.squad_ai:GetEntities() do
+        local buildChannelChaosLord = build_manager:GetBuildChannelFromID(e:GetID())
+        if (buildChannelChaosLord ~= nil) then
+            local addOnID = buildChannelChaosLord:GetItemIDAt(BuildChannelAI.PQ_AddOn, addonSlot)
+            if (buildChannelChaosLord:IsBuilding() == 0 and buildChannelChaosLord:CanAddToQueue(BuildChannelAI.PQ_AddOn, addOnID) == BuildChannelAI.CANBUILD_Ok) then
+                buildChannelChaosLord:BuildAddOn(addOnID)
+                return
+            end
+        end
+    end
+    return
+end
+
+-- Assassinate win condition -- never attack
+function ChaosLordTactic:IsAttacker()
+    return (not cpu_manager.assassinate and self:IsCommanderAttacker())
+end
+
+-- Assassinate win condition -- never defend
+function ChaosLordTactic:IsDefender()
+    return (not cpu_manager.assassinate and self:IsCommanderDefender())
+end
+
+-- Chaos Lord is allowed to retreat even directly after a jump
+function ChaosLordTactic:SetTarget(target, variant_type)
+    self.variant_type = variant_type
+    self.variant_type = variant_type
+    if self.variant_type == Tactic.Variant.Vector then
+        self.target = Vector3f(target)
+    elseif self.variant_type == Tactic.Variant.SquadAI then
+        self.target = target
+    elseif self.variant_type == Tactic.Variant.BaseAI then
+        self.target = target
+    end
+    self.m_iMoveDelay = 0
+    self.last_jump = 0
+end
+
+-- Assassinate win condition -- never jump into combat
+function ChaosLordTactic:JumpAttack()
+    if (not cpu_manager.assassinate) then
+        Tactic.JumpAttack(self)
+    end
+end
+
+function ChaosLordTactic:CanJumpAttached()
+    return true
+end
+
+-- ChaosLordTactic (Only unique abilities, inherits common ones)
+function ChaosLordTactic:DoAbilities()
+    -- Check if we can possess
+    if self.squad_ai:CanPossess() and
+       (self.squad_ai:IsInCombat() or cpu_manager.terrain_analyzer:HasThreat(self.squad_ai:GetPosition(), 35)) then
+        self.squad_ai:DoPossess()
+    end
+
+    -- Call parent DoAbilities for common abilities
+    ChaosMarineInfantryTactic.DoAbilities(self)
+end
+
+function ChaosLordTactic:Upgrade()
+    if (cpu_manager:GetTierLevel() <= 4) then
+        local addon_random_commander_upgrades = math.random(0, 8) -- Randomize these addons
+        self:AutoBuildAddOn(addon_random_commander_upgrades)
+    end
+
+    if (cpu_manager:GetTierLevel() > 4) then
+        self:AutoBuildAddOn(2) -- Always build in late tiers to support the construction of Titans and late game ubers.
+    end
+end
+
+function ChaosLordTactic:DoTimedSpecialAbilities()
+    -- Try to use detection ability (105)
+    if (self.squad_ai:CanDoAbility(105)) then
+        -- Check for infiltrated enemy
+        local oEnemy = Ability.Filters.CloseInfiltratedEnemy(self.squad_ai:GetPosition(), 35, 1)
+        if (oEnemy ~= nil) then
+            -- Get distance to enemy unit
+            local vSquadPos = self.squad_ai:GetPosition()
+            local vEnemyPos = oEnemy:GetPosition()
+            local iDistance = distance(vSquadPos, vEnemyPos)
+
+            -- If target is too far away launch auspex in range
+            local vTargetPos = Vector3f(vSquadPos)
+            local iRange = self.squad_ai:GetAbilityRange(105)
+            if (iDistance > iRange) then
+                local fThrowFactor = iRange / iDistance
+                vTargetPos.x = vTargetPos.x + (vEnemyPos.x - vSquadPos.x) * fThrowFactor
+                vTargetPos.z = vTargetPos.z + (vEnemyPos.z - vSquadPos.z) * fThrowFactor
+            else
+                vTargetPos = Vector3f(vEnemyPos)
+            end
+            self.squad_ai:DoSpecialAbilityPos(105, vTargetPos)
+        end
+    end
+end
+
+function ChaosLordTactic:Update()
+    if (self:IsComplete()) then
+        return
+    end
+
+    -- State machine
+    if (not InfantryTactic.Update(self)) then
+        return
+    end
+
+    -- Assassinate win condition -- never attach to a squad
+    if (not cpu_manager.assassinate) then
+        -- Attach to melee in tier2+
+        if (cpu_manager:GetTierLevel() > 1) then
+            if (self:TryAttachSquad(true, true, 50, 150, nil) ~= nil) then
+                return
+            end
+        end
+        if (self:TryAttachSquad(false, true, 50, nil, self.m_fCommanderAttachHealth) == nil) then
+            self:TryAttachSquadMelee()
+        end
+    end
+
+    -- Check if we are in serious trouble
+    self:EmergencyRetreat()
+end
+
+class 'ChaosLordTerminatorTactic' (ChaosMarineInfantryTactic)
+
+function ChaosLordTerminatorTactic:__init(squad_ai)
+    super(squad_ai)
+
+    self:SetName("Chaos Lord Tactic")
+
+    self.m_oTimedSpecialAbilities = Timer(ChaosLordTerminatorTactic.DoTimedSpecialAbilities, self, 7)
+end
+
+function ChaosLordTerminatorTactic:AutoBuildAddOn(addonSlot)
+    for e in self.squad_ai:GetEntities() do
+        local buildChannelChaosLordTerminator = build_manager:GetBuildChannelFromID(e:GetID())
+        if (buildChannelChaosLordTerminator ~= nil) then
+            local addOnID = buildChannelChaosLordTerminator:GetItemIDAt(BuildChannelAI.PQ_AddOn, addonSlot)
+            if (buildChannelChaosLordTerminator:IsBuilding() == 0 and buildChannelChaosLordTerminator:CanAddToQueue(BuildChannelAI.PQ_AddOn, addOnID) == BuildChannelAI.CANBUILD_Ok) then
+                buildChannelChaosLordTerminator:BuildAddOn(addOnID)
+                return
+            end
+        end
+    end
+end
+
+-- Assassinate win condition -- never attack
+function ChaosLordTerminatorTactic:IsAttacker()
+    return (not cpu_manager.assassinate and self:IsCommanderAttacker())
+end
+
+-- Assassinate win condition -- never defend
+function ChaosLordTerminatorTactic:IsDefender()
+    return (not cpu_manager.assassinate and self:IsCommanderDefender())
+end
+
+-- Chaos Lord is allowed to retreat even directly after a jump
+function ChaosLordTerminatorTactic:SetTarget(target, variant_type)
+    self.variant_type = variant_type
+    self.variant_type = variant_type
+    if self.variant_type == Tactic.Variant.Vector then
+        self.target = Vector3f(target)
+    elseif self.variant_type == Tactic.Variant.SquadAI then
+        self.target = target
+    elseif self.variant_type == Tactic.Variant.BaseAI then
+        self.target = target
+    end
+    self.m_iMoveDelay = 0
+    self.last_jump = 0
+end
+
+-- Assassinate win condition -- never jump into combat
+function ChaosLordTerminatorTactic:JumpAttack()
+    if (not cpu_manager.assassinate) then
+        Tactic.JumpAttack(self)
+    end
+end
+
+function ChaosLordTerminatorTactic:CanJumpAttached()
+    return true
+end
+
+-- ChaosLordTerminatorTactic
+function ChaosLordTerminatorTactic:DoAbilities()
+    -- Check if we can possess
+    if self.squad_ai:CanPossess() and
+       (self.squad_ai:IsInCombat() or cpu_manager.terrain_analyzer:HasThreat(self.squad_ai:GetPosition(), 35)) then
+        self.squad_ai:DoPossess()
+    end
+
+    -- Call parent DoAbilities for common abilities
+    ChaosMarineInfantryTactic.DoAbilities(self)
+end
+
+function ChaosLordTerminatorTactic:Upgrade()
+    if (cpu_manager:GetTierLevel() <= 4) then
+        local addon_random_commander_upgrades = math.random(7, 15) -- Randomize these addons
+        self:AutoBuildAddOn(addon_random_commander_upgrades)
+    end
+
+    if (cpu_manager:GetTierLevel() > 4) then
+        self:AutoBuildAddOn(9) -- Always build in late tiers to support the construction of Titans and late game ubers.
+    end
+
+    -- Figure out my enemy's favourite class
+    local enemy = cpu_manager:FindClosestEnemyPlayer()
+    if (enemy == nil) then
+        return
+    end
+
+    local class_type = enemy:GetMajorityClassType()
+
+    -- Hard counter upgrade for infantry
+    if (class_type == UnitStatsAI.UC_LightInfantryLow) or
+        (class_type == UnitStatsAI.UC_LightInfantryMed) or
+        (class_type == UnitStatsAI.UC_LightInfantryHigh) or
+        (class_type == UnitStatsAI.UC_HeavyInfantryMed) or
+        (class_type == UnitStatsAI.UC_HeavyInfantryHigh) or
+        (class_type == UnitStatsAI.UC_MonsterMed) then
+        if (cpu_manager:GetTierLevel() >= 2) then
+            local addon_random_infantry_wargear = math.random(0, 1)
+            self:AutoBuildAddOn(addon_random_infantry_wargear) -- Randomize between Combo Flamers and Plasma weapons
+        end
+        -- Hard counter upgrade for Vehicles
+    elseif (class_type == UnitStatsAI.UC_VehicleLow) or
+        (class_type == UnitStatsAI.UC_VehicleMed) or
+        (class_type == UnitStatsAI.UC_VehicleHigh) or
+        (class_type == UnitStatsAI.UC_MonsterHigh) then
+        if (cpu_manager:GetTierLevel() >= 2) then
+            local addon_random_vehicle_wargear = math.random(2, 3)
+            self:AutoBuildAddOn(addon_random_vehicle_wargear) -- Randomize between Combo Melta and Reaper weapons
+        end
+    end
+
+    -- Build Chainfist wargear first then..
+    self:AutoBuildAddOn(4)
+
+    -- Build Lightning Claws wargear next..
+    self:AutoBuildAddOn(5)
+
+    -- Always build teleport addon
+    self:AutoBuildAddOn(6)
+end
+
+function ChaosLordTerminatorTactic:DoTimedSpecialAbilities()
+    -- Try to use detection ability
+    if (self.squad_ai:CanDoAbility(ChaosLordTerminator.detector_id)) then
+        -- Check for infiltrated enemy
+        local oEnemy = Ability.Filters.CloseInfiltratedEnemy(self.squad_ai:GetPosition(), 35, 1)
+        if (oEnemy ~= nil) then
+            -- Get distance to enemy unit
+            local vSquadPos = self.squad_ai:GetPosition()
+            local vEnemyPos = oEnemy:GetPosition()
+            local iDistance = distance(vSquadPos, vEnemyPos)
+
+            -- If target is too far away launch auspex in range
+            local vTargetPos = Vector3f(vSquadPos)
+            local iRange = self.squad_ai:GetAbilityRange(ChaosLordTerminator.detector_id)
+            if (iDistance > iRange) then
+                local fThrowFactor = iRange / iDistance
+                vTargetPos.x = vTargetPos.x + (vEnemyPos.x - vSquadPos.x) * fThrowFactor
+                vTargetPos.z = vTargetPos.z + (vEnemyPos.z - vSquadPos.z) * fThrowFactor
+            else
+                vTargetPos = Vector3f(vEnemyPos)
+            end
+            self.squad_ai:DoSpecialAbilityPos(ChaosLordTerminator.detector_id, vTargetPos)
+        end
+    end
+end
+
+function ChaosLordTerminatorTactic:Update()
+    if (self:IsComplete()) then
+        return
+    end
+
+    -- State machine
+    if (not InfantryTactic.Update(self)) then
+        return
+    end
+
+    -- Assassinate win condition -- never attach to a squad
+    if (not cpu_manager.assassinate) then
+        -- Attach to melee in tier2+
+        if (cpu_manager:GetTierLevel() > 1) then
+            if (self:TryAttachSquad(true, true, 50, 150, nil) ~= nil) then
+                return
+            end
+        end
+        if (self:TryAttachSquad(false, true, 50, nil, self.m_fCommanderAttachHealth) == nil) then
+            self:TryAttachSquadMelee()
+        end
+    end
+
+    -- Check if we are in serious trouble
+    self:EmergencyRetreat()
+end
+
+class 'DaemonPrinceAdvancedTactic' (ChaosMarineInfantryTactic)
+
+function DaemonPrinceAdvancedTactic:__init(squad_ai)
+    super(squad_ai)
+
+    self:SetName("Daemon Prince Advanced Tactic")
+
+    self.m_oTimedSpecialAbilities = Timer(DaemonPrinceAdvancedTactic.DoTimedSpecialAbilities, self, 7)
+end
+
+-- DaemonPrinceAdvancedTactic DoAbilities
+-- DaemonPrinceAdvancedTactic
+function DaemonPrinceAdvancedTactic:DoAbilities()
+    local abilities = {
+        [212] = { -- chaos_ritual_confusion
+            function()
+                if self.squad_ai:IsAttacking() then
+                    local hasSquad = Ability.Filters.CloseSquadEnemy(self.squad_ai:GetPosition(), 20, 4)
+                    local hasCommander = Ability.Filters.CloseCommanderEnemy(self.squad_ai:GetPosition(), 20, 1)
+                    return hasSquad or hasCommander
+                end
+                return false
+            end
+        },
+        [215] = { -- chaos_ritual_eye
+            function()
+                if not self.squad_ai:IsInCombat() and
+                   not cpu_manager.terrain_analyzer:HasThreat(self.squad_ai:GetPosition(), 80) and
+                   self.squad_ai:GetHealthPercentage() > 0.8 then
+                    local oSquad = Ability.Filters.CloseEnemy(self.squad_ai:GetPosition(), 80, 20)
+                    return oSquad ~= nil and oSquad:IsAttacking()
+                end
+                return false
+            end
+        },
+        [217] = { -- chaos_ritual_sacrifice
+            function()
+                if not self.squad_ai:IsInCombat() and
+                   not cpu_manager.terrain_analyzer:HasThreat(self.squad_ai:GetPosition(), 60) and
+                   self.squad_ai:GetHealthPercentage() > 0.7 then
+                    return Ability.Filters.CloseSquadEnemy(self.squad_ai:GetPosition(), 60, 30) or
+                           Ability.Filters.CloseMonsterEnemy(self.squad_ai:GetPosition(), 60, 30)
+                end
+                return false
+            end
+        }
+    }
+
+    -- Execute unique abilities
+    for ability_id, data in pairs(abilities) do
+        if self.squad_ai:CanDoAbility(ability_id) then
+            local result = data[1]()
+            if type(result) == "boolean" and result then
+                self.squad_ai:DoSpecialAbility(ability_id)
+            elseif result then -- Vector3f position or target
+                if type(result) == "userdata" then -- Vector3f position
+                    self.squad_ai:DoSpecialAbilityPos(ability_id, result)
+                else -- Target unit
+                    self.squad_ai:DoSpecialAbilityTarget(ability_id, result)
+                end
+            end
+        end
+    end
+
+    -- Call parent DoAbilities for common abilities
+    ChaosMarineInfantryTactic.DoAbilities(self)
+end
+
+function DaemonPrinceAdvancedTactic:DoTimedSpecialAbilities()
+    -- Try to use detection ability (105)
+    if (self.squad_ai:CanDoAbility(105)) then
+        local oSquad = Ability.Filters.CloseInfiltratedEnemy(self.squad_ai:GetPosition(), 35, 1)
+        if (oSquad ~= nil) then
+            self.squad_ai:DoSpecialAbility(105)
+        end
+    end
+end
+
+class 'DaemonPrinceTactic' (ChaosMarineInfantryTactic)
+
+function DaemonPrinceTactic:__init(squad_ai)
+    super(squad_ai)
+
+    self:SetName("Daemon Prince Tactic")
+end
+
+function DaemonPrinceTactic:AutoBuildAddOn(addonSlot)
+    for e in self.squad_ai:GetEntities() do
+        local buildChannelDaemonPrince = build_manager:GetBuildChannelFromID(e:GetID())
+        if (buildChannelDaemonPrince ~= nil) then
+            local addOnID = buildChannelDaemonPrince:GetItemIDAt(BuildChannelAI.PQ_AddOn, addonSlot)
+            if (buildChannelDaemonPrince:IsBuilding() == 0 and buildChannelDaemonPrince:CanAddToQueue(BuildChannelAI.PQ_AddOn, addOnID) == BuildChannelAI.CANBUILD_Ok) then
+                buildChannelDaemonPrince:BuildAddOn(addOnID)
+                return
+            end
+        end
+    end
+    return
+end
+
+-- DaemonPrinceTactic
+function DaemonPrinceTactic:DoAbilities()
+    local abilities = {
+        [212] = { -- chaos_ritual_confusion
+            function()
+                if self.squad_ai:IsAttacking() then
+                    local hasSquad = Ability.Filters.CloseSquadEnemy(self.squad_ai:GetPosition(), 20, 4)
+                    local hasCommander = Ability.Filters.CloseCommanderEnemy(self.squad_ai:GetPosition(), 20, 1)
+                    return hasSquad or hasCommander
+                end
+                return false
+            end
+        },
+        [215] = { -- chaos_ritual_eye
+            function()
+                if not self.squad_ai:IsInCombat() and
+                   not cpu_manager.terrain_analyzer:HasThreat(self.squad_ai:GetPosition(), 60) then
+                    if self.squad_ai:GetHealthPercentage() > 0.6 then
+                        self.squad_ai:DoSpecialAbility(215)
+                    end
+                end
+                return false
+            end
+        },
+        [217] = { -- chaos_ritual_sacrifice
+            function()
+                if not self.squad_ai:IsInCombat() and
+                   not cpu_manager.terrain_analyzer:HasThreat(self.squad_ai:GetPosition(), 50) then
+                    if self.squad_ai:GetHealthPercentage() > 0.7 then
+                        return Ability.Filters.CloseSquadEnemy(self.squad_ai:GetPosition(), 50, 30) or
+                               Ability.Filters.CloseMonsterEnemy(self.squad_ai:GetPosition(), 50, 30)
+                    end
+                end
+                return false
+            end
+        }
+    }
+
+    -- Execute unique abilities
+    for ability_id, data in pairs(abilities) do
+        if self.squad_ai:CanDoAbility(ability_id) then
+            local result = data[1]()
+            if type(result) == "boolean" and result then
+                self.squad_ai:DoSpecialAbility(ability_id)
+            elseif result then -- Vector3f position or target
+                if type(result) == "userdata" then -- Vector3f position
+                    self.squad_ai:DoSpecialAbilityPos(ability_id, result)
+                else -- Target unit
+                    self.squad_ai:DoSpecialAbilityTarget(ability_id, result)
+                end
+            end
+        end
+    end
+
+    -- Call parent DoAbilities for common abilities
+    ChaosMarineInfantryTactic.DoAbilities(self)
+end
+
+function DaemonPrinceTactic:Upgrade()
+    if (cpu_manager.cpu_player:IsResearchComplete("commander_level8_research") and cpu_manager.cpu_player:IsResearchComplete("chaos_apocalypse_research")) then
+        -- Choose a random ritual addon
+        local addon_random_sorcerer_ritual = math.random(0, 2) -- Randomize these ritual addons
+        self:AutoBuildAddOn(addon_random_sorcerer_ritual)
+    end
+
+    if (cpu_manager:GetTierLevel() <= 4) then
+        local addon_random_commander_upgrades = math.random(3, 11) -- Randomize these addons
+        self:AutoBuildAddOn(addon_random_commander_upgrades)
+    end
+
+    if (cpu_manager:GetTierLevel() > 4) then
+        self:AutoBuildAddOn(5) -- Always build in late tiers to support the construction of Titans and late game ubers.
+    end
+end
+
+------------------------------------------------------------------------------------------------------------------------------------------
+-- SORCERER ABILTIIES COMPARTMENTALIZED TO REDUCE CLUTTER
+------------------------------------------------------------------------------------------------------------------------------------------
+class 'SorcererAdvancedTactic' (ChaosMarineInfantryTactic)
+
+function SorcererAdvancedTactic:__init(squad_ai)
+    super(squad_ai)
+
+    self:SetName("Sorcerer Advanced Tactic")
+
+    self.dance_time = 0
+end
+function SorcererAdvancedTactic:DoAbilities()
+    -- We are dying, lower requisites for attacks
+    if (self.squad_ai:WasRecentlyHurt() and self.squad_ai:GetHealthPercentage() < 0.4) then
+        self:DoSorcererAbilities(4, 2)
+    else
+        self:DoSorcererAbilities(8, 4)
+    end
+
+    -- Call parent DoAbilities for common abilities
+    ChaosMarineInfantryTactic.DoAbilities(self)
+end
+
+function SorcererAdvancedTactic:AutoBuildAddOn(addonSlot)
+    for e in self.squad_ai:GetEntities() do
+        local buildChannelSorcererAdvanced = build_manager:GetBuildChannelFromID(e:GetID())
+        if (buildChannelSorcererAdvanced ~= nil) then
+            local addOnID = buildChannelSorcererAdvanced:GetItemIDAt(BuildChannelAI.PQ_AddOn, addonSlot)
+            if (buildChannelSorcererAdvanced:IsBuilding() == 0 and buildChannelSorcererAdvanced:CanAddToQueue(BuildChannelAI.PQ_AddOn, addOnID) == BuildChannelAI.CANBUILD_Ok) then
+                buildChannelSorcererAdvanced:BuildAddOn(addOnID)
+                return
+            end
+        end
+    end
+    return
+end
+
+function SorcererAdvancedTactic:IsAttacker()
+    return self:IsCommanderAttacker()
+end
+
+function SorcererAdvancedTactic:IsDefender()
+    return self:IsCommanderDefender()
+end
+
+-- Sorcerer Advanced is allowed to retreat even directly after a jump
+function SorcererAdvancedTactic:SetTarget(target, variant_type)
+    self.variant_type = variant_type
+    self.variant_type = variant_type
+    if self.variant_type == Tactic.Variant.Vector then
+        self.target = Vector3f(target)
+    elseif self.variant_type == Tactic.Variant.SquadAI then
+        self.target = target
+    elseif self.variant_type == Tactic.Variant.BaseAI then
+        self.target = target
+    end
+    self.m_iMoveDelay = 0
+    self.last_jump = 0
+end
+
+-- Arkhan 03.2006: Inherited method used by commanders which are able to jump with an attached squad
+function SorcererAdvancedTactic:CanJumpAttached()
+    return true
+end
+
+function SorcererAdvancedTactic:Upgrade()
+    if (cpu_manager:GetTierLevel() <= 4) then
+        local addon_random_commander_upgrades = math.random(0, 8) -- Randomize these addons
+        self:AutoBuildAddOn(addon_random_commander_upgrades)
+    end
+
+    if (cpu_manager:GetTierLevel() > 4) then
+        self:AutoBuildAddOn(2) -- Always build in late tiers to support the construction of Titans and late game ubers.
+    end
+end
+
+function SorcererAdvancedTactic:Update()
+    if (self:IsComplete()) then
+        return
+    end
+
+    -- State machine
+    if (not InfantryTactic.Update(self)) then
+        return
+    end
+
+    -- Check for close commander
+    local bSetRanged = false
+    local bSetMelee = false
+    local vSquadPos = self.squad_ai:GetPosition()
+    local eStance = self.squad_ai:GetMeleeStance()
+    local oEnemyCommander = Ability.Filters.CloseCommanderEnemy(vSquadPos, 20, 1)
+    if (oEnemyCommander ~= nil) then
+        -- Check health
+        if (self.squad_ai:GetHealthPercentage() > 0.8 and oEnemyCommander:GetHealthPercentage() < 0.3) then
+            bSetMelee = (eStance == SquadAI.MSTANCE_Ranged)
+            self.dance_time = 0
+        else
+            bSetRanged = (eStance == SquadAI.MSTANCE_Assault)
+        end
+    else
+        -- Check for close attached commander
+        local oSquad = Ability.Filters.CloseInfantryEnemy(vSquadPos, 20, 4)
+        if (oSquad ~= nil and oSquad:IsAttached()) then
+            bSetRanged = (eStance == SquadAI.MSTANCE_Assault)
+        else
+            bSetMelee = (eStance == SquadAI.MSTANCE_Ranged)
+        end
+    end
+
+    -- At leat 10 secs ranged stance/dancing
+    if (bSetRanged) then
+        self.squad_ai:DoSetMeleeStance(SquadAI.MSTANCE_Ranged)
+        self.dance_time = g_iGMT
+    elseif (bSetMelee and self.stateID ~= Tactic.StateID.DoDance and g_iGMT > self.dance_time + 10) then
+        self.squad_ai:DoSetDefaultMeleeStance()
+        self.dance_time = 0
+    end
+
+    -- Check if we are in serious trouble
+    self:EmergencyRetreat()
+
+    -- Attach to melee
+    if (self.squad_ai:GetMeleeStance() == SquadAI.MSTANCE_Assault) then
+        if (self:TryAttachSquad(true, true, 50, 100, nil) == nil) then
+            if (self:TryAttachSquad(false, false, 50, 100, self.m_fCommanderAttachHealth) == nil) then
+                self:TryAttachSquadMelee()
+            end
+        end
+    end
+end
+
+class 'SorcererTactic' (ChaosMarineInfantryTactic)
+
+function SorcererTactic:__init(squad_ai)
+    super(squad_ai)
+
+    self:SetName("Sorcerer Tactic")
+
+    self.dance_time = 0
+end
+
+function SorcererTactic:AutoBuildAddOn(addonSlot)
+    for e in self.squad_ai:GetEntities() do
+        local buildChannelSorcerer = build_manager:GetBuildChannelFromID(e:GetID())
+        if (buildChannelSorcerer ~= nil) then
+            local addOnID = buildChannelSorcerer:GetItemIDAt(BuildChannelAI.PQ_AddOn, addonSlot)
+            if (buildChannelSorcerer:IsBuilding() == 0 and buildChannelSorcerer:CanAddToQueue(BuildChannelAI.PQ_AddOn, addOnID) == BuildChannelAI.CANBUILD_Ok) then
+                buildChannelSorcerer:BuildAddOn(addOnID)
+                return
+            end
+        end
+    end
+    return
+end
+
+function SorcererTactic:IsAttacker()
+    return self:IsCommanderAttacker()
+end
+
+function SorcererTactic:IsDefender()
+    return self:IsCommanderDefender()
+end
+
+-- Sorcerer is allowed to retreat even directly after a jump
+function SorcererTactic:SetTarget(target, variant_type)
+    self.variant_type = variant_type
+    self.variant_type = variant_type
+    if self.variant_type == Tactic.Variant.Vector then
+        self.target = Vector3f(target)
+    elseif self.variant_type == Tactic.Variant.SquadAI then
+        self.target = target
+    elseif self.variant_type == Tactic.Variant.BaseAI then
+        self.target = target
+    end
+    self.m_iMoveDelay = 0
+    self.last_jump = 0
+end
+
+-- Arkhan 03.2006: Inherited method used by commanders which are able to jump with an attached squad
+function SorcererTactic:CanJumpAttached()
+    return true
+end
+
+-- SorcererTactic
+function SorcererTactic:DoAbilities()
+    -- We are dying, lower requisites for attacks
+    if (self.squad_ai:WasRecentlyHurt() and self.squad_ai:GetHealthPercentage() < 0.4) then
+        self:DoSorcererAbilities(4, 2)
+    else
+        self:DoSorcererAbilities(8, 4)
+    end
+
+    -- Call parent DoAbilities for common abilities
+    ChaosMarineInfantryTactic.DoAbilities(self)
+end
+
+function SorcererTactic:Upgrade()
+    if (cpu_manager.cpu_player:IsResearchComplete("commander_level8_research") and cpu_manager.cpu_player:IsResearchComplete("chaos_apocalypse_research")) then
+        -- Choose a random ritual addon
+        local addon_random_sorcerer_ritual = math.random(0, 2) -- Randomize these ritual addons
+        self:AutoBuildAddOn(addon_random_sorcerer_ritual)
+    end
+
+    if (cpu_manager:GetTierLevel() <= 4) then
+        local addon_random_commander_upgrades = math.random(3, 11) -- Randomize these addons
+        self:AutoBuildAddOn(addon_random_commander_upgrades)
+    end
+
+    if (cpu_manager:GetTierLevel() > 4) then
+        self:AutoBuildAddOn(5) -- Always build in late tiers to support the construction of Titans and late game ubers.
+    end
+end
+
+function SorcererTactic:Update()
+    if (self:IsComplete()) then
+        return
+    end
+
+    -- State machine
+    if (not InfantryTactic.Update(self)) then
+        return
+    end
+
+    -- Check for close commander
+    local bSetRanged = false
+    local bSetMelee = false
+    local vSquadPos = self.squad_ai:GetPosition()
+    local eStance = self.squad_ai:GetMeleeStance()
+    local oEnemyCommander = Ability.Filters.CloseCommanderEnemy(vSquadPos, 20, 1)
+    if (oEnemyCommander ~= nil) then
+        -- Check health
+        if (self.squad_ai:GetHealthPercentage() > 0.8 and oEnemyCommander:GetHealthPercentage() < 0.3) then
+            bSetMelee = (eStance == SquadAI.MSTANCE_Ranged)
+            self.dance_time = 0
+        else
+            bSetRanged = (eStance == SquadAI.MSTANCE_Assault)
+        end
+    else
+        -- Check for close attached commander
+        local oSquad = Ability.Filters.CloseInfantryEnemy(vSquadPos, 20, 4)
+        if (oSquad ~= nil and oSquad:IsAttached()) then
+            bSetRanged = (eStance == SquadAI.MSTANCE_Assault)
+        else
+            bSetMelee = (eStance == SquadAI.MSTANCE_Ranged)
+        end
+    end
+
+    -- At leat 10 secs ranged stance/dancing
+    if (bSetRanged) then
+        self.squad_ai:DoSetMeleeStance(SquadAI.MSTANCE_Ranged)
+        self.dance_time = g_iGMT
+    elseif (bSetMelee and self.stateID ~= Tactic.StateID.DoDance and g_iGMT > self.dance_time + 10) then
+        self.squad_ai:DoSetDefaultMeleeStance()
+        self.dance_time = 0
+    end
+
+    -- Check if we are in serious trouble
+    self:EmergencyRetreat()
+
+    -- Attach to melee
+    if (self.squad_ai:GetMeleeStance() == SquadAI.MSTANCE_Assault) then
+        if (self:TryAttachSquad(true, true, 50, 100, nil) == nil) then
+            if (self:TryAttachSquad(false, false, 50, 100, self.m_fCommanderAttachHealth) == nil) then
+                self:TryAttachSquadMelee()
+            end
+        end
+    end
+end

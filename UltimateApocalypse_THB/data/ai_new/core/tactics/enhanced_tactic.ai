@@ -1,0 +1,543 @@
+----------------------------------------
+-- File: 'enhanced_tactic.ai'
+-- Enhanced tactic system for Warhammer 40k: Dawn of War Soulstorm
+-- Provides advanced unit control and micro-management
+-- Compatible with Lua 5.1
+-- Created by AI Assistant @ 2024
+
+import('Core/ai_improvements.ai')
+
+-- Enhanced Tactic class that extends the base Tactic
+class 'EnhancedTactic'
+
+-- Tactic states for better micro-management
+EnhancedTactic.States = {
+    IDLE = "idle",
+    MOVING = "moving",
+    ATTACKING = "attacking",
+    RETREATING = "retreating",
+    HOLDING = "holding",
+    FLANKING = "flanking",
+    SUPPORTING = "supporting"
+}
+
+-- Unit roles for better specialization
+EnhancedTactic.Roles = {
+    FRONTLINE = "frontline",
+    SUPPORT = "support",
+    HARASSER = "harasser",
+    ANTI_VEHICLE = "anti_vehicle",
+    ANTI_INFANTRY = "anti_infantry",
+    COMMANDER = "commander"
+}
+
+function EnhancedTactic:__init(squad_ai)
+    -- Call parent constructor if it exists
+    if Tactic and Tactic.__init then
+        Tactic.__init(self, squad_ai)
+    end
+    
+    self.squad_ai = squad_ai
+    self.squad = squad_ai:GetSquad()
+    self.stats = squad_ai:GetStats()
+    
+    -- Enhanced state management
+    self.current_state = EnhancedTactic.States.IDLE
+    self.state_timer = 0
+    self.state_duration = 0
+    
+    -- Performance monitoring
+    self.performance_monitor = AI_Improvements.PerformanceMonitor
+    
+    -- Unit role and specialization
+    self.unit_role = self:DetermineUnitRole()
+    self.specialization = self:DetermineSpecialization()
+    
+    -- Combat parameters
+    self.engagement_range = self.stats:GetRange()
+    self.retreat_health_threshold = 0.3
+    self.aggressive_health_threshold = 0.7
+    
+    -- Movement and positioning
+    self.target_position = nil
+    self.formation_offset = { x = 0, y = 0, z = 0 }
+    self.last_position = self.squad:GetPosition()
+    self.stuck_timer = 0
+    
+    -- Combat memory
+    self.combat_memory = {
+        last_target = nil,
+        successful_engagements = 0,
+        failed_engagements = 0,
+        damage_dealt = 0,
+        damage_taken = 0,
+        last_combat_time = 0
+    }
+    
+    -- Adaptive behavior
+    self.adaptive_params = {
+        aggression_level = 0.5,
+        caution_level = 0.3,
+        support_tendency = 0.4,
+        flanking_tendency = 0.3
+    }
+    
+    -- Initialize based on unit type
+    self:InitializeUnitBehavior()
+end
+
+-- Determine unit role based on stats and class
+function EnhancedTactic:DetermineUnitRole()
+    local class = self.stats:GetClass()
+    local damage = self.stats:GetDamage()
+    local health = self.stats:GetMaxHealth()
+    local range = self.stats:GetRange()
+    local speed = self.stats:GetSpeed()
+    
+    if class == UnitStatsAI.UC_Commander then
+        return EnhancedTactic.Roles.COMMANDER
+    elseif class == UnitStatsAI.UC_VehicleLow or 
+           class == UnitStatsAI.UC_VehicleMed or 
+           class == UnitStatsAI.UC_VehicleHigh then
+        if damage > 100 then
+            return EnhancedTactic.Roles.ANTI_VEHICLE
+        else
+            return EnhancedTactic.Roles.FRONTLINE
+        end
+    elseif range > 50 then
+        return EnhancedTactic.Roles.SUPPORT
+    elseif speed > 15 then
+        return EnhancedTactic.Roles.HARASSER
+    elseif damage > 50 then
+        return EnhancedTactic.Roles.ANTI_INFANTRY
+    else
+        return EnhancedTactic.Roles.FRONTLINE
+    end
+end
+
+-- Determine unit specialization
+function EnhancedTactic:DetermineSpecialization()
+    local specializations = {}
+    
+    -- Check for special abilities
+    if self.stats:HasAbility("heal") or self.stats:HasAbility("repair") then
+        table.insert(specializations, "healing")
+    end
+    
+    if self.stats:HasAbility("stealth") or self.stats:HasAbility("invisibility") then
+        table.insert(specializations, "stealth")
+    end
+    
+    if self.stats:HasAbility("mobility") or self.stats:HasAbility("teleport") then
+        table.insert(specializations, "mobility")
+    end
+    
+    -- Check weapon types
+    local weapon_type = self.stats:GetWeaponType()
+    if weapon_type == "anti_vehicle" then
+        table.insert(specializations, "anti_vehicle")
+    elseif weapon_type == "anti_infantry" then
+        table.insert(specializations, "anti_infantry")
+    end
+    
+    return specializations
+end
+
+-- Initialize unit-specific behavior
+function EnhancedTactic:InitializeUnitBehavior()
+    local unit_name = self.squad:GetSquadName()
+    
+    -- Adjust parameters based on unit type
+    if self.unit_role == EnhancedTactic.Roles.COMMANDER then
+        self.adaptive_params.aggression_level = 0.7
+        self.adaptive_params.support_tendency = 0.8
+        self.retreat_health_threshold = 0.2
+    elseif self.unit_role == EnhancedTactic.Roles.SUPPORT then
+        self.adaptive_params.aggression_level = 0.3
+        self.adaptive_params.support_tendency = 0.9
+        self.retreat_health_threshold = 0.4
+    elseif self.unit_role == EnhancedTactic.Roles.HARASSER then
+        self.adaptive_params.aggression_level = 0.8
+        self.adaptive_params.flanking_tendency = 0.8
+        self.retreat_health_threshold = 0.5
+    elseif self.unit_role == EnhancedTactic.Roles.FRONTLINE then
+        self.adaptive_params.aggression_level = 0.6
+        self.adaptive_params.caution_level = 0.4
+        self.retreat_health_threshold = 0.3
+    end
+end
+
+-- Enhanced state management
+function EnhancedTactic:SetState(new_state, duration)
+    if self.current_state ~= new_state then
+        self:OnStateExit(self.current_state)
+        self.current_state = new_state
+        self.state_timer = 0
+        self.state_duration = duration or 0
+        self:OnStateEnter(new_state)
+    end
+end
+
+function EnhancedTactic:OnStateEnter(state)
+    -- Override in subclasses
+end
+
+function EnhancedTactic:OnStateExit(state)
+    -- Override in subclasses
+end
+
+function EnhancedTactic:UpdateState(delta_time)
+    self.state_timer = self.state_timer + delta_time
+    
+    if self.state_duration > 0 and self.state_timer >= self.state_duration then
+        self:OnStateTimeout()
+    end
+end
+
+function EnhancedTactic:OnStateTimeout()
+    -- Default timeout behavior
+    self:SetState(EnhancedTactic.States.IDLE)
+end
+
+-- Enhanced target selection
+function EnhancedTactic:SelectOptimalTarget(enemy_squads)
+    self.performance_monitor:StartTimer("target_selection")
+    
+    local best_target = nil
+    local best_score = -999999
+    local current_pos = self.squad:GetPosition()
+    
+    for squad in enemy_squads do
+        local score = self:EvaluateTarget(squad, current_pos)
+        
+        if score > best_score then
+            best_score = score
+            best_target = squad
+        end
+    end
+    
+    self.performance_monitor:EndTimer("target_selection")
+    
+    return best_target, best_score
+end
+
+function EnhancedTactic:EvaluateTarget(enemy_squad, friendly_position)
+    local enemy_stats = enemy_squad:GetStats()
+    local enemy_pos = enemy_squad:GetPosition()
+    local distance = AI_Improvements.VectorDistance(friendly_position, enemy_pos)
+    
+    local score = 0
+    
+    -- Distance factor (prefer closer targets)
+    if distance <= self.engagement_range then
+        score = score + 100
+    elseif distance <= self.engagement_range * 2 then
+        score = score + 50
+    else
+        score = score - 50
+    end
+    
+    -- Health factor (prefer weaker targets)
+    local health_ratio = enemy_stats:GetHealth() / enemy_stats:GetMaxHealth()
+    score = score + (1 - health_ratio) * 200
+    
+    -- Threat factor (consider enemy damage)
+    local enemy_damage = enemy_stats:GetDamage()
+    score = score - enemy_damage * 0.5
+    
+    -- Role-based targeting
+    if self.unit_role == EnhancedTactic.Roles.ANTI_VEHICLE then
+        local enemy_class = enemy_stats:GetClass()
+        if enemy_class == UnitStatsAI.UC_VehicleLow or 
+           enemy_class == UnitStatsAI.UC_VehicleMed or 
+           enemy_class == UnitStatsAI.UC_VehicleHigh then
+            score = score + 300
+        end
+    elseif self.unit_role == EnhancedTactic.Roles.ANTI_INFANTRY then
+        local enemy_class = enemy_stats:GetClass()
+        if enemy_class == UnitStatsAI.UC_Infantry then
+            score = score + 200
+        end
+    end
+    
+    -- Specialization targeting
+    for _, spec in self.specialization do
+        if spec == "anti_vehicle" and enemy_stats:GetClass() >= UnitStatsAI.UC_VehicleLow then
+            score = score + 150
+        elseif spec == "anti_infantry" and enemy_stats:GetClass() == UnitStatsAI.UC_Infantry then
+            score = score + 150
+        end
+    end
+    
+    return score
+end
+
+-- Enhanced positioning
+function EnhancedTactic:FindOptimalPosition(enemy_squads, friendly_squads)
+    self.performance_monitor:StartTimer("position_calculation")
+    
+    local current_pos = self.squad:GetPosition()
+    local best_position = current_pos
+    local best_score = -999999
+    
+    -- Sample positions around current position
+    local sample_radius = 30
+    local sample_count = 8
+    
+    for i = 0, sample_count do
+        local angle = (i / sample_count) * 2 * math.pi
+        local test_pos = {
+            x = current_pos.x + math.cos(angle) * sample_radius,
+            y = current_pos.y + math.sin(angle) * sample_radius,
+            z = current_pos.z
+        }
+        
+        local score = self:EvaluatePosition(test_pos, enemy_squads, friendly_squads)
+        
+        if score > best_score then
+            best_score = score
+            best_position = test_pos
+        end
+    end
+    
+    self.performance_monitor:EndTimer("position_calculation")
+    
+    return best_position, best_score
+end
+
+function EnhancedTactic:EvaluatePosition(position, enemy_squads, friendly_squads)
+    local score = 0
+    
+    -- Distance to enemies (role-based)
+    for squad in enemy_squads do
+        local distance = AI_Improvements.VectorDistance(position, squad:GetPosition())
+        local stats = squad:GetStats()
+        local range = stats:GetRange()
+        
+        if self.unit_role == EnhancedTactic.Roles.SUPPORT then
+            -- Support units prefer to stay at maximum range
+            if distance >= range * 0.8 and distance <= range * 1.2 then
+                score = score + 100
+            elseif distance < range * 0.5 then
+                score = score - 200  -- Too close
+            end
+        elseif self.unit_role == EnhancedTactic.Roles.HARASSER then
+            -- Harassers prefer to stay mobile and avoid close combat
+            if distance >= range * 1.5 then
+                score = score + 50
+            elseif distance < range * 0.8 then
+                score = score - 150
+            end
+        else
+            -- Frontline units prefer medium range
+            if distance >= range * 0.5 and distance <= range * 1.0 then
+                score = score + 80
+            elseif distance < range * 0.3 then
+                score = score - 100
+            end
+        end
+    end
+    
+    -- Distance to friendlies (support tendency)
+    for squad in friendly_squads do
+        if squad ~= self.squad then
+            local distance = AI_Improvements.VectorDistance(position, squad:GetPosition())
+            if distance <= 20 then
+                score = score + self.adaptive_params.support_tendency * 50
+            elseif distance <= 40 then
+                score = score + self.adaptive_params.support_tendency * 25
+            end
+        end
+    end
+    
+    return score
+end
+
+-- Enhanced combat behavior
+function EnhancedTactic:ExecuteCombat(enemy_squads, friendly_squads)
+    local current_health = self.stats:GetHealth() / self.stats:GetMaxHealth()
+    
+    -- Check if we should retreat
+    if current_health < self.retreat_health_threshold then
+        self:SetState(EnhancedTactic.States.RETREATING, 10.0)
+        return
+    end
+    
+    -- Select target
+    local target, target_score = self:SelectOptimalTarget(enemy_squads)
+    
+    if target and target_score > 0 then
+        -- Attack target
+        self:SetState(EnhancedTactic.States.ATTACKING, 5.0)
+        self.squad:AttackSquad(target)
+        self.combat_memory.last_target = target
+        self.combat_memory.last_combat_time = cpu_manager.cpu_player:GetGameTime()
+    else
+        -- Find better position
+        local optimal_pos, pos_score = self:FindOptimalPosition(enemy_squads, friendly_squads)
+        
+        if pos_score > 0 then
+            self:SetState(EnhancedTactic.States.MOVING, 3.0)
+            self.squad:MoveTo(optimal_pos.x, optimal_pos.y, optimal_pos.z)
+            self.target_position = optimal_pos
+        else
+            -- Hold position
+            self:SetState(EnhancedTactic.States.HOLDING, 2.0)
+        end
+    end
+end
+
+-- Enhanced movement behavior
+function EnhancedTactic:ExecuteMovement(target_position)
+    local current_pos = self.squad:GetPosition()
+    local distance = AI_Improvements.VectorDistance(current_pos, target_position)
+    
+    -- Check if stuck
+    if distance < 5 and self.target_position then
+        self.stuck_timer = self.stuck_timer + 0.05
+        if self.stuck_timer > 2.0 then
+            -- Try to find alternative path
+            local offset = {
+                x = (math.random() - 0.5) * 20,
+                y = (math.random() - 0.5) * 20,
+                z = 0
+            }
+            local new_target = {
+                x = target_position.x + offset.x,
+                y = target_position.y + offset.y,
+                z = target_position.z + offset.z
+            }
+            self.squad:MoveTo(new_target.x, new_target.y, new_target.z)
+            self.stuck_timer = 0
+        end
+    else
+        self.stuck_timer = 0
+    end
+    
+    -- Update last position
+    self.last_position = current_pos
+end
+
+-- Enhanced retreat behavior
+function EnhancedTactic:ExecuteRetreat(friendly_squads)
+    local current_pos = self.squad:GetPosition()
+    local best_retreat_pos = nil
+    local best_score = -999999
+    
+    -- Find safest retreat position near allies
+    for squad in friendly_squads do
+        if squad ~= self.squad then
+            local ally_pos = squad:GetPosition()
+            local distance = AI_Improvements.VectorDistance(current_pos, ally_pos)
+            
+            if distance <= 50 then
+                local score = 100 - distance  -- Closer allies are better
+                if score > best_score then
+                    best_score = score
+                    best_retreat_pos = ally_pos
+                end
+            end
+        end
+    end
+    
+    if best_retreat_pos then
+        self.squad:MoveTo(best_retreat_pos.x, best_retreat_pos.y, best_retreat_pos.z)
+    else
+        -- Fallback to base position
+        local base_pos = cpu_manager.start_pos
+        self.squad:MoveTo(base_pos.x, base_pos.y, base_pos.z)
+    end
+end
+
+-- Enhanced update method
+function EnhancedTactic:Update()
+    self.performance_monitor:StartTimer("tactic_update")
+    
+    -- Update state
+    self:UpdateState(0.05)
+    
+    -- Get current game state
+    local enemy_squads = cpu_manager.stats:GetEnemySquads()
+    local friendly_squads = cpu_manager.stats:GetSquads()
+    local current_health = self.stats:GetHealth() / self.stats:GetMaxHealth()
+    
+    -- Execute behavior based on current state
+    if self.current_state == EnhancedTactic.States.IDLE then
+        if current_health < self.retreat_health_threshold then
+            self:ExecuteRetreat(friendly_squads)
+        else
+            self:ExecuteCombat(enemy_squads, friendly_squads)
+        end
+    elseif self.current_state == EnhancedTactic.States.ATTACKING then
+        -- Continue attacking or switch targets
+        self:ExecuteCombat(enemy_squads, friendly_squads)
+    elseif self.current_state == EnhancedTactic.States.MOVING then
+        if self.target_position then
+            self:ExecuteMovement(self.target_position)
+        end
+    elseif self.current_state == EnhancedTactic.States.RETREATING then
+        self:ExecuteRetreat(friendly_squads)
+    elseif self.current_state == EnhancedTactic.States.HOLDING then
+        -- Hold position and wait
+        if current_health > self.aggressive_health_threshold then
+            self:SetState(EnhancedTactic.States.IDLE)
+        end
+    end
+    
+    -- Update combat memory
+    self:UpdateCombatMemory()
+    
+    -- Cleanup performance monitoring
+    self.performance_monitor:Cleanup()
+    
+    self.performance_monitor:EndTimer("tactic_update")
+end
+
+-- Update combat memory and adaptive parameters
+function EnhancedTactic:UpdateCombatMemory()
+    local current_time = cpu_manager.cpu_player:GetGameTime()
+    
+    -- Update success rate based on health changes
+    if self.combat_memory.last_combat_time > 0 and 
+       current_time - self.combat_memory.last_combat_time < 10.0 then
+        
+        local health_change = self.stats:GetHealth() - self.combat_memory.last_health
+        if health_change > 0 then
+            self.combat_memory.successful_engagements = self.combat_memory.successful_engagements + 1
+        else
+            self.combat_memory.failed_engagements = self.combat_memory.failed_engagements + 1
+        end
+        
+        -- Adjust adaptive parameters
+        local success_rate = self.combat_memory.successful_engagements / 
+                           math.max(1, self.combat_memory.successful_engagements + self.combat_memory.failed_engagements)
+        
+        if success_rate > 0.7 then
+            self.adaptive_params.aggression_level = math.min(1.0, self.adaptive_params.aggression_level + 0.05)
+            self.adaptive_params.caution_level = math.max(0.1, self.adaptive_params.caution_level - 0.03)
+        elseif success_rate < 0.3 then
+            self.adaptive_params.aggression_level = math.max(0.1, self.adaptive_params.aggression_level - 0.05)
+            self.adaptive_params.caution_level = math.min(1.0, self.adaptive_params.caution_level + 0.03)
+        end
+    end
+    
+    self.combat_memory.last_health = self.stats:GetHealth()
+end
+
+-- Get unit role
+function EnhancedTactic:GetUnitRole()
+    return self.unit_role
+end
+
+-- Get unit specializations
+function EnhancedTactic:GetSpecializations()
+    return self.specialization
+end
+
+-- Set formation offset
+function EnhancedTactic:SetFormationOffset(offset)
+    self.formation_offset = offset
+end
+
+-- Export the enhanced tactic
+return EnhancedTactic 

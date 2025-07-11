@@ -1,0 +1,281 @@
+-- ============================================
+-- File: 'marinestrategyinfo.ai'
+-- Fuckups fixed by Cannibaltoast @ 2025
+-- Edited by Thudmeizer  @ 14.11.2016
+-- Edited by Cylarne_04 2011
+-- ============================================
+
+BuildBaseStrategyInfo =
+{
+	space_marine_race =
+	{
+		post_builder = 2,
+		flag_capture = 2,
+
+		-- Reserve this amount for building Units, reinforcing and upgrading
+		req_reserve = 150,
+
+		--need at least this at all times
+		squad_cap_threshold = 2,
+
+		--need at least this at all times
+		support_cap_threshold = 3,
+
+		--used to calculate wants for engineers
+		Engineers =
+		{
+			--number of engineers we're aiming for
+			want = 4,
+		},
+
+		-- Is used to modify the army strength in the build programs (Allows faster balancing adjustments)
+		ArmyStrengthModifier = 1.0,
+		--[[
+		============================================
+		BUILD PROGRAMS
+		============================================
+
+		VERY FUCKING IMPORTANT
+		TIERS HAVE 1 NUMBER ADDED (Because the game crashes if it doesnt lol)
+		SO TIER 0 (no tier upgrades) IS TIER 1
+		2=3 3=4 4=5 5=6
+		I learned this the hard way kek.
+		Building tier quantities start at the tier which they are acquired. ie orbital relay starts quantity at tier 3(actually 2 but game engine sucks lol)
+		THE AI WILL ALSO USE THE LAST QUANTITY AMOUNT FOR FURTHER TIERS. IE. Plasma Generators: Last quantity defined is at tier 3(Acutally 2, you get the fucking point) so each sequential tier coming after will use that value
+		CannibalToast 2025
+		]]
+		EmergencyDefense =
+		{
+			-- Buildings to prioritize during HQ emergency
+			-- Format: name, min_count, max_count, priority (1 highest)
+			Buildings =
+			{
+				{ "space_marine_turret_bolter",     2, 4, 1 },
+				{ "space_marine_wall",              4, 8, 2 },
+				{ "space_marine_tanktrap",          4, 8, 3 },
+				{ "space_marine_turret_missile_sp", 1, 2, 4 },
+				{ "space_marine_listening_post",    2, 4, 5 }
+			},
+
+			-- Emergency resource settings
+			ResourceMultiplier = 1.5, -- Multiply resource allocation
+			BuilderCount = 3, -- Desired builder count during emergency
+			DefenseRadius = 40 -- How far from HQ to build defenses
+		},
+
+		BuildPrograms =
+		{
+			{
+				-- Special units that will be conditionally selected in ComputeBuildProgram
+				{ 1, 220,   0,     0,    "Unit",     "space_marine_squad_tactical",                     4, 3,  3,  3,  3,  3 },
+				{ 1, 220,   0,     0,    "Unit",     "space_marine_squad_lotd_tactical",                 4, 3,  3,  3,  3,  3 },
+				-- ============================================
+				-- Buildings
+				-- ============================================
+				-- Tier, Req, Power, Min. ArmyStrength, Type, Name, 				Quantity per tier:   T1, T2, T3, T4, T5, T6
+				-- Tier 1 Buildings
+				{ 1, 700,   150,   0,    "Building", "space_marine_hq",                                 1, 1,  2,  3,  4,  4 },
+				{ 1, 135,   0,     0,    "Building", "space_marine_generator",                          6, 6,  12, 18, 24, 24 },
+				{ 1, 175,   50,    0,    "Building", "space_marine_armoury",                            1, 2,  2,  2,  2,  2 },
+				{ 1, 250,   0,     0,    "Building", "space_marine_barracks",                           1, 1,  2,  2,  2,  3 },
+				{ 1, 45,    105,   0,    "Building", "space_marine_turret_bolter",                      4, 6,  8,  10, 10, 10 },
+				{ 1, 35,    0,     0,    "Building", "space_marine_tanktrap",                           5, 10, 15, 15, 15, 15 },
+				{ 1, 100,   0,     0,    "Building", "space_marine_listening_post",                     3, 4,  5,  6,  6,  6 },
+				-- Tier 2 Buildings
+				{ 2, 3500,  0,     1500, "Building", "space_marine_thermo_generator",                   0, 0,  0,  0,  1,  2 },
+				{ 2, 200,   125,   250,  "Building", "space_marine_vehicle_building",                   0, 1,  1,  1,  1,  1 },
+				{ 2, 125,   50,    0,    "Building", "space_marine_ability_building",                   0, 1,  1,  1,  1,  1 },
+				{ 2, 50,    0,     0,    "Building", "space_marine_wall",                               0, 4,  8,  8,  8,  8 },
+				-- Tier 3 Buildings
+				{ 3, 175,   100,   0,    "Building", "space_marine_orbital_relay",                      0, 0,  1,  2,  2,  2 },
+				{ 3, 300,   100,   0,    "Building", "space_marine_income_structure",                   0, 0,  3,  3,  6,  12 },
+				-- Tier 4 Buildings
+				{ 4, 400,   210,   0,    "Building", "space_marine_landraider_building",                0, 0,  0,  1,  1,  2 },
+				{ 4, 150,   50,    0,    "Building", "space_marine_interface_relay",                    0, 0,  1,  1,  2,  3 },
+				{ 4, 60,    120,   0,    "Building", "space_marine_turret_missile_sp",                  0, 0,  0,  2,  4,  6 },
+				{ 4, 2000,  2000,  0,    "Building", "space_marine_hq_super",                           0, 0,  0,  0,  1,  2 },
+				-- Tier 5 Buildings
+				{ 5, 2000,  1500,  1000, "Building", "space_marine_armoury_emperor",                    0, 0,  0,  0,  1,  1 },
+				{ 5, 890,   410,   0,    "Building", "space_marine_titan_facility",                     0, 0,  0,  0,  1,  2 },
+
+				-- ============================================
+				-- Units
+				-- ============================================
+				-- Tier 1 Units
+				{ 1, 50,    0,     0,    "Unit",     "space_marine_squad_servitor",                     6, 6,  6,  6,  6,  6 },
+				{ 1, 50,    0,     0,    "Unit",     "space_marine_squad_skull_probe",                  4, 4,  4,  4,  4,  4 },
+				{ 1, 50,    0,     0,    "Unit",     "space_marine_squad_servitor_weapons",             2, 4,  4,  4,  4,  4 },
+				{ 1, 100,   0,     0,    "Unit",     "space_marine_squad_scout",                        4, 4,  4,  4,  4,  4 },
+				{ 1, 270,   60,    0,    "Unit",     "space_marine_squad_force_commander",              1, 1,  1,  1,  1,  1 },
+				{ 1, 270,   60,    0,    "Unit",     "space_marine_squad_force_commander_lotd",         1, 1,  1,  1,  1,  1 },
+				{ 1, 170,   30,    0,    "Unit",     "space_marine_squad_tactical_bike",                1, 2,  2,  3,  3,  3 },
+				{ 1, 240,   0,     0,    "Unit",     "space_marine_squad_assault",                      3, 2,  2,  3,  3,  3 },
+				-- Tier 2 Units
+				{ 2, 130,   100,   0,    "Unit",     "space_marine_squad_land_speeder",                 0, 1,  2,  2,  3,  3 },
+				{ 2, 170,   140,   0,    "Unit",     "space_marine_squad_razorback",                    0, 1,  2,  2,  3,  3 },
+				{ 2, 170,   140,   0,    "Unit",     "space_marine_squad_damocles",                    0, 1,  2,  2,  3,  3 },
+				{ 2, 280,   40,    0,    "Unit",     "space_marine_squad_devastator",                   0, 1,  2,  2,  3,  3 },
+				{ 2, 300,   70,    0,    "Unit",     "space_marine_squad_chaplain",                     0, 1,  1,  1,  1,  1 },
+				{ 2, 195,   315,   0,    "Unit",     "space_marine_squad_vindicator",                   0, 1,  1,  2,  2,  2 },
+				{ 2, 195,   315,   0,    "Unit",     "space_marine_squad_razorback",                    0, 1,  2,  2,  3,  3 },
+				{ 2, 195,   315,   0,    "Unit",     "space_marine_squad_dreadnought",              	0, 2,  3,  4,  5,  6 },
+				{ 2, 280,   80,    0,    "Unit",     "space_marine_squad_librarian",                    0, 1,  0,  0,  0,  1 },
+				{ 2, 400,   110,   0,    "Unit",     "space_marine_squad_chaplain_advance_sp",          0, 0,  0,  0,  0,  1 },
+				{ 2, 400,   110,   0,    "Unit",     "space_marine_squad_thunderfire_cannon",          	0, 2,  0,  0,  0,  1 },
+				{ 2, 400,   110,   0,    "Unit",     "space_marine_squad_rhino_stalker",                0, 2,  0,  0,  0,  1 },
+				{ 2, 400,   110,   0,    "Unit",     "space_marine_squad_apothecary",                   0, 2,  0,  0,  0,  1 },
+				{ 2, 400,   110,   0,    "Unit",     "space_marine_squad_banner_bearer",                0, 2,  0,  0,  0,  1 },
+				-- Tier 3 Units
+				{ 3, 200,   335,   0,    "Unit",     "space_marine_squad_dreadnought_ironclad",         0, 0,  1,  2,  2,  2 },
+				{ 3, 340,   60,    0,    "Unit",     "space_marine_squad_sternguard_veteran",           0, 0,  1,  2,  2,  2 },
+				{ 3, 340,   60,    0,    "Unit",     "space_marine_squad_vanguard_veteran",             0, 0,  1,  2,  2,  2 },
+				-- Tier 4 Units
+				{ 4, 230,   410,   0,    "Unit",     "space_marine_squad_predator",                     0, 0,  0,  1,  2,  2 },
+				{ 4, 280,   410,   0,    "Unit",     "space_marine_squad_dreadnought_venerable",        0, 0,  0,  1,  2,  2 },
+				{ 4, 520,   120,   0,    "Unit",     "space_marine_squad_terminator",                   0, 0,  0,  1,  2,  2 },
+				{ 4, 520,   120,   0,    "Unit",     "space_marine_squad_terminator_assault",           0, 0,  0,  1,  2,  2 },
+
+				-- ============================================
+				-- Research
+				-- ============================================
+				-- Tier, Req,  Power, ArmyStrength, Type,      Name,                                       Quantity per tier: T1, T2, T3, T4, T5, T6
+				-- Tier 1 Research
+				{ 1, 50,    30,    0,    "Research", "UA_marine_accuracy_upgrade_research",                1, 0,  0,  0,  0,  0 },
+				{ 1, 100,   50,    0,    "Research", "UA_marine_armor_upgrade_research",                   1, 0,  0,  0,  0,  0 },
+				{ 1, 100,   25,    0,    "Research", "UA_marine_commander_health_research_1",              1, 0,  0,  0,  0,  0 },
+				{ 1, 25,    75,    0,    "Research", "UA_marine_frag_grenade_research",                    1, 0,  0,  0,  0,  0 },
+				{ 1, 100,   50,    0,    "Research", "UA_marine_health_upgrade_research",                  1, 0,  0,  0,  0,  0 },
+				{ 1, 50,    75,    0,    "Research", "UA_marine_inferno_grenades_research",                1, 0,  0,  0,  0,  0 },
+				{ 1, 75,    75,    0,    "Research", "UA_marine_max_weapons_research",                     1, 0,  0,  0,  0,  0 },
+				{ 1, 75,    50,    0,    "Research", "UA_marine_quickening_research",                      1, 0,  0,  0,  0,  0 },
+				{ 1, 100,   50,    0,    "Research", "UA_marine_scout_infiltrate_research",                1, 0,  0,  0,  0,  0 },
+				{ 1, 50,    20,    0,    "Research", "UA_marine_sergeant_melee_upgrade_1",                 1, 0,  0,  0,  0,  0 },
+				{ 1, 50,    25,    0,    "Research", "UA_marine_skull_probe_infiltrate_research",          1, 0,  0,  0,  0,  0 },
+				{ 1, 50,    50,    0,    "Research", "UA_marine_smoke_grenade_research",                   1, 0,  0,  0,  0,  0 },
+				{ 1, 75,    25,    0,    "Research", "UA_marine_smoke_launcher_research",                  1, 0,  0,  0,  0,  0 },
+				{ 1, 150,   100,   0,    "Research", "UA_marine_sniper_rifle",                             1, 0,  0,  0,  0,  0 },
+				{ 1, 180,   180,   0,    "Research", "UA_marine_turret_upgrade1",                          1, 0,  0,  0,  0,  0 },
+				-- Tier 2 Research
+				{ 2, 100,   50,    0,    "Research", "UA_marine_accuracy_upgrade_research_2",              0, 1,  0,  0,  0,  0 },
+				{ 2, 150,   100,   0,    "Research", "UA_marine_armor_upgrade_research_2",                 0, 1,  0,  0,  0,  0 },
+				{ 2, 80,    35,    0,    "Research", "UA_marine_bolter_upgrade_research",                  0, 1,  0,  0,  0,  0 },
+				{ 2, 115,   60,    0,    "Research", "UA_marine_bolter_upgrade_research_2",                0, 1,  0,  0,  0,  0 },
+				{ 2, 125,   50,    0,    "Research", "UA_marine_commander_health_research_2",              0, 1,  0,  0,  0,  0 },
+				{ 2, 50,    50,    0,    "Research", "UA_marine_flashbang_grenade_research",               0, 1,  0,  0,  0,  0 },
+				{ 2, 80,    35,    0,    "Research", "UA_marine_force_commander_ability_research_1",       0, 1,  0,  0,  0,  0 },
+				{ 2, 100,   50,    0,    "Research", "UA_marine_health_upgrade_research_2",                0, 1,  0,  0,  0,  0 },
+				{ 2, 90,    40,    0,    "Research", "UA_marine_jumppack_research",                        0, 1,  0,  0,  0,  0 },
+				{ 2, 75,    75,    0,    "Research", "UA_marine_krak_grenades_research",                   0, 1,  0,  0,  0,  0 },
+				{ 2, 50,    25,    0,    "Research", "UA_marine_land_speeder_research",                    0, 1,  0,  0,  0,  0 },
+				{ 2, 150,   150,   0,    "Research", "UA_marine_max_weapons_research_2",                   0, 1,  0,  0,  0,  0 },
+				{ 2, 50,    20,    0,    "Research", "UA_marine_sergeant_ranged_upgrade_1",                0, 1,  0,  0,  0,  0 },
+				{ 2, 390,   390,   0,    "Research", "UA_marine_turret_upgrade2",                          0, 1,  0,  0,  0,  0 },
+				{ 2, 125,   75,    0,    "Research", "UA_marine_vehicle_armor_research",                   0, 1,  0,  0,  0,  0 },
+				-- Tier 3 Research
+				{ 3, 100,   50,    0,    "Research", "UA_marine_force_commander_research_2",               0, 0,  1,  0,  0,  0 },
+				{ 3, 600,   240,   0,    "Research", "UA_marine_listening_post_upgrade",                   0, 0,  1,  0,  0,  0 },
+				{ 3, 200,   150,   0,    "Research", "UA_marine_lotd_infiltrate_research",                 0, 0,  1,  0,  0,  0 },
+				{ 3, 100,   100,   0,    "Research", "UA_marine_melta_bomb_research",                      0, 0,  1,  0,  0,  0 },
+				{ 3, 75,    125,   0,    "Research", "UA_marine_personalteleporter_research",              0, 0,  1,  0,  0,  0 },
+				{ 3, 50,    20,    0,    "Research", "UA_marine_sergeant_melee_upgrade_2",                 0, 0,  1,  0,  0,  0 },
+				{ 3, 300,   300,   0,    "Research", "UA_marine_squad_size_increase_research",             0, 0,  1,  0,  0,  0 },
+				{ 3, 165,   165,   0,    "Research", "UA_marine_wargear_upgrade_terminator_halo_research", 0, 0,  1,  0,  0,  0 },
+				-- Tier 4 Research
+				{ 4, 150,   100,   0,    "Research", "UA_marine_accuracy_upgrade_research_3",              0, 0,  0,  1,  0,  0 },
+				{ 4, 400,   225,   0,    "Research", "UA_marine_advanced_weaponry_research",               0, 0,  0,  1,  0,  0 },
+				{ 4, 180,   120,   0,    "Research", "UA_marine_armor_upgrade_research_3",                 0, 0,  0,  1,  0,  0 },
+				{ 4, 150,   100,   0,    "Research", "UA_marine_health_upgrade_research_3",                0, 0,  0,  1,  0,  0 },
+				{ 4, 200,   200,   0,    "Research", "UA_marine_max_weapons_research_3",                   0, 0,  0,  1,  0,  0 },
+				{ 4, 1000,  1000,  0,    "Research", "UA_marine_relic_research_1",                         0, 0,  0,  1,  0,  0 },
+				{ 4, 1500,  1500,  0,    "Research", "UA_marine_terra_army_research",                      0, 0,  0,  1,  0,  0 },
+				-- Tier 5 Research
+				{ 5, 500,   500,   0,    "Research", "UA_marine_hellstorm_research",                       0, 0,  0,  0,  1,  0 },
+				{ 5, 2000,  2000,  0,    "Research", "UA_marine_relic_research_2",                         0, 0,  0,  0,  1,  0 },
+				{ 5, 7500,  7500,  0,    "Research", "UA_marine_terra_fortress_research",                  0, 0,  0,  0,  1,  0 },
+				-- Tier 6 Research
+				{ 6, 30000, 30000, 0,    "Research", "UA_marine_battlefleet_gothic_research",              0, 0,  0,  0,  0,  1 },
+				{ 6, 1750,  1750,  0,    "Research", "UA_marine_emperors_space_marines_research",          0, 0,  0,  0,  0,  1 },
+				{ 6, 1500,  2500,  0,    "Research", "UA_marine_essence_machine_spirit_research",          0, 0,  0,  0,  0,  1 },
+				{ 6, 2500,  5000,  0,    "Research", "UA_marine_essence_omnissiah_research",               0, 0,  0,  0,  0,  1 },
+				{ 6, 3500,  3500,  0,    "Research", "UA_marine_iron_curtain_research",                    0, 0,  0,  0,  0,  1 },
+			},
+
+			CommanderUpgrades =
+			{
+				-- Tier 1 Commander Upgrades
+				{ 1, 100,  0,    0, "Research", "UA_marine_commander_level1_research",                1, 0, 0, 0, 0, 0 },
+				{ 1, 30,   30,   0, "Research", "UA_marine_wargear08",                                1, 0, 0, 0, 0, 0 },
+				{ 1, 20,   30,   0, "Research", "UA_marine_wargear12",                                1, 0, 0, 0, 0, 0 },
+				{ 1, 0,    10,   0, "Research", "UA_marine_spell_weaken_resolve",                     1, 0, 0, 0, 0, 0 },
+				{ 1, 75,   50,   0, "Research", "UA_marine_quickening_research",                      1, 0, 0, 0, 0, 0 },
+				-- Tier 2 Commander Upgrades
+				{ 2, 150,  50,   0, "Research", "UA_marine_commander_level2_research",                0, 1, 0, 0, 0, 0 },
+				{ 2, 245,  75,   0, "Research", "UA_marine_commander_level3_research",                0, 1, 0, 0, 0, 0 },
+				{ 2, 50,   30,   0, "Research", "UA_marine_wargear03",                                0, 1, 0, 0, 0, 0 },
+				{ 2, 115,  75,   0, "Research", "UA_marine_wargear07",                                0, 1, 0, 0, 0, 0 },
+				{ 2, 40,   40,   0, "Research", "UA_marine_wargear18",                                0, 1, 0, 0, 0, 0 },
+				{ 2, 0,    15,   0, "Research", "UA_marine_spell_smite",                              0, 1, 0, 0, 0, 0 },
+				-- Tier 3 Commander Upgrades
+				{ 3, 300,  95,   0, "Research", "UA_marine_commander_level4_research",                0, 0, 1, 0, 0, 0 },
+				{ 3, 325,  125,  0, "Research", "UA_marine_commander_level5_research",                0, 0, 1, 0, 0, 0 },
+				{ 3, 165,  165,  0, "Research", "UA_marine_wargear_upgrade_terminator_halo_research", 0, 0, 1, 0, 0, 0 },
+				{ 3, 65,   45,   0, "Research", "UA_marine_wargear01",                                0, 0, 1, 0, 0, 0 },
+				{ 3, 70,   70,   0, "Research", "UA_marine_wargear04",                                0, 0, 1, 0, 0, 0 },
+				{ 3, 50,   60,   0, "Research", "UA_marine_wargear10",                                0, 0, 1, 0, 0, 0 },
+				{ 3, 90,   90,   0, "Research", "UA_marine_wargear15",                                0, 0, 1, 0, 0, 0 },
+				{ 3, 115,  115,  0, "Research", "UA_marine_wargear16",                                0, 0, 1, 0, 0, 0 },
+				{ 3, 160,  160,  0, "Research", "UA_marine_wargear21",                                0, 0, 1, 0, 0, 0 },
+				{ 3, 80,   80,   0, "Research", "UA_marine_wargear22",                                0, 0, 1, 0, 0, 0 },
+				{ 3, 135,  135,  0, "Research", "UA_marine_wargear24",                                0, 0, 1, 0, 0, 0 },
+				{ 3, 80,   80,   0, "Research", "UA_marine_wargear25",			                      0, 0, 1, 0, 0, 0 },
+				{ 3, 0,    40,   0, "Research", "UA_marine_spell_curse_machine_spirit",               0, 0, 1, 0, 0, 0 },
+				{ 3, 0,    35,   0, "Research", "UA_marine_spell_firebolt",                           0, 0, 1, 0, 0, 0 },
+				{ 3, 0,    35,   0, "Research", "UA_marine_spell_haste",                              0, 0, 1, 0, 0, 0 },
+				{ 3, 0,    35,   0, "Research", "UA_marine_spell_mind_war",                           0, 0, 1, 0, 0, 0 },
+				-- Tier 4 Commander Upgrades
+				{ 4, 600,  225,  0, "Research", "UA_marine_commander_level6_research",                0, 0, 0, 1, 0, 0 },
+				{ 4, 1440, 400,  0, "Research", "UA_marine_wargear09",                                0, 0, 0, 1, 0, 0 },
+				{ 4, 100,  100,  0, "Research", "UA_marine_wargear17",                                0, 0, 0, 1, 0, 0 },
+				{ 4, 90,   90,   0, "Research", "UA_marine_wargear19",                                0, 0, 0, 1, 0, 0 },
+				{ 4, 0,    40,   0, "Research", "UA_marine_spell_aura_of_honor",                      0, 0, 0, 1, 0, 0 },
+				{ 4, 0,    50,   0, "Research", "UA_marine_spell_halo_shield",                        0, 0, 0, 1, 0, 0 },
+				{ 4, 0,    50,   0, "Research", "UA_marine_spell_inquisition",                        0, 0, 0, 1, 0, 0 },
+				{ 4, 0,    30,   0, "Research", "UA_marine_spell_word_of_emperor",                    0, 0, 0, 1, 0, 0 },
+				-- Tier 5 Commander Upgrades
+				{ 5, 750,  225,  0, "Research", "UA_marine_commander_level7_research",                0, 0, 0, 0, 1, 0 },
+				{ 5, 85,   85,   0, "Research", "UA_marine_wargear02",                                0, 0, 0, 0, 1, 0 },
+				{ 5, 95,   95,   0, "Research", "UA_marine_wargear05",                                0, 0, 0, 0, 1, 0 },
+				{ 5, 40,   120,  0, "Research", "UA_marine_wargear11",                                0, 0, 0, 0, 1, 0 },
+				{ 5, 35,   60,   0, "Research", "UA_marine_wargear13",                                0, 0, 0, 0, 1, 0 },
+				{ 5, 2000, 1000, 0, "Research", "UA_marine_wargear20",                                0, 0, 0, 0, 1, 0 },
+				-- Tier 6 Commander Upgrades
+				{ 6, 165,  165,  0, "Research", "UA_marine_wargear06",                                0, 0, 0, 0, 0, 1 },
+				{ 6, 165,  165,  0, "Research", "UA_marine_wargear14",                                0, 0, 0, 0, 0, 1 },
+				{ 6, 165,  165,  0, "Research", "UA_marine_wargear23",                                0, 0, 0, 0, 0, 1 },
+				{ 6, 0,    60,   0, "Research", "UA_marine_spell_mastermind",                         0, 0, 0, 0, 0, 1 },
+				{ 6, 0,    80,   0, "Research", "UA_marine_spell_vision",                             0, 0, 0, 0, 0, 1 },
+			},
+		},
+		-- Addons
+		{ 1, 90,   0,    0,   60,  "TurretAddon", "space_marine_list_post_addon_1" },
+		{ 1, 90,   0,    0,   60,  "TurretAddon", "space_marine_list_post_addon_2" },
+		
+		-- Addons
+		{ 6, 1500, 1500, 700, 100, "Addon",       "space_marine_thermonuclear_addon" },
+
+
+		SquadLimits =
+		{
+			standard = {
+			}
+		},
+	},
+}
+
+AttackStrategyInfo =
+{
+	space_marine_race =
+	{
+		MinArmyStrength = 550,
+	},
+}

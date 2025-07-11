@@ -1,0 +1,246 @@
+----------------------------------------
+-- File: 'loader.ai'
+-- Edited by Arkhan	@ 23.10.2006
+-- Renamed by Corsix    @ 13.02.2006
+-- Edited by Thudmeizer @ 07.06.2016
+
+class 'eldar_race'
+
+-- Constructor
+function eldar_race:__init()
+
+end
+
+-- Returns the name of the race
+function eldar_race:GetRaceName()
+	return "eldar_race"
+end
+
+-- This function is called if eldar are the race being played
+function eldar_race:LoadRace( eDifficulty )
+	
+	-- Import strategies
+	import( 'Races/eldar_race/Strategies/EldarBuildBaseStrategy.ai' )
+	
+	-- Import strategy info
+	import( "Races/eldar_race/Strategies/EldarStrategyInfo.ai" )
+	
+	-- Import tactics
+	import( 'Races/eldar_race/Tactics/EldarInfantryTactic.ai' )
+	import( 'Races/eldar_race/Tactics/EldarVehicleTactic.ai' )
+	import( 'Races/eldar_race/Tactics/BonesingerTactic.ai' )
+	import( 'Races/eldar_race/Tactics/GuardianTactic.ai' )
+	import( 'Races/eldar_race/Tactics/EldarSquadTactic.ai' )
+	import( 'Races/eldar_race/Tactics/BansheeTactic.ai' )
+	import( 'Races/eldar_race/Tactics/DireAvengerTactic.ai' )
+	import( 'Races/eldar_race/Tactics/CorsairTactic.ai' )
+	import( 'Races/eldar_race/Tactics/GravPlatformTactic.ai' )
+	import( 'Races/eldar_race/Tactics/JetBikeTactic.ai' )
+	import( 'Races/eldar_race/Tactics/WraithGuardTactic.ai' )
+	import( 'Races/eldar_race/Tactics/HarlequinTactic.ai' )
+	import( 'Races/eldar_race/Tactics/ShiningSpearsTactic.ai' )
+	import( 'Races/eldar_race/Tactics/WarlockTactic.ai' )
+	import( 'Races/eldar_race/Tactics/SeerCouncilTactic.ai' )
+	import( 'Races/eldar_race/Tactics/ShadowseerTactic.ai' )
+	import( 'Races/eldar_race/Tactics/AutarchTactic.ai' )
+	import( 'Races/eldar_race/Tactics/FarSeerTactic.ai' )
+	import( 'Races/eldar_race/Tactics/LaughingGodTactic.ai' )
+	import( 'Races/eldar_race/Tactics/AvatarTactic.ai' )
+	import( 'Races/eldar_race/Tactics/WaveSerpentTactic.ai' )
+	import( 'Races/eldar_race/Tactics/FalconTactic.ai' )
+	import( 'Races/eldar_race/Tactics/FirePrismTactic.ai' )
+	import( 'Races/eldar_race/Tactics/WraithConstructTactic.ai' )
+	import( 'Races/eldar_race/Tactics/PhoenixTactic.ai' )
+	import( 'Races/eldar_race/Tactics/StormSerpentTactic.ai' )
+	import( 'Races/eldar_race/Tactics/TitanTactic.ai' )
+	import( 'Races/eldar_race/Tactics/GlobalSuperWeaponTactic.ai' )
+	import( 'Races/eldar_race/Tactics/EldarHQTactic.ai' )
+	import( 'Races/eldar_race/Tactics/EldarAspectTactic.ai' )
+	import( 'Races/eldar_race/Tactics/EldarWebSailTactic.ai' )
+	import( 'Races/eldar_race/Tactics/EldarBuildingTactic.ai' )
+	import( 'Races/eldar_race/Tactics/EldarSuperweaponTactic.ai' )
+	import( 'Races/eldar_race/Tactics/EldarBombTactic.ai' )
+	import( 'Races/eldar_race/Tactics/EldarBigGeneratorTactic.ai' )
+	return true
+end
+
+-- This function is called even if eldar are not the race being played
+function eldar_race:LoadGlobalInfo()
+
+	-- Import info files
+	import( 'Races/eldar_race/Info/eldarunitstats.ai' )
+		
+	-- Add eldar unit stats
+	table.insert(UnitStats, EldarUnitStats)
+	return true
+end
+
+-- Creates build base strategy
+function eldar_race:CreateBuildBaseStrategy()
+	return EldarBuildBaseStrategy(BuildBaseStrategyInfo)
+end
+
+-- Creates a special tactic for an eldar unit
+function eldar_race:CreateTactic(oSquadAI)
+
+	-- Get unit name and class
+	local sUnitName = oSquadAI:GetSquadName()
+	local eClass = oSquadAI:GetStats():GetClass()
+	
+	-- Check if there is a special tactic for the unit available
+	if (sUnitName == "eldar_squad_bonesinger") then
+		return BonesingerTactic(oSquadAI)
+	elseif (sUnitName == "eldar_squad_jetbikes") then
+		return JetBikeTactic(oSquadAI)
+	elseif (sUnitName == "eldar_squad_grav_platform") or (sUnitName == "eldar_squad_grav_platform_brightlance") then
+		return GravPlatformTactic(oSquadAI)
+	elseif (sUnitName == "eldar_guardian_squad") then
+		return GuardianTactic(oSquadAI)
+	elseif (sUnitName == "eldar_storm_guardian_squad") or (sUnitName == "eldar_squad_rangers") or (sUnitName == "eldar_squad_dark_reapers") or (sUnitName == "eldar_squad_striking_scorpions") or (sUnitName == "eldar_squad_swooping_hawk") or (sUnitName == "eldar_squad_fire_dragon") or (sUnitName == "eldar_squad_warp_spider") then
+		return EldarSquadTactic(oSquadAI)
+	elseif (sUnitName == "eldar_squad_banshees") then
+		return BansheeTactic(oSquadAI)
+	elseif (sUnitName == "eldar_dire_avenger_squad") then
+		return DireAvengerTactic(oSquadAI)
+	elseif (sUnitName == "eldar_squad_corsairs") then
+		return CorsairTactic(oSquadAI)
+	elseif (sUnitName == "eldar_squad_wraithguard") or (sUnitName == "eldar_squad_wraithguard_ancient") then
+		return WraithGuardTactic(oSquadAI)
+	elseif (sUnitName == "eldar_squad_shining_spears") then
+		return ShiningSpearsTactic(oSquadAI)
+	elseif (sUnitName == "eldar_harlequin_squad") then
+		return HarlequinTactic(oSquadAI)
+	elseif (sUnitName == "eldar_warlock_attachable_squad") then
+		return WarlockTactic(oSquadAI)
+	elseif (sUnitName == "eldar_squad_seer_council") then
+		return SeerCouncilTactic(oSquadAI)
+	elseif (sUnitName == "eldar_squad_shadowseer") then
+		return ShadowseerTactic(oSquadAI)
+	elseif (sUnitName == "eldar_squad_autarch") then
+		return AutarchTactic(oSquadAI)
+	elseif (sUnitName == "eldar_squad_farseer") or (sUnitName == "eldar_squad_farseer_advance_sp") or (sUnitName == "npc_squad_civilian_group") then
+		return FarSeerTactic(oSquadAI)
+	elseif (sUnitName == "eldar_squad_laughing_god") then
+		return LaughingGodTactic(oSquadAI)
+	elseif (sUnitName == "eldar_squad_avatar") then
+		return AvatarTactic(oSquadAI)
+	elseif (sUnitName == "eldar_squad_wave_serpent") then
+		return WaveSerpentTactic(oSquadAI)
+	elseif (sUnitName == "eldar_squad_falcon_grav_tank") then
+		return FalconTactic(oSquadAI)
+	elseif (sUnitName == "eldar_squad_fire_prism") then
+		return FirePrismTactic(oSquadAI)
+	elseif (sUnitName == "eldar_wraithlord") or (sUnitName == "eldar_squad_wraithwalker") or (sUnitName == "eldar_squad_wraithking") then
+		return WraithConstructTactic(oSquadAI)
+	elseif (sUnitName == "eldar_squad_phoenix") then
+		return PhoenixTactic(oSquadAI)
+	elseif (sUnitName == "eldar_squad_storm_serpent") then
+		return StormSerpentTactic(oSquadAI)
+	elseif (sUnitName == "eldar_squad_titan_revenant") or (sUnitName == "eldar_squad_titan_phantom") then
+		return TitanTactic(oSquadAI)
+	elseif (sUnitName == "eldar_squad_unthraith_globalsuperweapon") then
+		return GlobalSuperWeaponTactic(oSquadAI)
+	elseif (oSquadAI:IsEngineer()) then
+		return nil
+	elseif (eClass == UnitStatsAI.UC_VehicleLow or eClass == UnitStatsAI.UC_VehicleMed or eClass == UnitStatsAI.UC_VehicleHigh) or
+	       (eClass == UnitStatsAI.UC_AirLow or eClass == UnitStatsAI.UC_AirMed or eClass == UnitStatsAI.UC_AirHigh) then
+		return EldarVehicleTactic(oSquadAI)
+	end
+	return EldarInfantryTactic(oSquadAI)
+end
+
+-- Creates a base tactic
+function eldar_race:CreateBaseTactic(oBuilding)
+
+	-- Get building name
+	local sBuildingName = oBuilding:GetBaseName()
+	
+	-- Check if their is a special tactic for the building available
+	if (sBuildingName == "eldar_hq") then
+		return EldarHQTactic(oBuilding)
+	elseif (sBuildingName == "eldar_hq_super") then
+		return EldarSuperweaponTactic(oBuilding)
+	elseif (sBuildingName == "eldar_aspect_portal") then
+		return EldarAspectTactic(oBuilding)
+	elseif (sBuildingName == "eldar_webway_sail") then
+		return EldarWebSailTactic(oBuilding)
+	elseif (sBuildingName == "eldar_khaine_shrine") or
+		(sBuildingName == "eldar_laughing_god_shrine") or
+		(sBuildingName == "eldar_listening_post") or
+		(sBuildingName == "eldar_soul_shrine") or
+		(sBuildingName == "eldar_support_platform_cannon_sp") or
+		(sBuildingName == "eldar_support_platform_scatterlaser") or
+		(sBuildingName == "eldar_support_platform_uberturret_sp_dxp3") or
+		(sBuildingName == "eldar_support_portal") or
+		(sBuildingName == "eldar_support_portal_super") or
+		(sBuildingName == "eldar_vaul_portal") or
+		(sBuildingName == "eldar_warp_generator") or
+		(sBuildingName == "eldar_support_portal_super") or
+		(sBuildingName == "eldar_webway_gate") then
+		return EldarBuildingTactic(oBuilding)
+	elseif (sBuildingName == "eldar_commander_bomb") then
+		return EldarBombTactic(oBuilding)
+	elseif (sBuildingName == "eldar_advanced_warp_generator") then
+		return EldarBigGeneratorTactic(oBuilding)
+	end
+	return nil
+end
+
+-- Returns a specific information
+function eldar_race:GetInfo(sType)
+
+	-- Check info type
+	if (sType == "TurretPower") then
+		return 400
+	elseif (sType == "SupportAllyFactor") then
+		return 10 / 4
+	elseif (sType == "AttackModifier") then
+		return 10
+	elseif (sType == "CriticalRangeIncreasePerTier") then
+		return 10
+	elseif (sType == "MinArmyStrengthPerTier") then
+		return 750
+	elseif (sType == "AttackRatio") then
+		return 4 / 5
+	elseif (sType == "RetreatRatio") then
+		return 3 / 5
+	elseif (sType == "InvisibleBuildings") then
+		return true
+	elseif (sType == "HarassingLeader") then
+		return "eldar_squad_autarch"
+	elseif (sType == "AutoConstructBuildings") then
+		return false
+	end
+	return nil
+end
+
+-- Returns the building type and threat
+function eldar_race:GetBuildingType(sBuildingName)
+
+	-- Return race specific object string
+	if (sBuildingName == "eldar_hq") then
+		return "HQ", 0
+		
+	elseif (sBuildingName == "eldar_warp_generator") then
+		return "Generator", 0
+		
+	elseif (sBuildingName == "eldar_advanced_warp_generator") then
+		return "BiggerGenerator", 0
+		
+	elseif (sBuildingName == "eldar_support_portal") then
+		return "VehicleBuilding", 0
+		
+	elseif (sBuildingName == "eldar_soul_shrine") then
+		return "Armoury", 0
+		
+	elseif (sBuildingName == "eldar_listening_post") then
+		return "ListeningPost", 0
+		
+	elseif (sBuildingName == "eldar_support_platform_scatterlaser") then
+		return "Turret", 40
+		
+	elseif (sBuildingName == "eldar_mine_field") then
+		return "Mine", 25
+	end
+	return nil, 0
+end

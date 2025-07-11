@@ -1,0 +1,475 @@
+----------------------------------------
+-- File: 'chaosmarineinfantrytactic.ai'
+-- Created by Arkhan		@ 12.01.2006
+-- Edited by Thudmeizer         @ 28.02.2016
+-- Edited by Cylarne_04 2011
+
+class 'ChaosMarineInfantryTactic' (InfantryTactic)
+
+function ChaosMarineInfantryTactic:__init(squad_ai)
+    super(squad_ai)
+
+    self:SetName("Chaos Marine Infantry Tactic")
+
+    -- Basic chaos infantry is able to enter transport vehicles
+    local sSquadName = squad_ai:GetSquadName()
+    if (sSquadName == "chaos_squad_cultist" or
+            sSquadName == "chaos_squad_renegades" or
+            sSquadName == "chaos_marine_squad" or
+            sSquadName == "chaos_havoc_marine_squad" or
+            sSquadName == "chaos_marine_bike_squad" or
+            sSquadName == "chaos_squad_khorne_berserker" or
+            sSquadName == "chaos_noise_marine_squad" or
+            sSquadName == "chaos_plague_marine_squad" or
+            sSquadName == "chaos_rubric_marine_squad" or
+            sSquadName == "chaos_squad_lord" or
+            sSquadName == "chaos_squad_lord_advance_sp" or
+            sSquadName == "chaos_squad_lord_khorne" or
+            sSquadName == "chaos_squad_lord_nurgle" or
+            sSquadName == "chaos_squad_lord_slaanesh" or
+            sSquadName == "chaos_squad_lord_terminator") then
+        self.m_iTransportable = 1 or 3 -- Rhino / Assault Pod
+        self.m_iDeepStrikeBlueprintID = cpu_manager.stats:GetBuildingID("chaos_warpforge")
+    elseif (sSquadName == "chaos_squad_raptor" or
+            sSquadName == "chaos_terminator_khorne_squad" or
+            sSquadName == "chaos_terminator_squad") then
+        self.m_iTransportable = 2 -- Land Raider
+        self.m_iDeepStrikeBlueprintID = cpu_manager.stats:GetBuildingID("chaos_temple")
+    elseif (sSquadName == "chaos_marine_icon_bearer_squad" or
+            sSquadName == "chaos_squad_horror" or
+            sSquadName == "chaos_squad_bloodletters" or
+            sSquadName == "chaos_squad_daemonettes" or
+            sSquadName == "chaos_squad_screamers" or
+            sSquadName == "chaos_squad_plague_bearers" or
+            sSquadName == "chaos_squad_mutilator" or
+            sSquadName == "chaos_squad_obliterator" or
+            sSquadName == "chaos_squad_possessed_marine" or
+            sSquadName == "chaos_squad_psyker" or
+            sSquadName == "chaos_squad_sorcerer" or
+            sSquadName == "chaos_squad_sorcerer_advance_sp") then
+        self.m_iDeepStrikeBlueprintID = cpu_manager.stats:GetBuildingID("chaos_sacrificial_circle")
+    elseif (sSquadName == "chaos_squad_lord_of_change" or
+            sSquadName == "chaos_squad_guo" or
+            sSquadName == "chaos_squad_keeper_of_secrets") then
+        self.m_iDeepStrikeBlueprintID = cpu_manager.stats:GetBuildingID("chaos_greater_sacrificial_circle")
+    end
+end
+
+function ChaosMarineInfantryTactic:AddTargetAbilities()
+    --[[
+	table.insert(InfantryTactic.TargetAbilities, { nil, "chaos_frag_grenades", Ability.Filters.CloseSquadEnemy, 6, 0 })
+	table.insert(InfantryTactic.TargetAbilities, { nil, "chaos_flashbang_grenades", Ability.Filters.CloseSquadEnemy, 4, 0 })
+	table.insert(InfantryTactic.TargetAbilities, { nil, "chaos_blight_grenades", Ability.Filters.CloseSquadEnemy, 4, 0 })
+	table.insert(InfantryTactic.TargetAbilities, { nil, "chaos_noise_grenades", Ability.Filters.CloseSquadEnemy, 4, 0 })
+	table.insert(InfantryTactic.TargetAbilities, { nil, "chaos_bolt_of_change_aspiringsorcerer", Ability.Filters.CloseSquadEnemy, 4, 0 })
+	table.insert(InfantryTactic.TargetAbilities, { nil, "chaos_bolt_of_change_psyker", Ability.Filters.CloseSquadEnemy, 4, 0 })
+	table.insert(InfantryTactic.TargetAbilities, { nil, "chaos_doombolt_psyker", Ability.Filters.CloseSquadEnemy, 4, 0 })
+	table.insert(InfantryTactic.TargetAbilities, { nil, "chaos_inferno_grenades", Ability.Filters.CloseSquadEnemy, 4, 0 })
+	table.insert(InfantryTactic.TargetAbilities, { nil, "chaos_melta_bombs", Ability.Filters.CloseVehicleEnemy, 1, 0 })
+	table.insert(InfantryTactic.TargetAbilities, { nil, "chaos_melta_bombs_havoc", Ability.Filters.CloseVehicleEnemy, 1, 0 })
+	table.insert(InfantryTactic.TargetAbilities, { nil, "chaos_krak_grenades", Ability.Filters.CloseVehicleEnemy, 1, 0 })
+]]
+end
+
+function ChaosMarineInfantryTactic:AddCommanders()
+    local commanders = {
+        -- Melee Commanders
+        { "chaos_squad_lord", true },
+        { "chaos_squad_lord_terminator", true },
+        { "chaos_squad_lord_advance_sp", true },
+        { "chaos_squad_lord_khorne", true },
+        { "chaos_squad_lord_nurgle", true },
+        { "chaos_squad_lord_slaanesh", true },
+        { "chaos_squad_lord_tzeentch", true },
+        { "chaos_daemon_prince", true },
+        { "chaos_daemon_prince_advance_sp", true },
+
+        -- Ranged Commanders
+        { "chaos_squad_sorcerer", false },
+        { "chaos_squad_sorcerer_advance_sp", false },
+        { "chaos_squad_psyker", false }
+    }
+
+    for i = 1, table.getn(commanders) do
+        table.insert(self.commander, commanders[i])
+    end
+end
+
+function ChaosMarineInfantryTactic:DoAbilities()
+    local abilities = {
+        [34] = { -- all_run
+            function()
+                return (self.squad_ai:IsInStateMove()) or
+                    self.stateID ~= Tactic.StateID.NoState
+            end
+        },
+        [148] = { -- chaos_furious_rage
+            function()
+                return self.squad_ai:IsInCombat() and not self.squad_ai:IsCapturing() and not self.squad_ai:IsBroken() and
+                    not self:IsMoving()
+            end
+        },
+        [139] = { -- chaos_forced_labor
+            function()
+                if self.squad_ai:GetHealthPercentage() > 0.2 and self.squad_ai:IsBuildProgressing() and not self.forced_labour then
+                    self.forced_labour = true
+                    -- Execute UA_all_run! when forced labor is activated
+                    if self.squad_ai:CanDoAbility(34) then
+                        self.squad_ai:DoSpecialAbility(34)
+                    end
+                    return true
+                elseif self.forced_labour and self.squad_ai:GetHealthPercentage() < 0.2 then
+                    self.forced_labour = false
+                    return true
+                end
+                return false
+            end,
+            function()
+                -- Keep UA_all_run! active while forced labor is active
+                if self.forced_labour and self.squad_ai:CanDoAbility(34) then
+                    self.squad_ai:DoSpecialAbility(34)
+                end
+            end
+        },
+        [224] = { -- chaos_smoke_grenades
+            function()
+                local iRange = self.squad_ai:GetAbilityRange(224)
+                local oUnit = Ability.Filters.CloseHurt(self.squad_ai:GetPosition(), iRange, 1)
+                return oUnit ~= nil and oUnit:IsInCombat() and cpu_manager:GetUnitStrength(oUnit) > 150
+            end,
+            function()
+                return Ability.Filters.CloseHurt(self.squad_ai:GetPosition(), self.squad_ai:GetAbilityRange(224), 1)
+                    :GetSquad()
+            end
+        },
+        -- Commander Abilities
+        [97] = { -- chaos_daemon_strength
+            function()
+                return self.squad_ai:IsInCombat()
+            end
+        },
+        [105] = { -- chaos_detector
+            function()
+                local oEnemy = Ability.Filters.CloseInfiltratedEnemy(self.squad_ai:GetPosition(), 35, 1)
+                if oEnemy ~= nil then
+                    local vSquadPos = self.squad_ai:GetPosition()
+                    local vEnemyPos = oEnemy:GetPosition()
+                    local iDistance = distance(vSquadPos, vEnemyPos)
+                    local vTargetPos = Vector3f(vSquadPos)
+                    local iRange = self.squad_ai:GetAbilityRange(105)
+
+                    if (iDistance > iRange) then
+                        local fThrowFactor = iRange / iDistance
+                        vTargetPos.x = vTargetPos.x + (vEnemyPos.x - vSquadPos.x) * fThrowFactor
+                        vTargetPos.z = vTargetPos.z + (vEnemyPos.z - vSquadPos.z) * fThrowFactor
+                    else
+                        vTargetPos = Vector3f(vEnemyPos)
+                    end
+                    return vTargetPos
+                end
+                return nil
+            end
+        },
+        [81] = { -- chaos_commander_bomb
+            function()
+                local pos = Ability.Filters.CloseEnemy(self.squad_ai:GetPosition(), 24)
+                if not pos then
+                    pos = Ability.EntityFilters.CloseBaseEntityEnemy(self.squad_ai:GetPosition(), 3)
+                end
+                return pos
+            end
+        },
+        [107] = { -- chaos_doom_siren
+            function()
+                local pos = Ability.Filters.CloseSquadEnemy(self.squad_ai:GetPosition(), 4)
+                if not pos then
+                    pos = Ability.Filters.CloseVehicleEnemy(self.squad_ai:GetPosition(), 1)
+                end
+                return pos
+            end
+        },
+        [133] = { -- chaos_fear_roar
+            function()
+                return Ability.Filters.CloseInfantryEnemy(self.squad_ai:GetPosition(), 20, 4)
+            end
+        }
+    }
+
+    -- Execute abilities
+    for ability_id, data in pairs(abilities) do
+        if self.squad_ai:CanDoAbility(ability_id) then
+            local result = data[1]()
+            if type(result) == "boolean" and result then
+                self.squad_ai:DoSpecialAbility(ability_id)
+            elseif result then  -- Vector3f position or target
+                if data[2] then -- Has targeting function
+                    local target = data[2]()
+                    if target then
+                        self.squad_ai:DoSpecialAbilityTarget(ability_id, target)
+                    end
+                else -- Use position
+                    self.squad_ai:DoSpecialAbilityPos(ability_id, result)
+                end
+            end
+        end
+    end
+
+    -- Handle grenades
+    self:DoGrenadeAbilities()
+
+    -- Handle attached squads
+    if not self.squad_ai:IsAttached() then
+        return
+    end
+
+    -- Define attachment handlers
+    local attachments = {
+        ["chaos_squad_lord"] = ChaosLordTactic,
+        ["chaos_squad_lord_terminator"] = ChaosLordTerminatorTactic,
+        ["chaos_squad_lord_advance_sp"] = ChaosLordAdvancedTactic,
+        ["chaos_squad_lord_khorne"] = ChaosLordsTactic,
+        ["chaos_squad_lord_nurgle"] = ChaosLordsTactic,
+        ["chaos_squad_lord_slaanesh"] = ChaosLordsTactic,
+        ["chaos_squad_sorcerer"] = SorcererTactic,
+        ["chaos_squad_sorcerer_advance_sp"] = SorcererAdvancedTactic,
+        ["chaos_squad_psyker"] = ChaosPsykerTactic
+    }
+
+    -- Check for attachments and execute appropriate tactics
+    for squad_name, tactic in pairs(attachments) do
+        if self.squad_ai:HasSquadAttached(squad_name) then
+            tactic.DoAbilities(self)
+            return
+        end
+    end
+end
+
+function ChaosMarineInfantryTactic:DoGrenadeAbilities()
+    local grenades = {
+        -- Format: [ability_id] = {filter, count}
+        [138] = { Ability.Filters.CloseSquadEnemy, 4 },    -- Flashbang
+        [141] = { Ability.Filters.CloseEnemy, 4 },         -- Frag
+        [166] = { Ability.Filters.CloseInfantryEnemy, 3 }, -- Inferno
+        [180] = { Ability.Filters.CloseVehicleEnemy, 1 },  -- Krak
+        [194] = { Ability.Filters.CloseVehicleEnemy, 1 }   -- Melta
+    }
+
+    local executableGrenades = {}
+
+    -- Collect all executable grenade abilities
+    for ability_id, data in pairs(grenades) do
+        if self.squad_ai:CanDoAbility(ability_id) then
+            table.insert(executableGrenades, { ability_id = ability_id, filter = data[1], count = data[2] })
+        end
+    end
+
+    -- Execute all collected grenade abilities
+    for _, grenade in ipairs(executableGrenades) do
+        Ability.DoAbilityTarget(self.squad_ai, grenade.ability_id, grenade.filter, grenade.count)
+    end
+end
+
+-- In ChaosMarineInfantryTactic, add these to the existing abilities table
+function ChaosMarineInfantryTactic:DoSorcererAbilities(threshold, baseThreshold)
+    local abilities = {
+        -- Standard Sorcerer abilities
+        [39] = { -- chaos_acidbolt
+            function()
+                return Ability.Filters.CloseInfantryEnemy(self.squad_ai:GetPosition(), threshold)
+            end
+        },
+        [52] = { -- chaos_bolt_of_change
+            function()
+                return Ability.Filters.CloseSquadEnemy(self.squad_ai:GetPosition(), threshold)
+            end
+        },
+        [54] = { -- chaos_bolt_of_change_greater
+            function()
+                return Ability.Filters.CloseInfantryEnemy(self.squad_ai:GetPosition(), threshold)
+            end
+        },
+        [57] = { -- chaos_bolt_of_change_improved
+            function()
+                return Ability.Filters.CloseSquadEnemy(self.squad_ai:GetPosition(), threshold)
+            end
+        },
+        [73] = { -- chaos_chains_of_torment
+            function()
+                return Ability.Filters.CloseEnemy(self.squad_ai:GetPosition(), threshold)
+            end
+        },
+        [86] = { -- chaos_corruption
+            function()
+                return Ability.Filters.CloseEnemy(self.squad_ai:GetPosition(), threshold)
+            end
+        },
+        [108] = { -- chaos_doombolt
+            function()
+                return Ability.Filters.CloseSquadEnemy(self.squad_ai:GetPosition(), threshold)
+            end
+        },
+        [134] = { -- chaos_firebolt
+            function()
+                return Ability.Filters.CloseInfantryEnemy(self.squad_ai:GetPosition(), threshold)
+            end
+        },
+        [201] = { -- chaos_meteors
+            function()
+                return Ability.Filters.CloseEnemy(self.squad_ai:GetPosition(), threshold)
+            end
+        },
+        [233] = { -- chaos_summon_gate
+            function()
+                local pos = Ability.Filters.CloseEnemy(self.squad_ai:GetPosition(), threshold)
+                if not pos then
+                    pos = Ability.EntityFilters.CloseBaseEntityEnemy(self.squad_ai:GetPosition(), baseThreshold)
+                end
+                return pos
+            end
+        },
+        [238] = { -- chaos_summon_statue
+            function()
+                return Ability.Filters.CloseEnemy(self.squad_ai:GetPosition(), threshold)
+            end
+        },
+        -- Ritual abilities
+        [212] = { -- chaos_ritual_confusion
+            function()
+                if self.squad_ai:IsAttacking() then
+                    local hasSquad = Ability.Filters.CloseSquadEnemy(self.squad_ai:GetPosition(), 20, 4)
+                    local hasCommander = Ability.Filters.CloseCommanderEnemy(self.squad_ai:GetPosition(), 20, 1)
+                    return hasSquad or hasCommander
+                end
+                return false
+            end
+        },
+        [215] = { -- chaos_ritual_eye
+            function()
+                if not self.squad_ai:IsInCombat() and
+                    not cpu_manager.terrain_analyzer:HasThreat(self.squad_ai:GetPosition(), 80) and
+                    self.squad_ai:GetHealthPercentage() > 0.8 then
+                    local oSquad = Ability.Filters.CloseEnemy(self.squad_ai:GetPosition(), 80, 20)
+                    return oSquad ~= nil and oSquad:IsAttacking()
+                end
+                return false
+            end
+        },
+        [217] = { -- chaos_ritual_sacrifice
+            function()
+                if not self.squad_ai:IsInCombat() and
+                    not cpu_manager.terrain_analyzer:HasThreat(self.squad_ai:GetPosition(), 60) and
+                    self.squad_ai:GetHealthPercentage() > 0.7 then
+                    return Ability.Filters.CloseSquadEnemy(self.squad_ai:GetPosition(), 60, 30) or
+                        Ability.Filters.CloseMonsterEnemy(self.squad_ai:GetPosition(), 60, 30)
+                end
+                return false
+            end
+        },
+        [232] = { -- chaos_storm_of_change
+            function()
+                local pos = Ability.Filters.CloseEnemy(self.squad_ai:GetPosition(), threshold)
+                if not pos then
+                    pos = Ability.EntityFilters.CloseBaseEntityEnemy(self.squad_ai:GetPosition(), baseThreshold)
+                end
+                return pos
+            end
+        },
+        [319] = { -- chaos_warp_time
+            function()
+                return Ability.Filters.CloseEnemy(self.squad_ai:GetPosition(), 10, threshold)
+            end
+        }
+    }
+
+    -- Execute abilities
+    for ability_id, data in pairs(abilities) do
+        if self.squad_ai:CanDoAbility(ability_id) then
+            local result = data[1]()
+            if type(result) == "boolean" and result then
+                self.squad_ai:DoSpecialAbility(ability_id)
+            elseif result then                     -- Vector3f position or target
+                if type(result) == "userdata" then -- Vector3f position
+                    self.squad_ai:DoSpecialAbilityPos(ability_id, result)
+                else                               -- Target unit
+                    self.squad_ai:DoSpecialAbilityTarget(ability_id, result)
+                end
+            end
+        end
+    end
+end
+
+function ChaosMarineInfantryTactic:CheckDance(oSquad)
+    -- Check opponent
+    if (oSquad == nil) then
+        return false
+    end
+
+    -- Compare opponents
+    local sSquadName = self.squad_ai:GetSquadName()
+    if (sSquadName == "chaos_marine_squad" or sSquadName == "chaos_squad_obliterator") then
+        -- Check opponent
+        if (oSquad:GetSquadName() == "chaos_squad_cultist") then
+            return false
+        end
+    end
+    return true
+end
+--[[
+function PrintAbilityIDs()
+    local abilities = {
+        -- Standard abilities
+        "UA_all_run!",             -- 26
+        "chaos_furious_rage",   -- 148
+        "chaos_forced_labor",   -- 139
+        "chaos_smoke_grenades", -- 224
+
+        -- Grenades
+        "chaos_frag_grenades",      -- 141
+        "chaos_flashbang_grenades", -- 138
+        "chaos_blight_grenades",    -- 47
+        "chaos_noise_grenades",     -- 203
+        "chaos_inferno_grenades",   -- 166
+        "chaos_krak_grenades",      -- 180
+        "chaos_melta_bombs",        -- 193
+
+        -- Commander abilities
+        "chaos_daemon_strength", -- 97
+        "chaos_detector",        -- 105
+        "chaos_commander_bomb",  -- 81
+        "chaos_doom_siren",      -- 107
+        "chaos_fear_roar",       -- 133
+
+        -- Sorcerer abilities
+        "chaos_acidbolt",                -- 39
+        "chaos_bolt_of_change",          -- 52
+        "chaos_bolt_of_change_greater",  -- 54
+        "chaos_bolt_of_change_improved", -- 57
+        "chaos_chains_of_torment",       -- 73
+        "chaos_corruption",              -- 86
+        "chaos_doombolt",                -- 108
+        "chaos_firebolt",                -- 134
+        "chaos_meteors",                 -- 201
+        "chaos_summon_gate",             -- 233
+        "chaos_summon_statue",           -- 238
+
+        -- Ritual abilities
+        "chaos_ritual_confusion", -- 212
+        "chaos_ritual_eye",       -- 215
+        "chaos_ritual_sacrifice", -- 217
+        "chaos_ritual_tzeentch",  -- 220
+        "chaos_storm_of_change",  -- 232
+        "chaos_warp_time",        -- 319
+
+        -- Psyker abilities
+        "chaos_bolt_of_change_psyker", -- 64
+        "chaos_doombolt_psyker",       -- 120
+        "guard_psyker_strip_soul"      -- 1162
+    }
+
+    for _, ability in ipairs(abilities) do
+        print(ability .. ": " .. cpu_manager.stats:GetAbilityID(ability))
+    end
+end
+
+PrintAbilityIDs()
+]]

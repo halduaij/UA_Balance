@@ -1,0 +1,487 @@
+----------------------------------------
+-- File: 'enhanced_config.ai'
+-- Enhanced configuration system for Warhammer 40k: Dawn of War Soulstorm
+-- Provides advanced AI customization and difficulty scaling
+-- Compatible with Lua 5.1
+-- Created by AI Assistant @ 2024
+
+-- Enhanced AI Configuration System
+local EnhancedConfig = {}
+
+-- Difficulty presets with detailed parameters
+EnhancedConfig.DifficultyPresets = {
+    Easy = {
+        -- General AI behavior
+        aggression_level = 0.3,
+        caution_level = 0.7,
+        adaptation_speed = 0.1,
+        decision_frequency = 0.5,
+        
+        -- Resource management
+        resource_efficiency_target = 0.6,
+        build_priority_modifier = 0.8,
+        tech_priority_modifier = 0.6,
+        
+        -- Combat behavior
+        retreat_health_threshold = 0.4,
+        attack_health_threshold = 0.8,
+        formation_cohesion = 0.5,
+        micro_management_level = 0.3,
+        
+        -- Strategic behavior
+        expansion_aggressiveness = 0.4,
+        harassment_frequency = 0.2,
+        defense_focus = 0.8,
+        counter_attack_threshold = 0.7,
+        
+        -- Performance settings
+        update_frequency = 0.1,
+        memory_cleanup_interval = 10.0,
+        cache_size = 50,
+        
+        -- Learning and adaptation
+        learning_rate = 0.05,
+        memory_retention = 0.7,
+        pattern_recognition = 0.3
+    },
+    
+    Standard = {
+        -- General AI behavior
+        aggression_level = 0.5,
+        caution_level = 0.5,
+        adaptation_speed = 0.2,
+        decision_frequency = 0.7,
+        
+        -- Resource management
+        resource_efficiency_target = 0.75,
+        build_priority_modifier = 1.0,
+        tech_priority_modifier = 0.8,
+        
+        -- Combat behavior
+        retreat_health_threshold = 0.3,
+        attack_health_threshold = 0.7,
+        formation_cohesion = 0.7,
+        micro_management_level = 0.5,
+        
+        -- Strategic behavior
+        expansion_aggressiveness = 0.6,
+        harassment_frequency = 0.4,
+        defense_focus = 0.6,
+        counter_attack_threshold = 0.6,
+        
+        -- Performance settings
+        update_frequency = 0.05,
+        memory_cleanup_interval = 5.0,
+        cache_size = 100,
+        
+        -- Learning and adaptation
+        learning_rate = 0.1,
+        memory_retention = 0.8,
+        pattern_recognition = 0.5
+    },
+    
+    Hard = {
+        -- General AI behavior
+        aggression_level = 0.7,
+        caution_level = 0.3,
+        adaptation_speed = 0.4,
+        decision_frequency = 0.9,
+        
+        -- Resource management
+        resource_efficiency_target = 0.85,
+        build_priority_modifier = 1.2,
+        tech_priority_modifier = 1.0,
+        
+        -- Combat behavior
+        retreat_health_threshold = 0.25,
+        attack_health_threshold = 0.6,
+        formation_cohesion = 0.8,
+        micro_management_level = 0.7,
+        
+        -- Strategic behavior
+        expansion_aggressiveness = 0.8,
+        harassment_frequency = 0.6,
+        defense_focus = 0.4,
+        counter_attack_threshold = 0.5,
+        
+        -- Performance settings
+        update_frequency = 0.03,
+        memory_cleanup_interval = 3.0,
+        cache_size = 150,
+        
+        -- Learning and adaptation
+        learning_rate = 0.15,
+        memory_retention = 0.9,
+        pattern_recognition = 0.7
+    },
+    
+    Insane = {
+        -- General AI behavior
+        aggression_level = 0.9,
+        caution_level = 0.1,
+        adaptation_speed = 0.6,
+        decision_frequency = 1.0,
+        
+        -- Resource management
+        resource_efficiency_target = 0.95,
+        build_priority_modifier = 1.5,
+        tech_priority_modifier = 1.2,
+        
+        -- Combat behavior
+        retreat_health_threshold = 0.15,
+        attack_health_threshold = 0.5,
+        formation_cohesion = 0.9,
+        micro_management_level = 0.9,
+        
+        -- Strategic behavior
+        expansion_aggressiveness = 1.0,
+        harassment_frequency = 0.8,
+        defense_focus = 0.2,
+        counter_attack_threshold = 0.4,
+        
+        -- Performance settings
+        update_frequency = 0.02,
+        memory_cleanup_interval = 2.0,
+        cache_size = 200,
+        
+        -- Learning and adaptation
+        learning_rate = 0.2,
+        memory_retention = 0.95,
+        pattern_recognition = 0.9
+    }
+}
+
+-- Race-specific configurations
+EnhancedConfig.RaceConfigs = {
+    space_marine_race = {
+        -- Space Marine specific behaviors
+        tactical_precision = 0.8,
+        defensive_doctrine = 0.7,
+        elite_unit_priority = 0.9,
+        combined_arms_focus = 0.8,
+        
+        -- Unit role preferences
+        unit_role_weights = {
+            commander = 0.9,
+            frontline = 0.8,
+            support = 0.7,
+            harasser = 0.5,
+            anti_vehicle = 0.8,
+            anti_infantry = 0.7
+        },
+        
+        -- Formation preferences
+        preferred_formations = {
+            attacking = "wedge",
+            defending = "circle",
+            moving = "line"
+        },
+        
+        -- Special abilities usage
+        ability_usage = {
+            heal = 0.8,
+            repair = 0.7,
+            stealth = 0.4,
+            mobility = 0.6
+        }
+    },
+    
+    ork_race = {
+        -- Ork specific behaviors
+        tactical_precision = 0.4,
+        defensive_doctrine = 0.3,
+        elite_unit_priority = 0.6,
+        combined_arms_focus = 0.5,
+        
+        -- Unit role preferences
+        unit_role_weights = {
+            commander = 0.7,
+            frontline = 0.9,
+            support = 0.4,
+            harasser = 0.8,
+            anti_vehicle = 0.6,
+            anti_infantry = 0.8
+        },
+        
+        -- Formation preferences
+        preferred_formations = {
+            attacking = "line",
+            defending = "line",
+            moving = "line"
+        },
+        
+        -- Special abilities usage
+        ability_usage = {
+            heal = 0.3,
+            repair = 0.4,
+            stealth = 0.2,
+            mobility = 0.7
+        }
+    },
+    
+    eldar_race = {
+        -- Eldar specific behaviors
+        tactical_precision = 0.9,
+        defensive_doctrine = 0.5,
+        elite_unit_priority = 0.8,
+        combined_arms_focus = 0.9,
+        
+        -- Unit role preferences
+        unit_role_weights = {
+            commander = 0.8,
+            frontline = 0.6,
+            support = 0.9,
+            harasser = 0.9,
+            anti_vehicle = 0.7,
+            anti_infantry = 0.8
+        },
+        
+        -- Formation preferences
+        preferred_formations = {
+            attacking = "circle",
+            defending = "circle",
+            moving = "wedge"
+        },
+        
+        -- Special abilities usage
+        ability_usage = {
+            heal = 0.9,
+            repair = 0.6,
+            stealth = 0.8,
+            mobility = 0.9
+        }
+    }
+}
+
+-- Map-specific configurations
+EnhancedConfig.MapConfigs = {
+    -- Generic map settings
+    default = {
+        expansion_points_importance = 0.7,
+        chokepoint_awareness = 0.6,
+        resource_scarcity_factor = 1.0,
+        terrain_utilization = 0.5
+    },
+    
+    -- Small maps
+    small = {
+        expansion_points_importance = 0.9,
+        chokepoint_awareness = 0.8,
+        resource_scarcity_factor = 1.2,
+        terrain_utilization = 0.7
+    },
+    
+    -- Large maps
+    large = {
+        expansion_points_importance = 0.5,
+        chokepoint_awareness = 0.4,
+        resource_scarcity_factor = 0.8,
+        terrain_utilization = 0.6
+    }
+}
+
+-- Dynamic configuration system
+EnhancedConfig.DynamicConfig = {
+    current_difficulty = "Standard",
+    current_race = nil,
+    current_map_type = "default",
+    
+    -- Runtime adjustments
+    performance_adjustments = {
+        frame_rate_threshold = 30,
+        memory_usage_threshold = 0.8,
+        cpu_usage_threshold = 0.9
+    },
+    
+    -- Adaptive difficulty
+    adaptive_difficulty = {
+        enabled = true,
+        player_skill_assessment = 0.5,
+        adjustment_rate = 0.1,
+        min_difficulty = "Easy",
+        max_difficulty = "Insane"
+    }
+}
+
+-- Configuration management functions
+function EnhancedConfig:GetCurrentConfig()
+    local base_config = self.DifficultyPresets[self.DynamicConfig.current_difficulty]
+    local race_config = self.RaceConfigs[self.DynamicConfig.current_race] or {}
+    local map_config = self.MapConfigs[self.DynamicConfig.current_map_type] or self.MapConfigs.default
+    
+    -- Merge configurations
+    local merged_config = self:DeepCopyTable(base_config)
+    
+    -- Apply race-specific modifications
+    for key, value in race_config do
+        if type(value) == "table" then
+            merged_config[key] = self:DeepCopyTable(value)
+        else
+            merged_config[key] = value
+        end
+    end
+    
+    -- Apply map-specific modifications
+    for key, value in map_config do
+        merged_config[key] = value
+    end
+    
+    return merged_config
+end
+
+function EnhancedConfig:SetDifficulty(difficulty)
+    if self.DifficultyPresets[difficulty] then
+        self.DynamicConfig.current_difficulty = difficulty
+        return true
+    end
+    return false
+end
+
+function EnhancedConfig:SetRace(race)
+    if self.RaceConfigs[race] then
+        self.DynamicConfig.current_race = race
+        return true
+    end
+    return false
+end
+
+function EnhancedConfig:SetMapType(map_type)
+    if self.MapConfigs[map_type] then
+        self.DynamicConfig.current_map_type = map_type
+        return true
+    end
+    return false
+end
+
+-- Utility functions
+function EnhancedConfig:DeepCopyTable(orig)
+    local copy = {}
+    for k, v in orig do
+        if type(v) == "table" then
+            copy[k] = self:DeepCopyTable(v)
+        else
+            copy[k] = v
+        end
+    end
+    return copy
+end
+
+function EnhancedConfig:InterpolateConfig(config1, config2, factor)
+    local result = {}
+    
+    for key, value1 in config1 do
+        if type(value1) == "number" and config2[key] and type(config2[key]) == "number" then
+            result[key] = value1 + (config2[key] - value1) * factor
+        elseif type(value1) == "table" and config2[key] and type(config2[key]) == "table" then
+            result[key] = self:InterpolateConfig(value1, config2[key], factor)
+        else
+            result[key] = value1
+        end
+    end
+    
+    return result
+end
+
+-- Adaptive difficulty system
+function EnhancedConfig:UpdateAdaptiveDifficulty(player_performance)
+    if not self.DynamicConfig.adaptive_difficulty.enabled then
+        return
+    end
+    
+    local current_skill = self.DynamicConfig.adaptive_difficulty.player_skill_assessment
+    local adjustment_rate = self.DynamicConfig.adaptive_difficulty.adjustment_rate
+    
+    -- Update skill assessment based on player performance
+    local skill_change = (player_performance - 0.5) * adjustment_rate
+    current_skill = math.max(0, math.min(1, current_skill + skill_change))
+    
+    self.DynamicConfig.adaptive_difficulty.player_skill_assessment = current_skill
+    
+    -- Determine target difficulty
+    local difficulties = {"Easy", "Standard", "Hard", "Insane"}
+    local target_index = math.floor(current_skill * 3) + 1
+    local target_difficulty = difficulties[target_index]
+    
+    -- Smoothly transition to target difficulty
+    if target_difficulty ~= self.DynamicConfig.current_difficulty then
+        self:SetDifficulty(target_difficulty)
+    end
+end
+
+-- Performance monitoring integration
+function EnhancedConfig:GetPerformanceAdjustedConfig()
+    local base_config = self:GetCurrentConfig()
+    local performance_config = self.DynamicConfig.performance_adjustments
+    
+    -- Adjust based on performance metrics
+    local frame_rate = self:GetCurrentFrameRate()
+    local memory_usage = self:GetCurrentMemoryUsage()
+    local cpu_usage = self:GetCurrentCPUUsage()
+    
+    local adjustment_factor = 1.0
+    
+    if frame_rate < performance_config.frame_rate_threshold then
+        adjustment_factor = adjustment_factor * 0.8
+    end
+    
+    if memory_usage > performance_config.memory_usage_threshold then
+        adjustment_factor = adjustment_factor * 0.9
+    end
+    
+    if cpu_usage > performance_config.cpu_usage_threshold then
+        adjustment_factor = adjustment_factor * 0.9
+    end
+    
+    -- Apply adjustments to performance-sensitive parameters
+    local adjusted_config = self:DeepCopyTable(base_config)
+    adjusted_config.update_frequency = base_config.update_frequency / adjustment_factor
+    adjusted_config.cache_size = math.floor(base_config.cache_size * adjustment_factor)
+    adjusted_config.micro_management_level = base_config.micro_management_level * adjustment_factor
+    
+    return adjusted_config
+end
+
+-- Placeholder functions for performance monitoring
+function EnhancedConfig:GetCurrentFrameRate()
+    -- This would integrate with the game's frame rate monitoring
+    return 60  -- Placeholder
+end
+
+function EnhancedConfig:GetCurrentMemoryUsage()
+    -- This would integrate with the game's memory monitoring
+    return 0.5  -- Placeholder
+end
+
+function EnhancedConfig:GetCurrentCPUUsage()
+    -- This would integrate with the game's CPU monitoring
+    return 0.6  -- Placeholder
+end
+
+-- Configuration validation
+function EnhancedConfig:ValidateConfig(config)
+    local required_fields = {
+        "aggression_level", "caution_level", "adaptation_speed",
+        "retreat_health_threshold", "attack_health_threshold",
+        "update_frequency", "cache_size"
+    }
+    
+    for _, field in required_fields do
+        if not config[field] then
+            return false, "Missing required field: " .. field
+        end
+    end
+    
+    -- Validate ranges
+    if config.aggression_level < 0 or config.aggression_level > 1 then
+        return false, "aggression_level must be between 0 and 1"
+    end
+    
+    if config.retreat_health_threshold < 0 or config.retreat_health_threshold > 1 then
+        return false, "retreat_health_threshold must be between 0 and 1"
+    end
+    
+    return true, "Configuration is valid"
+end
+
+-- Export the enhanced configuration system
+return EnhancedConfig 

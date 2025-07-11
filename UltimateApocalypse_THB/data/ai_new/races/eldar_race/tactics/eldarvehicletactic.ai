@@ -1,0 +1,209 @@
+----------------------------------------
+-- File: 'eldarvehicletactic.ai'
+-- Created by Arkhan		@ 31.01.2006
+-- Edited by Thudmeizer         @ 11.11.2016
+-- Edited by Cylarne		@ 3/21/11
+
+class 'EldarVehicleTactic' (VehicleTactic)
+
+EldarVehicle = {}
+
+function EldarVehicleTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Eldar Vehicle Tactic")
+
+	if (sName == "eldar_squad_vypers" or
+		sName == "eldar_squad_wave_serpent" or
+		sName == "eldar_squad_falcon_grav_tank" or
+		sName == "eldar_squad_war_walker" or
+		sName == "eldar_squad_wraithlord" or
+		sName == "eldar_squad_nightspinner" or
+		sName == "eldar_squad_fire_prism" or
+		sName == "eldar_squad_wraithwalker" or
+		sName == "eldar_squad_wraithking" or
+		sName == "eldar_squad_titan_phantom" or
+		sName == "eldar_squad_titan_revenant") then
+
+		-- Vehicles can deepstrike
+		--self.m_iDeepStrikeBlueprintID = cpu_manager.stats:GetBuildingID( "eldar_webway_sail" ) -- AI does not support inter-webway transit like IG bunkers.
+
+	elseif (sName == "eldar_squad_jetbikes" or 
+		sName == "eldar_squad_shining_spears") then
+		-- Squads are both transportable and can deepstrike
+		self.m_iTransportable = 1 or 2 -- Wave Serpent or Falcon // Storm Serpent
+	end
+
+	-- Set Stuck Unit Positions
+	self.initialPosition = self.squad_ai:GetPosition()
+	self.isStuck = false
+--[[
+	-- Set FoF range
+	self.m_iFoFRange = 40
+	if (sSquadName == "eldar_squad_wraithlord" or sSquadName == "eldar_squad_wraithwalker") then
+		self.m_iFoFRange = 25
+	end
+]]
+end
+
+-- Check if the vehicle should dance away in melee
+function EldarVehicleTactic:CheckVehicleDance(sName)
+
+	if (sName == "eldar_squad_falcon_grav_tank" or
+		sName == "eldar_squad_wave_serpent" or
+		sName == "eldar_squad_vypers" or
+		sName == "eldar_squad_hornet" or
+		sName == "eldar_squad_war_walker" or
+		sName == "eldar_squad_wraithlord" or
+		sName == "eldar_squad_nightspinner" or
+		sName == "eldar_squad_fire_prism" or
+		sName == "eldar_squad_wraithwalker" or
+		sName == "eldar_squad_wraithking" or
+		sName == "eldar_squad_scorpion" or
+		sName == "eldar_squad_storm_serpent" or
+		sName == "eldar_squad_voidspinner" or
+		sName == "eldar_squad_cobra" or
+		sName == "eldar_squad_titan_revenant" or
+		sName == "eldar_squad_titan_phantom") then
+		return true
+	end
+	return false
+end
+
+function EldarVehicleTactic:DoAbilities()
+--[[	
+	-- Run if safe
+	if ((not self.squad_ai:IsInCombat() and self.squad_ai:IsInStateMove()) or self.stateID ~= Tactic.StateID.NoState) then
+
+		-- If I am safe I can run
+		local foot_id = cpu_manager.stats:GetAbilityID( "UA_eldar_fleetoffoot" )
+		if (self.squad_ai:CanDoAbility( foot_id )) then
+			self.squad_ai:DoSpecialAbility( foot_id )
+		end
+	end
+
+	-- RAM!!! - The vehicle will sacrifice combat accuracy in exchange for extra speed and the ability to knock down infantry wherever the vehicle goes.
+	-- Vehicle gains a 60% movement speed increase and will knock down infantry continuously on contact.
+	local rammingspeed_id = cpu_manager.stats:GetAbilityID( "UA_all_bumpertank" )
+	if (self.squad_ai:IsInCombat() and self.squad_ai:IsInStateMove()) then
+		if (self.squad_ai:CanDoAbility( rammingspeed_id )) then
+			self.squad_ai:DoSpecialAbility( rammingspeed_id )
+		end
+	end
+]]
+	-- Jump squads' unstuck code call.
+	-- Checks jump-able stuck squads, and force them to jump nearby
+   	if self.squad_ai:CanJump() then
+        	self:SolveStuckCase()
+	end
+
+	-- Check if I should enable/disable fleet of foot
+	--self:DoAbilityVehicleFoF()
+end
+
+-- Unstuck Code
+function EldarVehicleTactic:SolveStuckCase()
+
+	local iPosition = self.squad_ai:GetPosition()
+    	if iPosition.x ~= self.initialPosition.x or iPosition.z ~= self.initialPosition.z then
+        	self.isStuck = false
+    	elseif (self.squad_ai:IsInStateMove() or self.squad_ai:IsInStateAttackMove()) and not self.squad_ai:IsInCombat()
+    		and iPosition.x == self.initialPosition.x and iPosition.z == self.initialPosition.z then
+        	self.isStuck = true
+    	end
+    	if self.isStuck then
+        	self:ForceSquadJumpNear(iPosition)
+	end
+    	self.initialPosition = self.squad_ai:GetPosition()
+end
+
+function EldarVehicleTactic:ForceSquadJumpNear(pos)
+
+	-- Try to jump somewhere near, perform 16 checks for a viable position
+    	local jumpDisSqr = sqr(self.squad_ai:GetJumpDistance())
+    	for iLoop1 = 1, 16 do
+        	-- Create a jump position
+        	local vJumpPosition = pos
+        	local vDir = cpu_manager:GetDirectionToEnemy(pos)
+        	vJumpPosition.x = vJumpPosition.x + vDir.x * math.random(-20, 50)
+        	vJumpPosition.z = vJumpPosition.z + vDir.z * math.random(-20, 50)
+        	-- Check if target position is in range and if unit is able to jump to target position
+        	local iDistance = distance_sqr(vJumpPosition, pos)
+        	if iDistance < jumpDisSqr and self.squad_ai:CanJumpToPosition(vJumpPosition) then
+            		-- Jump to position
+            		self.squad_ai:DoJump(vJumpPosition)
+            		self.last_jump = g_iGMT
+            		self.m_iLastGatherMove = self.last_jump - 10
+            		return
+		end
+	end
+end
+--[[
+function EldarVehicleTactic:ToggleFoF( squad_ai, state )
+
+	-- Check if the squad can handle boost
+	--local id = cpu_manager.stats:GetAbilityID( "UA_eldar_fleetoffoot" )
+	local id = cpu_manager.stats:GetAbilityID( "UA_eldar_graviticbooster" )
+	if (not squad_ai:CanDoAbility(id)) then --or (not squad_ai:CanDoAbility(idB)) then
+		return
+	end
+	
+	-- Check if it's already in desired state
+	if (squad_ai:IsUsingAbility(id) == state) then --or (squad_ai:IsUsingAbility(idB) == state) then
+		return 
+	end
+	
+	-- Activate boost
+	squad_ai:DoSpecialAbility(id)
+	--squad_ai:DoSpecialAbility(idB)
+end
+
+-- Dreddnott edit (April 16th)
+function EldarVehicleTactic:DoAbilityVehicleFoF()
+
+	-- Check if we should toggle FoF
+	--local iFoFID = cpu_manager.stats:GetAbilityID( "UA_eldar_fleetoffoot" )
+	local iFoFID = cpu_manager.stats:GetAbilityID( "UA_eldar_graviticbooster" )
+	local bToggleFoF = false
+	--local bToggleFoFB = false
+
+	-- Check whether we're using the ability
+	local bIsUsing = self.squad_ai:IsUsingAbility(iFoFID)
+	--local bIsUsingB = self.squad_ai:IsUsingAbility(iFoFIDB)
+
+	-- Check if we're attacking
+	local bIsAttacking = self.squad_ai:IsInStateAttackMove()
+	
+	-- Check if we are shooting or fighting in melee
+	local bIsFighting = self.squad_ai:IsAttacking()
+	
+	-- Check if we're moving normally
+	local bIsMoving = (self.squad_ai:IsInStateMove() and not bIsAttacking)
+
+	-- Check if we're in a state that should FoF regardless of enemy presence
+	local bAvoidCombat = (self.squad_ai:IsBroken() or self:IsInSubState() or self.squad_ai:IsCapturing() or bIsMoving)
+
+	-- Check if we should slow down for enemies nearing range
+	local vSquadPos = self.squad_ai:GetPosition()
+	local oEnemy = cpu_manager.cpu_player:FindFirstEnemy(vSquadPos, self.m_iFoFRange, 1)
+	local bCloseEnemy = (oEnemy ~= nil)
+	
+	-- Helper flags
+	local bIsCharging = (bIsAttacking and bCloseEnemy)
+	local bIsDefending = (not bIsMoving and bCloseEnemy)
+	local bIsInCombat = (bIsFighting or bIsCharging or bIsDefending)
+
+	-- Check if FoF should be toggled
+	if ((bIsUsing and bIsInCombat and not bAvoidCombat) or (not bIsUsing and (not bIsInCombat or bAvoidCombat))) then        
+        	bToggleFoF = true
+	--elseif ((bIsUsingB and bIsInCombat and not bAvoidCombat) or (not bIsUsingB and (not bIsInCombat or bAvoidCombat))) then  
+		--bToggleFoFB = true
+	end
+
+	-- Toggle FoF
+	if (bToggleFoF and self.squad_ai:CanDoAbility(iFoFID)) then
+		self.squad_ai:DoSpecialAbility(iFoFID)
+	--elseif (bToggleFoFB and self.squad_ai:CanDoAbility(iFoFIDB)) then
+		--self.squad_ai:DoSpecialAbility(iFoFIDB)
+	end
+end
+]]

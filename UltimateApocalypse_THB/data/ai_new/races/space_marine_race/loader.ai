@@ -1,0 +1,209 @@
+----------------------------------------
+-- File: 'smloader.ai'
+-- Edited by Arkhan	@ 23.10.2006
+-- Renamed by Corsix    @ 13.02.2006
+-- Edited by Thudmeizer @ 23.09.2016
+-- Edited by Cylarne_04 2011
+-- Optimized by CannibalToast @ 2024
+
+class 'space_marine_race'
+
+-- Constructor
+function space_marine_race:__init()
+	-- Tactic lookup table
+	self.unit_tactics = {
+		space_marine_squad_servitor = ServitorTactic,
+		space_marine_squad_skull_probe = SkullProbeTactic,
+		space_marine_squad_techmarine = TechmarineTactic,
+		space_marine_squad_scout = ScoutTactic,
+		space_marine_squad_tactical = TacticalMarineTactic,
+		space_marine_squad_devastator = DevastatorTactic,
+		space_marine_squad_lotd_tactical = DeathwatchTactic,
+		space_marine_squad_sternguard_veteran = SternguardTactic,
+		space_marine_squad_vanguard_veteran = VanguardTactic,
+		space_marine_squad_terminator = TerminatorTactic,
+		space_marine_squad_terminator_assault = TerminatorAssaultTactic,
+		space_marine_squad_apothecary = ApothecaryTactic,
+		space_marine_squad_banner_bearer = BannerBearerTactic,
+		space_marine_squad_chaplain = ChaplainTactic,
+		space_marine_squad_chaplain_advance_sp = ChaplainTerminatorTactic,
+		space_marine_squad_librarian = LibrarianTactic,
+		npc_squad_civilian_group = ForceCommanderTactic,
+		space_marine_squad_force_commander_killeus = ForceCommanderTactic,
+		space_marine_squad_force_commander_lotd = ForceCommanderLotdTactic,
+		space_marine_squad_force_commander_terminator = ForceCommanderTerminatorTactic,
+		space_marine_squad_force_commander_advance_sp = ForceCommanderCampaignTactic,
+		space_marine_squad_force_commander = ForceCommanderAdvancedTactic,
+		space_marine_squad_chapter_master = ChapterMasterTactic,
+		space_marine_squad_honor_guard_gladiator = HonourGuardTactic,
+		space_marine_squad_tactical_bike = AttackbikeTactic,
+		space_marine_squad_thunderfire_cannon = ThunderfireCannonTactic,
+		space_marine_squad_thunderhawk_uamod = ThunderhawkTactic,
+		space_marine_squad_rhino = RhinoTactic,
+		space_marine_squad_razorback = RazorbackTactic,
+		space_marine_squad_rhino_stalker = StalkerTactic,
+		space_marine_squad_land_speeder = LandspeederTactic,
+		space_marine_squad_damocles = DamoclesTactic,
+		space_marine_squad_vindicator = VindicatorTactic,
+		space_marine_squad_dreadnought = DreadnoughtTactic,
+		space_marine_squad_dreadnought_hellfire = DreadnoughtTactic,
+		space_marine_squad_dreadnought_ironclad = DreadnoughtTactic,
+		space_marine_squad_whirlwind = WhirlwindTactic,
+		space_marine_squad_predator_murderer = WhirlwindTactic,
+		space_marine_squad_land_raider = LandRaiderTactic,
+		space_marine_squad_land_raider_crusader = LandRaiderTactic,
+		space_marine_squad_land_raider_helios = LandRaiderTactic,
+		space_marine_squad_land_raider_prometheus = LandRaiderTactic,
+		space_marine_squad_land_raider_redeemer = LandRaiderTactic,
+		space_marine_squad_land_raider_ares = LandRaiderTactic,
+		space_marine_squad_land_raider_terminus = LandRaiderTerminusTactic,
+		space_marine_squad_warhound_titan = TitanTactic,
+		space_marine_squad_reaver_titan = TitanTactic,
+		space_marine_squad_warlord_titan = WarlordTactic,
+		space_marine_squad_imperator_titan = WarlordTactic
+	}
+
+	-- Building tactics lookup table
+	self.building_tactics = {
+		space_marine_barracks = MarineBarracksTactic,
+		space_marine_orbital_relay = OrbitalRelayTactic,
+		space_marine_interface_relay = OrbitalRelayTactic,
+		space_marine_vehicle_building = OrbitalRelayTactic,
+		space_marine_hq_super = SuperStructureTactic,
+		space_marine_hq = MarinesHQTactic,
+		space_marine_thermo_generator = MarinesBigGeneratorTactic,
+		space_marine_thermonuclear_generator = MarinesBigGeneratorTactic
+	}
+
+	-- Generic buildings that use MarinesBuildingTactic
+	self.generic_buildings = {
+		space_marine_ability_building = true,
+		space_marine_armoury = true,
+		space_marine_generator = true,
+		space_marine_landraider_building = true,
+		space_marine_titan_facility = true,
+		space_marine_armoury_emperor = true,
+		space_marine_listening_post = true,
+		space_marine_turret_bolter = true,
+		space_marine_turret_missile_sp = true,
+		space_marine_wall = true,
+		marine_commander_bomb = true, -- Changed from MarinesBombTactic to true
+	}
+
+	-- Building types lookup table
+	self.building_types = {
+		space_marine_hq = { "HQ", 0 },
+		space_marine_generator = { "Generator", 0 },
+		space_marine_thermo_generator = { "BiggerGenerator", 0 },
+		space_marine_vehicle_building = { "VehicleBuilding", 0 },
+		space_marine_armoury = { "Armoury", 0 },
+		space_marine_listening_post = { "ListeningPost", 0 },
+		space_marine_turret_bolter = { "Turret", 50 },
+		space_marine_mine_field = { "Mine", 25 }
+	}
+
+	-- Info lookup table
+	self.info_types = {
+		TurretPower = 400,
+		SupportAllyFactor = 9 / 4,
+		AttackModifier = 10,
+		CriticalRangeIncreasePerTier = 10,
+		MinArmyStrengthPerTier = 750,
+		AttackRatio = 4 / 5,
+		RetreatRatio = 3 / 5,
+		InvisibleBuildings = false,
+		HarassingLeader = "space_marine_squad_force_commander",
+		AutoConstructBuildings = false
+	}
+end
+
+-- Returns the name of the race
+function space_marine_race:GetRaceName()
+	return "space_marine_race"
+end
+
+-- This function is called if space marines are the race being played
+function space_marine_race:LoadRace(eDifficulty)
+	-- Import strategies
+	import('Races/space_marine_race/Strategies/MarineBuildBaseStrategy.ai')
+	import("Races/space_marine_race/Strategies/MarineStrategyInfo.ai")
+	-- Import tactics
+	import('Races/space_marine_race/Tactics/MarineVehicles.ai')
+	import('Races/space_marine_race/Tactics/MarineInfantry.ai')
+	import('Races/space_marine_race/Tactics/MarineCommanders.ai')
+	import('Races/space_marine_race/Tactics/SpaceMarineInfantryTactic.ai')
+	import('Races/space_marine_race/Tactics/SpaceMarineVehicleTactic.ai')
+	import('Races/space_marine_race/Tactics/MarinesBuildingTactic.ai')
+	import('Races/space_marine_race/Tactics/servitortactic.ai')
+	return true
+end
+
+-- This function is called even if space marines are not the race being played
+function space_marine_race:LoadGlobalInfo()
+	-- Import info files
+	import('Races/space_marine_race/Info/marineunitstats.ai')
+
+	-- Add space marine unit stats
+	table.insert(UnitStats, SpaceMarineUnitStats)
+	return true
+end
+
+-- Creates build base strategy
+function space_marine_race:CreateBuildBaseStrategy()
+	return MarineBuildBaseStrategy(BuildBaseStrategyInfo)
+end
+
+-- Creates a special tactic for a space marine unit
+function space_marine_race:CreateTactic(oSquadAI)
+	local sUnitName = oSquadAI:GetSquadName()
+	local eClass = oSquadAI:GetStats():GetClass()
+
+	-- Check if unit has a specific tactic
+	if self.unit_tactics[sUnitName] then
+		return self.unit_tactics[sUnitName](oSquadAI)
+	end
+
+	-- Check for vehicle/air units
+	if (eClass == UnitStatsAI.UC_VehicleLow or
+			eClass == UnitStatsAI.UC_VehicleMed or
+			eClass == UnitStatsAI.UC_VehicleHigh or
+			eClass == UnitStatsAI.UC_AirLow or
+			eClass == UnitStatsAI.UC_AirMed or
+			eClass == UnitStatsAI.UC_AirHigh) then
+		return SpaceMarineVehicleTactic(oSquadAI)
+	end
+
+	-- Default to infantry tactic
+	return SpaceMarineInfantryTactic(oSquadAI)
+end
+
+-- Creates a base tactic
+function space_marine_race:CreateBaseTactic(oBuilding)
+	local sBuildingName = oBuilding:GetBaseName()
+
+	-- Check if building has a specific tactic
+	if self.building_tactics[sBuildingName] then
+		return self.building_tactics[sBuildingName](oBuilding)
+	end
+
+	-- Check for generic buildings
+	if self.generic_buildings[sBuildingName] then
+		return MarinesBuildingTactic(oBuilding)
+	end
+
+	return nil
+end
+
+-- Returns a specific information
+function space_marine_race:GetInfo(sType)
+	return self.info_types[sType]
+end
+
+-- Returns the building type and threat
+function space_marine_race:GetBuildingType(sBuildingName)
+	local buildingInfo = self.building_types[sBuildingName]
+	if buildingInfo then
+		return buildingInfo[1], buildingInfo[2]
+	end
+	return nil, 0
+end

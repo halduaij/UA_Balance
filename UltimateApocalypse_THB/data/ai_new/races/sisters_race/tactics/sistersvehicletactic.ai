@@ -1,0 +1,71 @@
+----------------------------------------
+-- File: 'sistersvehicletactic.ai'
+-- Edited by Thudmeizer			@ 10.08.2016
+-- Edited by Arkhan			@ 16.03.2008
+
+class 'SistersVehicleTactic' (VehicleTactic)
+
+function SistersVehicleTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Sisters Vehicle Tactic")
+
+	-- Set infantry options
+	local sSquadName = squad_ai:GetSquadName()
+	if (sSquadName == "sisters_squad_rhino" or
+		sSquadName == "sisters_squad_sentinel" or
+		sSquadName == "sisters_squad_exorcist_mk" or
+		sSquadName == "sisters_squad_exorcist_tank" or
+		sSquadName == "sisters_squad_incarcerator_tank" or
+		sSquadName == "sisters_squad_immolator_tank") then
+
+		-- Squads are transportable
+		self.m_iTransportable = 2	-- Capitol Imperialis 
+	end
+end
+
+-- Check if the vehicle should dance away in melee
+function SistersVehicleTactic:CheckVehicleDance(sName)
+
+	if (sName == "sisters_squad_rhino" or
+	    sName == "sisters_squad_immolator_tank" or
+	    sName == "sisters_squad_exorcist_tank" or
+	    sName == "sisters_squad_exorcist_mk" or
+	    sName == "sisters_squad_penitent_engine") then
+		return true
+	end
+	return false
+end
+
+function SistersVehicleTactic:DoAbilities()
+--[[
+	-- RAM!!! - The vehicle will sacrifice combat accuracy in exchange for extra speed and the ability to knock down infantry wherever the vehicle goes.
+	-- Vehicle gains a 60% movement speed increase and will knock down infantry continuously on contact.
+	local rammingspeed_id = cpu_manager.stats:GetAbilityID( "UA_all_bumpertank" )
+	if (self.squad_ai:IsInCombat() and self.squad_ai:IsInStateMove()) then
+		if (self.squad_ai:CanDoAbility( rammingspeed_id )) then
+			self.squad_ai:DoSpecialAbility( rammingspeed_id )
+		end
+	end
+
+	-- Run if safe
+	if ((not self.squad_ai:IsInCombat() and self.squad_ai:IsInStateMove()) or self.stateID ~= Tactic.StateID.NoState) then
+
+		-- If I am safe I can run
+		local run_id = cpu_manager.stats:GetAbilityID( "UA_all_run!" )
+		if (self.squad_ai:CanDoAbility( run_id )) then
+			self.squad_ai:DoSpecialAbility( run_id )
+		end
+	end
+]]
+	-- Call standard method
+	VehicleTactic.DoAbilities(self)
+end
+
+function SistersVehicleTactic:CanOnlyDecap()
+
+	local sSquadName = self.squad_ai:GetSquadName()
+	if (sSquadName == "sisters_squad_sentinel") then
+		return true
+	end
+	return false
+end

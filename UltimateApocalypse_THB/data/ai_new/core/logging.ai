@@ -1,0 +1,206 @@
+-- logging.ai
+----------------------------------------
+-- File: 'logging.ai'
+-- Created by CannibalToast
+-- Extended debug functions for Dawn of War Soulstorm
+
+-- Import original utility functions
+if not aitrace then
+    dofile("data/ai/core/utility.ai")
+end
+
+-- Debug configuration
+DEBUG = {
+    ENABLED = true,
+    LOG_PATH = "AI_Debug.log",
+    SECTION_SEPARATOR = "=========================================",
+    INDENT = "    "
+}
+
+-- Enhanced debug print function
+function debug_print(message, category)
+    if not DEBUG.ENABLED then return end
+
+    local timestr = ""
+    if g_iGMT then
+        local mint = math.floor(g_iGMT / 60)
+        local sec = math.mod(g_iGMT, 60)
+        -- Fix: Ensure numeric formatting
+        timestr = string.format("[%02d:%02d] ", mint, sec)
+    end
+
+    -- Fix: Ensure category is properly converted to string
+    local category_str = ""
+    if category then
+        category_str = string.format("[%s] ", tostring(category))
+    end
+
+    -- Fix: Ensure message is converted to string
+    local final_message = timestr .. category_str .. tostring(message)
+
+    -- Print to console
+    print(final_message)
+
+    -- Log to file
+    local log = io.open(DEBUG.LOG_PATH, "a+")
+    if log then
+        log:write(final_message .. "\n")
+        log:close()
+    end
+end
+
+-- Function entry logging
+function debug_function_enter(func_name, params)
+    if not DEBUG.ENABLED then return end
+
+    debug_print(DEBUG.SECTION_SEPARATOR)
+    debug_print("Entering: " .. tostring(func_name), "ENTRY")
+
+    if params then
+        debug_print("Parameters:", "PARAMS")
+        for k, v in pairs(params) do
+            -- Fix: Ensure both key and value are converted to string
+            debug_print(DEBUG.INDENT .. tostring(k) .. ": " .. tostring(v), "PARAMS")
+        end
+    end
+end
+
+-- Function exit logging
+function debug_function_exit(func_name, result)
+    if not DEBUG.ENABLED then return end
+
+    if result ~= nil then
+        debug_print("Result: " .. tostring(result), "EXIT")
+    end
+    debug_print("Exiting: " .. tostring(func_name), "EXIT")
+    debug_print(DEBUG.SECTION_SEPARATOR)
+end
+
+-- Resource logging
+function debug_resources()
+    if not DEBUG.ENABLED then return end
+
+    if not resource_manager then
+        debug_print("Resource manager is nil", "ERROR")
+        return
+    end
+
+    local resourceAmount = resource_manager:GetResourceAmount()
+    if not resourceAmount then
+        debug_print("Resource amount is nil", "ERROR")
+        return
+    end
+
+    local req = resourceAmount:Get(ResourceAmount.RT_Requisition)
+    local pow = resourceAmount:Get(ResourceAmount.RT_Power)
+
+    -- Fix: Ensure numeric values are properly formatted
+    debug_print(string.format("Resources - Req: %d, Pow: %d",
+        tonumber(req) or 0, tonumber(pow) or 0), "RESOURCES")
+end
+
+-- Plan status logging
+function debug_plan_status(plan)
+    if not DEBUG.ENABLED then return end
+
+    if not plan then
+        debug_print("Plan is nil", "ERROR")
+        return
+    end
+
+    local plan_type = "unknown"
+    pcall(function()
+        plan_type = plan:GetType()
+    end)
+
+    debug_print(string.format("Plan Type: %s", tostring(plan_type)), "PLAN")
+
+    -- Add specific plan info based on type
+    if plan_type == "Research Plan" and plan.research_id then
+        local research_name = cpu_manager.stats:GetResearchName(plan.research_id) or "unknown"
+        debug_print(string.format("Research Name: %s", tostring(research_name)), "PLAN")
+    end
+end
+
+-- Building status logging
+function debug_building_status(building)
+    if not DEBUG.ENABLED then return end
+
+    if not building then
+        debug_print("Building is nil", "ERROR")
+        return
+    end
+
+    local status = {
+        valid = building:IsValid(),
+        construction_done = building:IsConstructionDone(),
+        blueprint_id = building:GetBlueprintID()
+    }
+
+    for k, v in pairs(status) do
+        -- Fix: Ensure boolean values are properly converted to string
+        debug_print(string.format("%s: %s", tostring(k), tostring(v)), "BUILDING")
+    end
+end
+
+-- CPU Manager status
+function debug_cpu_status()
+    if not DEBUG.ENABLED then return end
+
+    if not cpu_manager then
+        debug_print("CPU Manager is nil", "ERROR")
+        return
+    end
+
+    local status = {
+        plans_count = 0,
+        has_stats = cpu_manager.stats ~= nil,
+        has_player = cpu_manager.cpu_player ~= nil
+    }
+
+    if cpu_manager.plans then
+        for _ in pairs(cpu_manager.plans) do
+            status.plans_count = status.plans_count + 1
+        end
+    end
+
+    for k, v in pairs(status) do
+        -- Fix: Ensure boolean values are properly converted to string
+        debug_print(string.format("%s: %s", tostring(k), tostring(v)), "CPU")
+    end
+end
+
+-- Error logging with stack trace
+function debug_error(message, error_obj)
+    if not DEBUG.ENABLED then return end
+
+    -- Print the error message
+    debug_print("ERROR: " .. tostring(message), "ERROR")
+
+    -- Print error details if available
+    if error_obj then
+        debug_print("Error details: " .. tostring(error_obj), "ERROR")
+    end
+
+    -- Get and print the stack trace
+    debug_print("Stack trace:", "ERROR")
+
+    -- Check if cpu_manager is nil
+    if not cpu_manager then
+        debug_print("cpu_manager is nil", "ERROR")
+    end
+
+    -- Check if plans exists
+    if cpu_manager and not cpu_manager.plans then
+        debug_print("cpu_manager.plans is nil", "ERROR")
+    end
+
+    -- Check other common nil conditions
+    if cpu_manager and cpu_manager.player_id == nil then
+        debug_print("cpu_manager.player_id is nil", "ERROR")
+    end
+
+    -- Print the actual stack trace
+    local trace = debug.traceback()
+    debug_print(trace, "ERROR")
+end

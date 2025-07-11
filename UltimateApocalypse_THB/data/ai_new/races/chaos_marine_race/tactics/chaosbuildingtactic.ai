@@ -1,0 +1,213 @@
+class 'ChaosBuildingTactic' (BaseTactic)
+
+-- Shared tables for abilities
+local SharedAbilities = {
+    -- Basic Abilities
+    repair_id = 3,            -- all_autorepair
+
+    -- Resource Management
+    inhibitor_id = 2,         -- all_apocalypse_inhibitor
+    powerdump_id = 31,        -- all_thermo_dump_power
+    reqdump_id = 32,          -- all_thermo_dump_requisition
+    recharge_id = 33,         -- all_thermo_shieldrecharge
+
+    -- HQ Abilities
+    warp_id = 127,           -- chaos_eye_of_warp
+
+    -- Super Weapons
+    warpstorm_id = 204,      -- chaos_nuke
+    warpstorm2_id = 286,     -- chaos_warp_storm_super_world_end
+
+    -- Special Abilities
+    detonate_id = 1845,      -- nuke_detonate
+}
+
+function ChaosBuildingTactic:__init(base_ai) super(base_ai)
+    self:SetName("Chaos Buildings Tactic")
+
+    -- Cache building IDs
+    self.m_iArmouryID = cpu_manager.stats:GetBuildingID("chaos_armoury")
+    self.m_iNukeID = cpu_manager.stats:GetBuildingID("chaos_hq_super")
+    self.m_iRelayID = cpu_manager.stats:GetBuildingID("chaos_warpgate")
+
+    self.m_bCanDeepStrikeTroops = false
+    self.m_abilitySelector = math.random(1, 100)
+    self.ResourcesGenTMR = g_iGMT
+end
+
+-- Base building tactic
+function ChaosBuildingTactic:DoAbilities()
+    -- Building repair logic
+    if self.base_ai:WasRecentlyHurt() and self.base_ai:GetHealthPercentage() < 0.6
+    and self.base_ai:CanDoAbility(SharedAbilities.repair_id) then
+        self.base_ai:DoSpecialAbility(SharedAbilities.repair_id)
+    end
+end
+
+-- Chaos HQ Tactic
+class 'ChaosHQTactic' (ChaosBuildingTactic)
+
+function ChaosHQTactic:__init(base_ai) super(base_ai)
+    self:SetName("Chaos HQ Tactic")
+end
+
+function ChaosHQTactic:DoAbilities()
+    local baseAI = self.base_ai
+
+    -- Call basic repair logic from parent class
+    ChaosBuildingTactic.DoAbilities(self)
+
+    -- Eye of Warp (Detection)
+    if baseAI:CanDoAbility(SharedAbilities.warp_id) then
+        local iRange = baseAI:GetAbilityRange(SharedAbilities.warp_id)
+        local oSquad = Ability.Filters.CloseEnemy(baseAI:GetPosition(), iRange, 7)
+        if oSquad and oSquad:IsAttacking() then
+            baseAI:DoSpecialAbilitySquad(SharedAbilities.warp_id, oSquad:GetSquad())
+        end
+    end
+end
+
+-- Chaos HQ Super Tactic
+class 'ChaosHQSuperTactic' (ChaosBuildingTactic)
+
+function ChaosHQSuperTactic:__init(base_ai) super(base_ai)
+    self:SetName("Chaos HQ Super Tactic")
+end
+
+function ChaosHQSuperTactic:DoAbilities()
+    local baseAI = self.base_ai
+
+    -- Call basic repair logic from parent class
+    ChaosBuildingTactic.DoAbilities(self)
+
+    -- Cache resources
+    local iRequisition = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Requisition)
+    local iPower = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Power)
+
+    -- World End Storm (check resources first)
+    if iRequisition >= 45000 and iPower >= 45000 and baseAI:CanDoAbility(SharedAbilities.warpstorm2_id) then
+        Ability.DoAbilityPos(baseAI, SharedAbilities.warpstorm2_id, Ability.Filters.CloseEnemy, 35)
+        Ability.DoAbilityPos(baseAI, SharedAbilities.warpstorm2_id, Ability.EntityFilters.CloseBaseEntityEnemy, 8)
+    end
+
+    -- Warp Storm (check resources first)
+    if iRequisition >= 3000 and iPower >= 3000 and baseAI:CanDoAbility(SharedAbilities.warpstorm_id) then
+        Ability.DoAbilityPos(baseAI, SharedAbilities.warpstorm_id, Ability.Filters.CloseEnemy, 25)
+        Ability.DoAbilityPos(baseAI, SharedAbilities.warpstorm_id, Ability.EntityFilters.CloseBaseEntityEnemy, 6)
+    end
+end
+
+-- Chaos Deepstrike Building Tactic
+class 'ChaosDeepstrikeTactic' (ChaosBuildingTactic)
+
+function ChaosDeepstrikeTactic:__init(base_ai) super(base_ai)
+    self:SetName("Chaos Deepstrike Tactic")
+    self.m_bCanDeepStrikeTroops = true
+end
+
+function ChaosDeepstrikeTactic:CanDeepStrikeTroops()
+    return true
+end
+
+-- Chaos Bomb Tactic
+class 'ChaosBombTactic' (ChaosBuildingTactic)
+
+function ChaosBombTactic:__init(base_ai) super(base_ai)
+    self:SetName("Chaos Bomb Tactic")
+end
+
+function ChaosBombTactic:DoAbilities()
+    local baseAI = self.base_ai
+
+    -- Detonate Bomb with enemies in vicinity
+    if baseAI:CanDoAbility(SharedAbilities.detonate_id) then
+        -- Check for enemies first (return early if found)
+        if Ability.DoAbilityArea(baseAI, SharedAbilities.detonate_id, Ability.Filters.CloseEnemy, 10, 5) then
+            return
+        end
+
+        -- If no enemies, check for buildings
+        local iRange = baseAI:GetAbilityRange(SharedAbilities.detonate_id)
+        local oBuilding = Ability.EntityFilters.CloseBaseEntityEnemy(baseAI:GetPosition(), iRange, 1)
+        if oBuilding then
+            baseAI:DoSpecialAbilityEntity(SharedAbilities.detonate_id, oBuilding)
+        end
+    end
+end
+
+-- Chaos Big Generator Tactic
+class 'ChaosBigGeneratorTactic' (ChaosBuildingTactic)
+
+function ChaosBigGeneratorTactic:__init(base_ai) super(base_ai)
+    self:SetName("Chaos Big Generator Tactic")
+    self.ResourcesGenTMR = g_iGMT
+end
+
+function ChaosBigGeneratorTactic:DoAbilities()
+    local baseAI = self.base_ai
+
+    -- Call basic repair logic from parent class
+    ChaosBuildingTactic.DoAbilities(self)
+
+    -- Cache resources
+    local iRequisition = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Requisition)
+    local iPower = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Power)
+
+    -- Increase charge rate of super weapons (check conditions first)
+    if iPower >= 30000 and cpu_manager.player_stats:GetNumBasesByBPID(self.m_iNukeID, true) > 0
+    and baseAI:CanDoAbility(SharedAbilities.inhibitor_id) then
+        baseAI:DoSpecialAbility(SharedAbilities.inhibitor_id)
+    end
+
+    -- Resource management (every 6 seconds)
+    if g_iGMT > self.ResourcesGenTMR + 6 then
+        -- Power to Requisition
+        if iPower > 9500 and iRequisition < 1000 and baseAI:CanDoAbility(SharedAbilities.powerdump_id) then
+            baseAI:DoSpecialAbility(SharedAbilities.powerdump_id)
+            self.ResourcesGenTMR = g_iGMT
+        -- Requisition to Power
+        elseif iRequisition > 9000 and iPower < 1000 and baseAI:CanDoAbility(SharedAbilities.reqdump_id) then
+            baseAI:DoSpecialAbility(SharedAbilities.reqdump_id)
+            self.ResourcesGenTMR = g_iGMT
+        end
+    end
+
+    -- Shield recharge for titans
+    if iPower >= 10000 and baseAI:CanDoAbility(SharedAbilities.recharge_id)
+    and self:PlayerHasLowMoraleSquad(0.3) then
+        baseAI:DoSpecialAbility(SharedAbilities.recharge_id)
+    end
+end
+
+function ChaosBigGeneratorTactic:PlayerHasLowMoraleSquad(iMoraleRatio)
+    for oSquad in cpu_manager.stats:GetPlayerStatsFromID(cpu_manager.player_id):GetSquads() do
+        if oSquad:IsValid() then
+            local oName = oSquad:GetSquadName()
+            if (oName == "chaos_squad_warhound_titan" or oName == "chaos_squad_reaver_titan")
+            and oSquad:GetMoralePercentage() <= iMoraleRatio then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+class 'GreaterSacrificialCircleTactic' (ChaosBuildingTactic)
+
+function GreaterSacrificialCircleTactic:__init(base_ai) super(base_ai)
+    self:SetName("Greater Sacrificial Circle Tactic")
+    self.m_bCanDeepStrikeTroops = true
+end
+
+function GreaterSacrificialCircleTactic:DoAbilities()
+    local baseAI = self.base_ai
+
+    -- Call basic repair logic from parent class
+    ChaosBuildingTactic.DoAbilities(self)
+end
+
+function GreaterSacrificialCircleTactic:CanDeepStrikeTroops()
+    return true
+end
+
+--print("SM Force Commander Teleport: " .. tostring(GetID(stats, "marines_teleport")))

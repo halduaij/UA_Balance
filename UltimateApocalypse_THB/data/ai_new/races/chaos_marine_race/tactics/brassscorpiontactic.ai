@@ -1,0 +1,87 @@
+----------------------------------------
+-- File: 'brasscorpiontactic.ai'
+-- Edited by Cylarne_04 2011
+-- Edited by Thudmeizer	@ 14.03.2016
+
+class 'BrassScorpionTactic' (ChaosMarineVehicleTactic)
+
+BrassScorpion = {}
+
+function BrassScorpionTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Brass Scorpion Tactic")
+	
+	-- Add a choice to stay in ranged or melee combat.
+	self.choice_ranged_melee = math.random(1, 100)
+end
+
+function BrassScorpionTactic:AlwaysAttack()
+	return true
+end
+
+function BrassScorpionTactic:InitAbilities()
+
+	-- Init ability ID's
+	if (BrassScorpion.flame_id == nil) then
+		BrassScorpion.flame_id = cpu_manager.stats:GetAbilityID( "chaos_brass_let_it_burn" )
+	end
+	if (BrassScorpion.wildfire_id == nil) then
+		BrassScorpion.wildfire_id = cpu_manager.stats:GetAbilityID( "chaos_brass_wildfire" )
+	end
+	if (BrassScorpion.entrench_id == nil) then
+	   	BrassScorpion.entrench_id = cpu_manager.stats:GetAbilityID( "chaos_entrench" )	
+	end
+end
+
+function BrassScorpionTactic:DoAbilities()
+
+	if (self.squad_ai:IsAttacking() and self.squad_ai:CanDoAbility(BrassScorpion.flame_id)) then
+		Ability.DoAbilityPos( self.squad_ai, BrassScorpion.flame_id, Ability.Filters.CloseEnemy, 6 )
+	end
+
+	if (self.squad_ai:IsAttacking() and self.squad_ai:CanDoAbility(BrassScorpion.wildfire_id)) then
+		Ability.DoAbilityArea( self.squad_ai, BrassScorpion.wildfire_id, Ability.Filters.CloseEnemy, 15, 10 ) 
+	end
+--[[
+	-- Desecration: Disables melee combat and movement of the unit in exchange for rapid fire rates; improving artillery barrage amounts and quick reload times of all weapons.
+	-- Initiate ranged-artillery ability on condition
+	if (self.squad_ai:IsUsingAbility(BrassScorpion.entrench_id)) then
+        	if (self.squad_ai:GetHealthPercentage() <= 0.5 or Ability.Filters.CloseEnemy(self.squad_ai:GetPosition(), 100, 1) == nil or Ability.Filters.CloseEnemy(self.squad_ai:GetPosition(), 20, 1) ~= nil) then
+            		self.squad_ai:DoSpecialAbility(BrassScorpion.entrench_id)
+		--print("Entrench On!")
+        	end
+    	elseif (self.squad_ai:GetHealthPercentage() > 0.5 and Ability.Filters.CloseEnemy(self.squad_ai:GetPosition(), 100, 1) ~= nil and Ability.Filters.CloseEnemy(self.squad_ai:GetPosition(), 20, 1) == nil) then
+        	self.squad_ai:DoSpecialAbility(BrassScorpion.entrench_id)
+		--print("Entrench Off!")
+   	 end
+]]
+	-- Desecration: Disables melee combat and movement of the unit in exchange for rapid fire rates; improving artillery barrage amounts and quick reload times of all weapons.
+	-- Initiate ranged-artillery ability on condition
+    	local conditionsMet = (self.squad_ai:GetHealthPercentage() > 0.5 and Ability.Filters.CloseEnemy(self.squad_ai:GetPosition(), 90, 1) ~= nil and Ability.Filters.CloseEnemy(self.squad_ai:GetPosition(), 20, 1) == nil)
+	if (self.squad_ai:IsUsingAbility(BrassScorpion.entrench_id)) then
+		if not conditionsMet then
+            		self.squad_ai:DoSpecialAbility(BrassScorpion.entrench_id)
+		--print("Entrench On!")
+        	end
+    	elseif conditionsMet then
+        	self.squad_ai:DoSpecialAbility(BrassScorpion.entrench_id)
+		--print("Entrench Off!")
+	end
+end
+
+function BrassScorpionTactic:Update()
+	
+	if (self:IsComplete()) then
+		return
+	end
+    
+	-- State machine
+	if (not VehicleTactic.Update( self )) then
+		return
+	end
+
+	-- Set unit on ranged stance by a 50/50 chance.
+	if (self.squad_ai:GetMeleeStance() == SquadAI.MSTANCE_Assault and cpu_manager:GetTierLevel() >= 5 and self.choice_ranged_melee >= 50) then
+		self.squad_ai:DoSetMeleeStance(SquadAI.MSTANCE_Ranged)
+	end
+end

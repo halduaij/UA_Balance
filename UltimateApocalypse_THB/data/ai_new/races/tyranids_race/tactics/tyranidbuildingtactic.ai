@@ -1,0 +1,36 @@
+----------------------------------------
+-- File: 'tyranidbuildingtactic.ai'
+-- Edited by Thudmeizer @ 02.10.2016
+
+class 'TyranidBuildingTactic' (BaseTactic)
+
+TyranidBuilding = {}
+
+function TyranidBuildingTactic:__init( base_ai ) super( base_ai )
+
+	self:SetName("Tyranid Building Tactic")
+
+	-- Building can deepstrike troops
+	self.m_bCanDeepStrikeTroops = true
+end
+
+function TyranidBuildingTactic:CanDeepStrikeTroops()
+	return true
+end
+
+function TyranidBuildingTactic:InitAbilities()
+    -- Direct ID assignment for repair
+    if (TyranidBuilding.repair_id == nil) then
+        TyranidBuilding.repair_id = 3
+        print("Tyranid Repair ID set to: " .. tostring(TyranidBuilding.repair_id))
+    end
+end
+
+function TyranidBuildingTactic:DoAbilities()
+    if (self.base_ai:GetHealthPercentage() < 0.5) then
+        if (self.base_ai:CanDoAbility(TyranidBuilding.repair_id)) then
+            self.base_ai:DoSpecialAbility(TyranidBuilding.repair_id)
+            print("Attempting repair on Tyranid building at " .. tostring(self.base_ai:GetHealthPercentage() * 100) .. "% health")
+        end
+    end
+end

@@ -1,0 +1,175 @@
+class 'FindDoWDPS'
+
+function FindDoWDPS:__init()
+    -- Pre-allocate tables and optimize memory usage
+    self.armour_types = {}
+    self.armour_type_names = {}
+    self.output_file = "aidps.html"
+    self.header_row_count = 0
+end
+
+function FindDoWDPS:each_file(rgd)
+    if not rgd or not rgd.path then return end
+    local map_part = _G
+    local key = "filemap"
+    local path = string.lower(rgd.path)
+    local _, _, after_attrib = string.find(path, "%.%.\\%.%.\\attrib\\(.*)")
+    if after_attrib then
+        for part in string.gfind(after_attrib, "[^\\]+") do
+            map_part = map_part[key]
+            key = part
+        end
+        map_part[key] = rgd
+    end
+end
+
+function FindDoWDPS:at_end()
+    print_info("<!-- Generating unit list ...")
+    -- Process race BPs
+    for filename, rgd in self:pairs_recursive(filemap.racebps) do
+        if rgd:GET("GameData", "race_details", "playable") then
+            local race_name = UCS(rgd:GET("GameData", "race_details", "name_id") or filename)
+            print_info("Iterating unit list for " .. race_name)
+            self:do_ebps_folder(rgd:GET("GameData", "race_path", "unit_path"))
+            self:do_ebps_folder(rgd:GET("GameData", "race_path", "building_path"))
+        end
+    end
+
+    -- Sort and process armour types
+    local armour_types_new = {}
+    for armour_type_name, unit_list in pairs(self.armour_types) do
+        table.sort(unit_list)
+        local nicename = string.gsub(string.sub(armour_type_name, string.find(armour_type_name, "tp_")+3), "_", " ")
+        if nicename ~= "armour" then
+            table.insert(armour_types_new, {
+                units = unit_list,
+                name = armour_type_name,
+                nice_name = nicename
+            })
+            table.insert(self.armour_type_names, nicename)
+        end
+    end
+
+    -- Sort by name
+    table.sort(armour_types_new, function(a,b) return a.nice_name < b.nice_name end)
+    table.sort(self.armour_type_names)
+    self.armour_types = armour_types_new
+
+    -- Generate HTML output
+    self:generate_html_output()
+    return self:do_weapons()
+end
+
+function FindDoWDPS:generate_html_output()
+    print_info("-->")
+    local html_start = "<html><head><title>DoW DPS</title>" .. the_css .. "</head><body bgcolor=666666><table border=\"0\" cellpadding=3 cellspacing=1>"
+    print(html_start)
+
+    -- Generate armour type rows
+    for _, armour_type in ipairs(self.armour_types) do
+        local row = string.format("\t<tr>\n\t<th valign=top>%s</th> <td bgcolor=999999>%s</td>\n\t</tr>",
+            armour_type.nice_name,
+            table.concat(armour_type.units, ", "))
+        print(row)
+    end
+    print("</table><br/><table border=\"0\" cellpadding=3 cellspacing=1>")
+end
+
+function FindDoWDPS:do_ebps_folder(path)
+    if not path then return end
+    for filename, rgd in self:pairs_recursive(self:filemap_folder("ebps\\" .. path)) do
+        local armour_type = rgd:GET("GameData", "type_ext", "type_armour")
+        if armour_type then
+            local armour_ref = string.lower(armour_type["$REF"])
+            if not self.armour_types[armour_ref] then
+                self.armour_types[armour_ref] = {}
+            end
+
+            local neat_filename = string.gsub(string.sub(rgd.name, 1, -5), "_", " ")
+            local screen_name = rgd:GET("GameData", "ui_ext", "ui_info", "screen_name_id")
+            if screen_name and screen_name ~= "$0" then
+                neat_filename = UCS(screen_name) .. " (" .. neat_filename .. ")"
+            end
+            table.insert(self.armour_types[armour_ref], neat_filename)
+        end
+    end
+end
+
+function FindDoWDPS:do_weapons()
+    local weapons = {}
+    for filename, rgd in self:pairs_recursive(filemap.weapon) do
+        table.insert(weapons, rgd)
+    end
+    table.sort(weapons, function(a,b) return a.path < b.path end)
+
+    -- Process weapons
+    for _, rgd in ipairs(weapons) do
+        local armour_damage = rgd:GET("GameData", "area_effect", "weapon_damage", "armour_damage")
+        if armour_damage and rgd.GameData.reload_time and rgd.GameData.reload_time > 0.0001 then
+            self:process_weapon(rgd, armour_damage)
+        end
+    end
+
+    print("</table></body></html>")
+    if print_file then
+        print_file:close()
+    end
+    print_info("\n<!-- done -->")
+end
+
+function FindDoWDPS:process_weapon(rgd, armour_damage)
+    local weapon = {
+        reload_time = rgd.GameData.reload_time,
+        accuracy = rgd.GameData.accuracy,
+        min_damage = armour_damage.min_damage_value,
+        damage = (armour_damage.max_damage + armour_damage.min_damage) / 2,
+        armour_piercing = armour_damage.armour_piercing,
+        ap = {}
+    }
+
+    -- Calculate armor piercing values
+    for key, ap_entry in pairs(armour_damage.armour_piercing_types) do
+        if key ~= "$REF" then
+            weapon.ap[string.lower(ap_entry.armour_type["$REF"])] = ap_entry.armour_piercing_value
+        end
+    end
+
+    -- Print weapon data
+    self.header_row_count = self.header_row_count + 1
+    if self.header_row_count == 24 then
+        self.header_row_count = 0
+        print("\t<tr>\n\t<th valign=top>File</th> <th valign=top>" ..
+              table.concat(self.armour_type_names, "</th> <th valign=top>") .. "</th> \n\t</tr>")
+    end
+
+    local td = (self.header_row_count % 2 == 1) and "<td bgcolor=aaaaaa>" or "<td bgcolor=999999>"
+    local damage_values = {}
+    for key, armour_type in ipairs(self.armour_types) do
+        local apval = math.min(math.max(weapon.ap[string.lower(armour_type.name)] or weapon.armour_piercing, 0), 100) / 100
+        local damage = weapon.damage * apval
+        damage = math.max(damage, weapon.min_damage)
+        table.insert(damage_values, string.format("%.3f", (damage * weapon.accuracy) / weapon.reload_time))
+    end
+
+    print("\t<tr>\n\t" .. td .. rgd.name .. "</td> " .. td .. table.concat(damage_values, "</td> " .. td) .. "</td> \n\t</tr>")
+end
+
+-- Utility functions remain mostly the same but optimized for Lua 5.0
+function FindDoWDPS:pairs_recursive(t)
+    local stack = {{t = t, k = nil}}
+    return function()
+        local top = stack[#stack]
+        local k, v = next(top.t, top.k)
+        while not k and #stack > 1 do
+            table.remove(stack)
+            top = stack[#stack]
+            k, v = next(top.t, top.k)
+        end
+        if not k then return nil end
+        top.k = k
+        if type(v) == "table" then
+            table.insert(stack, {t = v, k = nil})
+        end
+        return k, v
+    end
+end

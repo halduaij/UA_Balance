@@ -1,0 +1,183 @@
+class 'MarinesBuildingTactic' (BaseTactic)
+
+-- Keep the simple SharedAbilities table as is
+local SharedAbilities = {
+    -- Orbital Relay abilities
+    orbital_strike = 1580,
+    orbital_bombardment = 1553,
+
+    -- Resource Management
+    inhibitor_id = 2,
+    powerdump_id = 31,
+    reqdump_id = 32,
+    recharge_id = 33,
+
+    -- Super Weapons / Special Abilities
+    nuke_id = 1457,           -- Nuclear Strike
+    emp_id = 1458,            -- EMP Strike
+    cannon_id = 1550,         -- Particle Cannon
+    curtain_id = 1551,        -- Iron Curtain
+    detonate_id = 1845,       -- Nuke Detonate
+
+    -- Building-specific abilities
+    repair_id = 3,            -- Repair ability
+    heal_id = 1485,          -- Healing ability
+}
+
+function MarinesBuildingTactic:__init(base_ai) super(base_ai)
+    self:SetName("Marine Buildings Tactic")
+
+    -- Cache building IDs
+    self.m_iArmouryID = cpu_manager.stats:GetBuildingID("space_marine_armoury")
+    self.m_iNukeID = cpu_manager.stats:GetBuildingID("space_marine_hq_super")
+    self.m_iRelayID = cpu_manager.stats:GetBuildingID("space_marine_interface_relay")
+
+    self.m_bCanDeepStrikeTroops = true
+    self.m_abilitySelector = math.random(1, 100)
+    self.ResourcesGenTMR = g_iGMT
+end
+
+-- Remove InitAbilities since we have static IDs in SharedAbilities table
+
+function MarinesBuildingTactic:DoAbilities()
+    -- Cache resources and base_ai
+    local baseAI = self.base_ai
+    local iRequisition = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Requisition)
+    local iPower = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Power)
+
+    -- Building repair logic (only check if health is low)
+    if baseAI:GetHealthPercentage() < 0.5 and baseAI:CanDoAbility(SharedAbilities.repair_id) then
+        baseAI:DoSpecialAbility(SharedAbilities.repair_id)
+    end
+
+    -- Big Generator ability (Inhibitor)
+    if iPower >= 30000 and cpu_manager.player_stats:GetNumBasesByBPID(self.m_iNukeID, true) > 0
+    and baseAI:CanDoAbility(SharedAbilities.inhibitor_id) then
+        baseAI:DoSpecialAbility(SharedAbilities.inhibitor_id)
+    end
+
+    -- Resource management (check every 6 seconds)
+    if g_iGMT > self.ResourcesGenTMR + 6 then
+        -- Power to Requisition
+        if iPower > 9500 and iRequisition < 1000 and baseAI:CanDoAbility(SharedAbilities.powerdump_id) then
+            baseAI:DoSpecialAbility(SharedAbilities.powerdump_id)
+            self.ResourcesGenTMR = g_iGMT
+        -- Requisition to Power
+        elseif iRequisition > 9000 and iPower < 1000 and baseAI:CanDoAbility(SharedAbilities.reqdump_id) then
+            baseAI:DoSpecialAbility(SharedAbilities.reqdump_id)
+            self.ResourcesGenTMR = g_iGMT
+        end
+    end
+
+    -- Shield recharge for titans
+    if iPower >= 10000 and baseAI:CanDoAbility(SharedAbilities.recharge_id)
+    and self:PlayerHasLowMoraleSquad(0.3) then
+        baseAI:DoSpecialAbility(SharedAbilities.recharge_id)
+    end
+
+    -- Orbital Relay abilities (25% chance)
+    if self.m_abilitySelector <= 25 then
+        -- Orbital Strike
+        if iPower >= 1200 and baseAI:CanDoAbility(SharedAbilities.orbital_strike) then
+            local iRange = baseAI:GetAbilityRange(SharedAbilities.orbital_strike)
+            local oSquad = Ability.Filters.CloseVehicleEnemy(baseAI:GetPosition(), iRange, 1)
+            if oSquad and oSquad:IsAttacking() then
+                baseAI:DoSpecialAbilitySquad(SharedAbilities.orbital_strike, oSquad:GetSquad())
+            end
+        end
+
+        -- Orbital Bombardment
+        if iRequisition >= 750 and iPower >= 750 and baseAI:CanDoAbility(SharedAbilities.orbital_bombardment) then
+            local iRange = baseAI:GetAbilityRange(SharedAbilities.orbital_bombardment)
+            local oSquad = Ability.Filters.CloseEnemy(baseAI:GetPosition(), iRange, 15)
+            if oSquad and oSquad:IsAttacking() then
+                baseAI:DoSpecialAbilitySquad(SharedAbilities.orbital_bombardment, oSquad:GetSquad())
+            end
+        end
+    end
+
+    -- Super Weapons (only check if resources are available)
+    -- Nuclear Strike
+    if iRequisition >= 4000 and iPower >= 4000 and baseAI:CanDoAbility(SharedAbilities.nuke_id) then
+        Ability.DoAbilityPos(baseAI, SharedAbilities.nuke_id, Ability.Filters.CloseEnemy, 24)
+        Ability.DoAbilityPos(baseAI, SharedAbilities.nuke_id, Ability.EntityFilters.CloseBaseEntityEnemy, 6)
+    end
+
+    -- EMP Strike
+    if iRequisition >= 4000 and iPower >= 2000 and baseAI:CanDoAbility(SharedAbilities.emp_id) then
+        Ability.DoAbilityPos(baseAI, SharedAbilities.emp_id, Ability.Filters.CloseVehicleEnemy, 8)
+        Ability.DoAbilityPos(baseAI, SharedAbilities.emp_id, Ability.EntityFilters.CloseBaseEntityEnemy, 10)
+        Ability.DoAbilityPos(baseAI, SharedAbilities.emp_id, Ability.Filters.CloseSquadEnemy, 12)
+    end
+
+    -- Particle Cannon
+    self:HandleParticleCannon(baseAI, iRequisition, iPower)
+
+    -- Iron Curtain
+    self:HandleIronCurtain(baseAI, iRequisition, iPower)
+
+    -- Bomb Detonation
+    self:HandleBombDetonation(baseAI)
+end
+
+-- Split complex ability handlers into separate functions
+function MarinesBuildingTactic:HandleParticleCannon(baseAI, iRequisition, iPower)
+    if iRequisition >= 3000 and iPower >= 3000 and baseAI:CanDoAbility(SharedAbilities.cannon_id) then
+        local iRange = baseAI:GetAbilityRange(SharedAbilities.cannon_id)
+        local oSquad = cpu_manager.cpu_player:FindFirstEnemy(baseAI:GetPosition(), iRange, 1)
+        if oSquad then
+            local oStats = oSquad:GetStats()
+            if oStats then
+                local eClass = oStats:GetClass()
+                if eClass == UnitStatsAI.UC_VehicleHigh or eClass == UnitStatsAI.UC_Commander or
+                   eClass == UnitStatsAI.UC_MonsterHigh or oSquad:GetNumTroopers() >= 10 then
+                    baseAI:DoSpecialAbilitySquad(SharedAbilities.cannon_id, oSquad:GetSquad())
+                end
+            end
+        end
+    end
+end
+
+function MarinesBuildingTactic:HandleIronCurtain(baseAI, iRequisition, iPower)
+    if iRequisition >= 8000 and iPower >= 8000 and baseAI:CanDoAbility(SharedAbilities.curtain_id) then
+        local iRange = baseAI:GetAbilityRange(SharedAbilities.curtain_id)
+        local oUnit = Ability.Filters.CloseHurt(baseAI:GetPosition(), iRange, 10)
+        if oUnit and oUnit:IsInCombat() and oUnit:WasRecentlyHurt() and cpu_manager:GetUnitStrength(oUnit) > 150 then
+            baseAI:DoSpecialAbilitySquad(SharedAbilities.curtain_id, oUnit:GetSquad())
+        end
+    end
+end
+
+function MarinesBuildingTactic:HandleBombDetonation(baseAI)
+    if baseAI:CanDoAbility(SharedAbilities.detonate_id) then
+        -- Check for enemies first
+        if Ability.DoAbilityArea(baseAI, SharedAbilities.detonate_id, Ability.Filters.CloseEnemy, 10, 5) then
+            return
+        end
+
+        -- If no enemies, check for buildings
+        local iRange = baseAI:GetAbilityRange(SharedAbilities.detonate_id)
+        local oBuilding = Ability.EntityFilters.CloseBaseEntityEnemy(baseAI:GetPosition(), iRange, 1)
+        if oBuilding then
+            baseAI:DoSpecialAbilityEntity(SharedAbilities.detonate_id, oBuilding)
+        end
+    end
+end
+
+-- Utility functions remain the same
+function MarinesBuildingTactic:CanDeepStrikeTroops()
+    return true
+end
+
+function MarinesBuildingTactic:PlayerHasLowMoraleSquad(iMoraleRatio)
+    for oSquad in cpu_manager.stats:GetPlayerStatsFromID(cpu_manager.player_id):GetSquads() do
+        if oSquad:IsValid() then
+            local oName = oSquad:GetSquadName()
+            if (oName == "space_marine_squad_warhound_titan" or oName == "space_marine_squad_reaver_titan")
+            and oSquad:GetMoralePercentage() <= iMoraleRatio then
+                return true
+            end
+        end
+    end
+    return false
+end

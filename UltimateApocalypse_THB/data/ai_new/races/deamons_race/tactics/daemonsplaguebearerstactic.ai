@@ -1,0 +1,50 @@
+----------------------------------------
+-- File: 'daemonsplaguebearerstactic.ai'
+-- Edited by Gambit 5.02.2015
+
+class 'DaemonsPlagueBearersTactic' (DaemonsInfantryTactic)
+
+DaemonsPlagueBearers  = {}
+
+function DaemonsPlagueBearersTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Daemons Plague Bearers Tactic")
+
+	PlagueUseLimiter = false
+	PlagueTimeLimiter = g_iGMT
+	PlagueNurgleArmy = cpu_manager.cpu_player:IsResearchComplete("daemons_mark_nurgle")
+end
+
+function DaemonsPlagueBearersTactic:InitAbilities()
+
+	-- Init ability ID's
+		if (DaemonsPlagueBearers.plague_id == nil) then
+			DaemonsPlagueBearers.plague_id = cpu_manager.stats:GetAbilityID( "UA_daemons_plague_aura" )
+		end
+end
+
+function DaemonsPlagueBearersTactic:DoAbilities()
+
+
+
+	if (self.squad_ai:IsUsingAbility(DaemonsPlagueBearers.plague_id)) then
+		if Ability.Filters.CloseSquadEnemy(self.squad_ai:GetPosition(), 20, 3) == nil then
+			self.squad_ai:DoSpecialAbility(DaemonsPlagueBearers.plague_id)
+			PlagueUseLimiter = false
+		end
+	elseif Ability.Filters.CloseSquadEnemy(self.squad_ai:GetPosition(), 20, 3) ~= nil then
+		if (not PlagueUseLimiter) or g_iGMT > PlagueTimeLimiter + 30 then
+			if not PlagueNurgleArmy then
+				if Ability.Filters.CloseHurt(self.squad_ai:GetPosition(), 25, 1) ~= nil then
+					return
+				end
+			end
+			self.squad_ai:DoSpecialAbility(DaemonsPlagueBearers.plague_id)
+			PlagueUseLimiter = true
+			PlagueTimeLimiter = g_iGMT
+		end
+	end
+
+	-- Call basic DoAbilities methods
+	DaemonsInfantryTactic.DoAbilities(self)
+end

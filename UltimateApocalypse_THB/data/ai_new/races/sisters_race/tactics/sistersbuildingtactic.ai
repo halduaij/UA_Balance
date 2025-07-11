@@ -1,0 +1,32 @@
+----------------------------------------
+-- File: 'sistersbuildingtactic.ai'
+-- Edited by Thudmeizer	@ 10.04.2016
+-- Modified by CannibalToast @ 2025
+
+class 'SistersBuildingTactic' (BaseTactic)
+
+SistersBuilding = {}
+
+function SistersBuildingTactic:__init( base_ai ) super( base_ai )
+    self:SetName("Sisters Building Tactic")
+end
+
+function SistersBuildingTactic:InitAbilities()
+    -- Direct ID assignment for repair
+    if (SistersBuilding.repair_id == nil) then
+        SistersBuilding.repair_id = 3  -- Using the same repair ID as Marines
+        -- Debug print to verify
+        print("Sisters Repair ID set to: " .. tostring(SistersBuilding.repair_id))
+    end
+end
+
+function SistersBuildingTactic:DoAbilities()
+    -- Only try to repair if health is below 60%
+    if (self.base_ai:GetHealthPercentage() < 0.6) then
+        if (self.base_ai:CanDoAbility(SistersBuilding.repair_id)) then
+            self.base_ai:DoSpecialAbility(SistersBuilding.repair_id)
+            -- Debug print when repair is attempted
+            print("Attempting repair on Sisters building at " .. tostring(self.base_ai:GetHealthPercentage() * 100) .. "% health")
+        end
+    end
+end

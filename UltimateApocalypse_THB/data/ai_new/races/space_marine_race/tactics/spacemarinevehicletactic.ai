@@ -1,0 +1,826 @@
+----------------------------------------
+-- File: 'spacemarinevehicletactic.ai'
+-- Created by Arkhan     @ 12.01.2006
+-- Edited by Thudmeizer  @ 03.09.2016
+-- Edited by Cylarne     @ 2013
+-- Edited by Clockwork   @ 07/28/2022
+-- Optimized by CannibalToast 2025
+----------------------------------------
+
+class 'SpaceMarineVehicleTactic' (VehicleTactic)
+
+-- One-time initialization of shared ability ID cache
+SpaceMarineVehicleTactic.ABILITY_IDS = {}
+
+-- Initialize all ability IDs in a centralized location
+function SpaceMarineVehicleTactic:InitAbilityIDs()
+    -- If already initialized, skip
+    if next(SpaceMarineVehicleTactic.ABILITY_IDS) ~= nil then
+        return
+    end
+    
+    -- Map ability keys to their file names (eliminates redundancy)
+    local ability_map = {
+        -- Smoke Abilities
+        SMOKE_STANDARD = "marines_smoke_launchers",
+        SMOKE_LAND_RAIDER = "marine_smoke_launchers_landraider",
+        PREDATOR_SMOKE = "marines_smoke_launchers_predator",
+        
+        -- Bike Grenades
+        BIKE_FLASHBANG = "marines_flashbang_grenades",
+        BIKE_FRAG = "marines_frag_grenades",
+        BIKE_INFERNO = "marines_inferno_grenades",
+        BIKE_KRAK = "marines_krak_grenades",
+        BIKE_MELTA = "marines_melta_bombs",
+        BIKE_BURNOUT = "marines_burnout",
+        
+        -- Transport Abilities
+        TRANSPORT_HEAL = "all_transport_heal",
+        TRANSPORT_REINFORCE = "all_transport_reinforce",
+        TRANSPORT_ABILITY_RECHARGE = "all_transport_abilityrecharge",
+        
+        -- Special Vehicle Abilities
+        MACHINE_SPIRIT = "marines_machine_spirit",
+        PREDATOR_RELOAD = "marines_predator_reload_sponsons",
+        
+        -- Missile Systems
+        MISSILE_WHIRLWIND = "marines_whirlwind_artillery_barrage",
+        MISSILE_INCENDIARY = "marines_incendiary_missiles",
+        MISSILE_HELIOS = "marines_helios_missiles",
+        MISSILE_HK_PRIMARY = "marines_hunter_killer_missile",
+        MISSILE_HK_SECONDARY = "marines_hunter_killer_missile_building",
+        MISSILE_APOCALYPSE = "marines_apocalypse_missile_strike",
+        
+        -- Support Systems
+        SENSOR_MAP = "marines_sensor_scan",
+        JAMMER_MAP = "marines_jamming_beacon",
+        SENSOR_MAP_DAMOCLES = "marines_sensor_scan_damocles",
+        JAMMER_MAP_DAMOCLES = "marines_jamming_beacon_damocles",
+        LAY_MINES = "marines_lay_mines",
+        LAY_MINES_STALKER = "marines_lay_mines_stalker",
+        VEHICLE_SABOTAGE = "marines_sabotage",
+        
+        -- Titan/Super Heavy Abilities
+        TITAN_STOMP = "marines_warlord_stomp",
+        TITAN_TURRET = "marines_warlord_weapon_reload",
+        
+        -- Warlord Abilities
+        WARLORD_VALKSTRIKE = "marines_valkyrie_strike_airstrike",
+        WARLORD_VALKSTRIKE2 = "marines_valkyrie_strike_artillery",
+        WARLORD_VULTSTRIKE = "marines_vulture_strike_airstrike",
+        WARLORD_VULTSTRIKE2 = "marines_vulture_strike_artillery",
+        WARLORD_DETECTION = "detection_field",
+
+        -- Universal Abilities
+    RAM = "all_vehicle_ram"
+    }
+    
+    -- Populate the ABILITY_IDS table by iterating through the map
+    for key, ability_name in pairs(ability_map) do
+        SpaceMarineVehicleTactic.ABILITY_IDS[key] = cpu_manager.stats:GetAbilityID(ability_name)
+    end
+    
+    -- Ability IDs are now initialized
+end
+
+-- Getter method to access ability IDs from child classes
+function SpaceMarineVehicleTactic:GetAbilityID(key)
+    return SpaceMarineVehicleTactic.ABILITY_IDS[key]
+end
+
+-- Define constants for ability usage
+SpaceMarineVehicleTactic.AbilityTypes = {
+    -- Bike grenade constants
+    BIKE_GRENADE = {
+        FLASHBANG = "BIKE_FLASHBANG",
+        FRAG = "BIKE_FRAG",
+        INFERNO = "BIKE_INFERNO",
+        KRAK = "BIKE_KRAK",
+        MELTA = "BIKE_MELTA",
+        BURNOUT = "BIKE_BURNOUT"
+    },
+    
+    -- Transport ability constants
+    TRANSPORT = {
+        HEAL = "TRANSPORT_HEAL",
+        REINFORCE = "TRANSPORT_REINFORCE",
+        ABILITY_RECHARGE = "TRANSPORT_ABILITY_RECHARGE"
+    },
+    
+    -- Missile system constants
+    MISSILE = {
+        WHIRLWIND = "MISSILE_WHIRLWIND",
+        INCENDIARY = "MISSILE_INCENDIARY",
+        HELIOS = "MISSILE_HELIOS",
+        HK_PRIMARY = "MISSILE_HK_PRIMARY",
+        HK_SECONDARY = "MISSILE_HK_SECONDARY",
+        APOCALYPSE = "MISSILE_APOCALYPSE"
+    },
+    
+    -- Support system constants
+    SUPPORT = {
+        SENSOR_MAP = "SENSOR_MAP",
+        JAMMER_MAP = "JAMMER_MAP",
+        SENSOR_MAP_DAMOCLES = "SENSOR_MAP_DAMOCLES",
+        JAMMER_MAP_DAMOCLES = "JAMMER_MAP_DAMOCLES",
+        LAY_MINES = "LAY_MINES",
+        LAY_MINES_STALKER = "LAY_MINES_STALKER",
+        VEHICLE_SABOTAGE = "VEHICLE_SABOTAGE"
+    },
+    
+    -- Special abilities
+    SPECIAL = {
+        SMOKE_STANDARD = "SMOKE_STANDARD",
+        SMOKE_LAND_RAIDER = "SMOKE_LAND_RAIDER",
+        MACHINE_SPIRIT = "MACHINE_SPIRIT",
+        RAM = "RAM"
+    },
+    
+    -- Titan abilities
+    TITAN = {
+        STOMP = "TITAN_STOMP",
+        TURRET = "TITAN_TURRET"
+    },
+    
+    -- Warlord abilities
+    WARLORD = {
+        VALKSTRIKE = "WARLORD_VALKSTRIKE",
+        VALKSTRIKE2 = "WARLORD_VALKSTRIKE2",
+        VULTSTRIKE = "WARLORD_VULTSTRIKE",
+        VULTSTRIKE2 = "WARLORD_VULTSTRIKE2",
+        DETECTION = "WARLORD_DETECTION"
+    }
+}
+
+-- Define ability configuration
+-- We'll use a consistent helper function approach rather than static data
+-- This aligns more with SpaceMarineInfantryTactic's approach
+-- Helper functions
+
+-- Ability helpers based on type
+function SpaceMarineVehicleTactic:GetSmokeConfig(ability_id)
+    return {
+        filter = Ability.Filters.CloseHurt,
+        count = 1,
+        minStrength = 150,
+        requiresCombat = true
+    }
+end
+
+-- Define bike grenade types as semantic constants
+local BIKE_GRENADES = {
+    FLASHBANG = "BIKE_FLASHBANG",
+    FRAG = "BIKE_FRAG",
+    INFERNO = "BIKE_INFERNO",
+    KRAK = "BIKE_KRAK",
+    MELTA = "BIKE_MELTA",
+    BURNOUT = "BIKE_BURNOUT"
+}
+
+-- Simplified bike grenade configuration with direct string keys
+SpaceMarineVehicleTactic.BIKE_GRENADE_CONFIG = {
+    ["BIKE_FLASHBANG"] = { filter = Ability.Filters.CloseSquadEnemy, count = 4 },
+    ["BIKE_FRAG"] = { filter = Ability.Filters.CloseEnemy, count = 4 },
+    ["BIKE_INFERNO"] = { filter = Ability.Filters.CloseSquadEnemy, count = 3 },
+    ["BIKE_KRAK"] = { filter = Ability.Filters.CloseVehicleEnemy, count = 1 },
+    ["BIKE_MELTA"] = { filter = Ability.Filters.CloseVehicleEnemy, count = 1 },
+    ["BIKE_BURNOUT"] = { filter = Ability.Filters.CloseInfantryEnemy, count = 10, range = 4 }
+}
+
+-- Export bike grenade constants to class level for child classes to access
+SpaceMarineVehicleTactic.BIKE_GRENADES = BIKE_GRENADES
+
+-- Get bike grenade configuration by grenade key
+function SpaceMarineVehicleTactic:GetBikeGrenadeConfig(grenade_key)
+    return self.BIKE_GRENADE_CONFIG[grenade_key]
+end
+
+-- Improved bike grenade handling with direct ability ID access
+function SpaceMarineVehicleTactic:DoBikeGrenades(allowed_types)
+    -- Validate input
+    if not allowed_types or table.getn(allowed_types) == 0 then 
+        return false 
+    end
+    
+    -- Track whether any grenades were used
+    local used = false
+    
+    -- First initialize ability IDs if not already done
+    self:InitAbilityIDs()
+    
+    -- Loop through all allowed grenade types
+    for i = 1, table.getn(allowed_types) do
+        local grenade_key = allowed_types[i]
+        local config = self:GetBikeGrenadeConfig(grenade_key)
+        
+        -- Only proceed if we have valid config, ability ID and can use the ability
+        if config then
+            -- Get the ability ID directly from the centralized cache
+            local ability_id = self:GetAbilityID(grenade_key)
+            
+            if ability_id and self.squad_ai:CanDoAbility(ability_id) then
+                -- Special handling for burnout that needs position targeting
+                if grenade_key == self.BIKE_GRENADES.BURNOUT and config.range then
+                    local range = config.range or self.squad_ai:GetAbilityRange(ability_id)
+                    Ability.DoAbilityPos(self.squad_ai, ability_id, config.filter, range, config.count)
+                    used = true
+                else
+                    -- Standard target-based grenades
+                    Ability.DoAbilityTarget(self.squad_ai, ability_id, config.filter, config.count)
+                    used = true
+                end
+            end
+        end
+    end
+    
+    return used
+end
+
+function SpaceMarineVehicleTactic:GetTransportConfig(transport_ability)
+    local configs = {
+        [self.AbilityTypes.TRANSPORT.HEAL] = {
+            filter = Ability.Filters.CloseHurt,
+            count = 1,
+            maxStrength = 150,
+            maxTroopers = 2,
+            requiresCombat = true
+        },
+        [self.AbilityTypes.TRANSPORT.REINFORCE] = {
+            filter = Ability.Filters.CloseHurt,
+            count = 1,
+            maxStrength = 150,
+            maxTroopers = 2,
+            requiresCombat = true
+        },
+        [self.AbilityTypes.TRANSPORT.ABILITY_RECHARGE] = {
+            filter = Ability.Filters.CloseHurt,
+            count = 1,
+            minStrength = 250
+        }
+    }
+    return configs[transport_ability]
+end
+
+function SpaceMarineVehicleTactic:GetMissileConfig(missile_type)
+    local configs = {
+        [self.AbilityTypes.MISSILE.WHIRLWIND] = {
+            filter = Ability.Filters.CloseEnemy,
+            count = 24,
+            requiresAttacking = true,
+            threatCheck = {
+                ranges = { 75, 100 },
+                chances = { 25, 75 }
+            }
+        },
+        [self.AbilityTypes.MISSILE.INCENDIARY] = {
+            filter = nil,
+            requiresAttacking = true,
+            healthCheck = 0.5,
+            toggleOff = {
+                notAttacking = true,
+                healthBelow = 0.5
+            }
+        },
+        [self.AbilityTypes.MISSILE.HELIOS] = {
+            multiTarget = {
+                vehicle = { filter = Ability.Filters.CloseVehicleEnemy, count = 1 },
+                squad = { filter = Ability.Filters.CloseSquadEnemy, count = 4 }
+            },
+            threatCheck = {
+                ranges = { 75, 100 },
+                chances = { 25, 75 }
+            }
+        },
+        [self.AbilityTypes.MISSILE.HK_PRIMARY] = {
+            filter = Ability.Filters.CloseVehicleEnemy,
+            count = 1
+        },
+        [self.AbilityTypes.MISSILE.HK_SECONDARY] = {
+            filter = Ability.Filters.CloseVehicleEnemy,
+            count = 1
+        },
+        [self.AbilityTypes.MISSILE.APOCALYPSE] = {
+            filter = Ability.Filters.CloseSquadEnemy,
+            count = 6
+        }
+    }
+    return configs[missile_type]
+end
+
+function SpaceMarineVehicleTactic:GetSupportConfig(support_type)
+    local configs = {
+        [self.AbilityTypes.SUPPORT.SENSOR_MAP] = {
+            simpleActivation = true
+        },
+        [self.AbilityTypes.SUPPORT.JAMMER_MAP] = {
+            simpleActivation = true
+        },
+        [self.AbilityTypes.SUPPORT.SENSOR_MAP_DAMOCLES] = {
+            simpleActivation = true
+        },
+        [self.AbilityTypes.SUPPORT.JAMMER_MAP_DAMOCLES] = {
+            simpleActivation = true
+        },
+        [self.AbilityTypes.SUPPORT.LAY_MINES] = {
+            filter = Ability.Filters.CloseEnemy,
+            count = 24,
+            positionBased = true
+        },
+        [self.AbilityTypes.SUPPORT.LAY_MINES_STALKER] = {
+            filter = Ability.Filters.CloseEnemy,
+            count = 24,
+            positionBased = true
+        },
+        [self.AbilityTypes.SUPPORT.VEHICLE_SABOTAGE] = {
+            filter = Ability.Filters.CloseVehicleEnemy,
+            count = 1,
+            targetMethod = 'DoVehicleSabotage'
+        }
+    }
+    return configs[support_type]
+end
+
+function SpaceMarineVehicleTactic:GetSpecialConfig(special_type)
+    local configs = {
+        [self.AbilityTypes.SPECIAL.MACHINE_SPIRIT] = {
+            conditions = {
+                recentlyHurt = true,
+                notMoving = false,
+                notAttackMoving = true
+            }
+        },
+        [self.AbilityTypes.SPECIAL.RAM] = {
+            simpleActivation = true
+        }
+    }
+    return configs[special_type]
+end
+
+function SpaceMarineVehicleTactic:GetTitanConfig(titan_type)
+    local configs = {
+        [self.AbilityTypes.TITAN.STOMP] = {
+            filter = Ability.Filters.CloseSquadEnemy,
+            count = 8,
+            minThreat = 40
+        },
+        [self.AbilityTypes.TITAN.TURRET] = {
+            simpleActivation = true
+        }
+    }
+    return configs[titan_type]
+end
+
+function SpaceMarineVehicleTactic:GetWarlordConfig(warlord_type)
+    local configs = {
+        [self.AbilityTypes.WARLORD.VALKSTRIKE] = {
+            filter = Ability.Filters.CloseSquadEnemy,
+            count = 4,
+            positionBased = true
+        },
+        [self.AbilityTypes.WARLORD.VALKSTRIKE2] = {
+            filter = Ability.Filters.CloseSquadEnemy,
+            count = 4,
+            positionBased = true
+        },
+        [self.AbilityTypes.WARLORD.VULTSTRIKE] = {
+            filter = Ability.Filters.CloseSquadEnemy,
+            count = 4,
+            positionBased = true
+        },
+        [self.AbilityTypes.WARLORD.VULTSTRIKE2] = {
+            filter = Ability.Filters.CloseSquadEnemy,
+            count = 4,
+            positionBased = true
+        },
+        [self.AbilityTypes.WARLORD.DETECTION] = {
+            simpleActivation = true
+        }
+    }
+    return configs[warlord_type]
+end
+
+-- Helper functions for abilities
+
+-- Helper functions for ability usage
+function SpaceMarineVehicleTactic:DoAbilitySimple(ability_id)
+    -- Get ability type from ID
+    local special_config = self:GetSpecialConfig(self.AbilityTypes.SPECIAL.RAM)
+    local titan_config = self:GetTitanConfig(self.AbilityTypes.TITAN.TURRET)
+    local warlord_config = self:GetWarlordConfig(self.AbilityTypes.WARLORD.DETECTION)
+    local support_config = self:GetSupportConfig(self.AbilityTypes.SUPPORT.SENSOR_MAP)
+    
+    -- Check for a simple activation ability in any of the configs
+    local config = special_config or titan_config or warlord_config or support_config
+    if config and config.simpleActivation and self.squad_ai:CanDoAbility(ability_id) then
+        self.squad_ai:DoSpecialAbility(ability_id)
+        return true
+    end
+    return false
+end
+
+function SpaceMarineVehicleTactic:DoAbilityTarget(ability_id, ability_type, config_key)
+    -- Get the configuration for this ability type
+    local config
+    if ability_type == "WARLORD" then
+        config = self:GetWarlordConfig(config_key)
+    elseif ability_type == "SUPPORT" then
+        config = self:GetSupportConfig(config_key)
+    elseif ability_type == "MISSILE" then
+        config = self:GetMissileConfig(config_key)
+    elseif ability_type == "SPECIAL" then
+        config = self:GetSpecialConfig(config_key)
+    elseif ability_type == "TITAN" then
+        config = self:GetTitanConfig(config_key)
+    end
+    
+    if config and self.squad_ai:CanDoAbility(ability_id) then
+        if config.positionBased then
+            Ability.DoAbilityPos(self.squad_ai, ability_id, config.filter, config.count or 1)
+        else
+            Ability.DoAbilityTarget(self.squad_ai, ability_id, config.filter, config.count or 1)
+        end
+        return true
+    end
+    return false
+end
+
+-- Standardized smoke launcher function with direct ID resolution
+function SpaceMarineVehicleTactic:DoSmokeLaunchers(smoke_type)
+    -- First initialize ability IDs if not already done
+    self:InitAbilityIDs()
+    
+    -- Validate smoke type and get ability ID
+    if not smoke_type then
+        return false
+    end
+    
+    -- Get the ability ID from our centralized cache
+    local ability_id = self:GetAbilityID(smoke_type)
+    if not ability_id then
+        return false
+    end
+    
+    -- Skip if ability can't be used
+    if not self.squad_ai:CanDoAbility(ability_id) then
+        return false
+    end
+    
+    -- Get configuration for this smoke launcher type
+    local config = self:GetSmokeConfig(smoke_type)
+    if not config then
+        return false
+    end
+    
+    -- Find target unit
+    local iRange = self.squad_ai:GetAbilityRange(ability_id)
+    local oUnit = config.filter(self.squad_ai:GetPosition(), iRange, config.count or 1)
+    
+    -- Use ability if appropriate target found
+    if oUnit and 
+       (not config.requiresCombat or oUnit:IsInCombat()) and 
+       (not config.minStrength or cpu_manager:GetUnitStrength(oUnit) > config.minStrength) then
+        self.squad_ai:DoSpecialAbilitySquad(ability_id, oUnit:GetSquad())
+        return true
+    end
+    
+    return false
+end
+
+-- Standardized transport ability function with direct ID resolution
+function SpaceMarineVehicleTactic:DoTransportAbility(ability_key)
+    -- First initialize ability IDs if not already done
+    self:InitAbilityIDs()
+    
+    -- Validate ability key
+    if not ability_key then
+        return false
+    end
+    
+    -- Get the ability ID from our centralized cache
+    local ability_id = self:GetAbilityID(ability_key)
+    if not ability_id then
+        return false
+    end
+    
+    -- Skip if ability can't be used
+    if not self.squad_ai:CanDoAbility(ability_id) then
+        return false
+    end
+    
+    -- Get configuration for this transport ability
+    local config = self:GetTransportConfig(ability_key)
+    if not config then
+        return false
+    end
+    
+    -- Find target unit
+    local iRange = self.squad_ai:GetAbilityRange(ability_id)
+    local oUnit = config.filter(self.squad_ai:GetPosition(), iRange, config.count or 1)
+    
+    -- Use ability if appropriate target found
+    if oUnit and 
+       (not config.requiresCombat or oUnit:IsInCombat()) and 
+       (not config.maxStrength or cpu_manager:GetUnitStrength(oUnit) < config.maxStrength) and
+       (not config.maxTroopers or oUnit:GetNumTroopers() <= config.maxTroopers) then
+        self.squad_ai:DoSpecialAbilitySquad(ability_id, oUnit:GetSquad())
+        return true
+    end
+    
+    return false
+end
+
+function SpaceMarineVehicleTactic:DoMissileAbility(missile_key)
+    -- Get the ability ID
+    local ability_id = self:GetAbilityID(missile_key)
+    if not ability_id then return false end
+    
+    -- Get configuration for this missile system
+    local config = self:GetMissileConfig(missile_key)
+    if config and self.squad_ai:CanDoAbility(ability_id) then
+        -- Check if ability has threat check conditions
+        if config.threatCheck then
+            local hkChance = math.random(1, 100)
+            local hasThreat1 = cpu_manager.terrain_analyzer:HasThreat(self.squad_ai:GetPosition(), config.threatCheck.ranges[1])
+            local hasThreat2 = cpu_manager.terrain_analyzer:HasThreat(self.squad_ai:GetPosition(), config.threatCheck.ranges[2])
+            
+            -- Only proceed if threat conditions are met
+            if (hasThreat1 and hkChance > config.threatCheck.chances[1]) or
+               (hasThreat2 and hkChance > config.threatCheck.chances[2]) then
+                -- Skip using ability if threat conditions are not favorable
+                return false
+            end
+        end
+        
+        -- Handle ability execution
+        if config.multiTarget then
+            -- Handle multi-target abilities like Helios
+            local success1 = Ability.DoAbilityTarget(self.squad_ai, ability_id, config.multiTarget.vehicle.filter, config.multiTarget.vehicle.count)
+            local success2 = Ability.DoAbilityTarget(self.squad_ai, ability_id, config.multiTarget.squad.filter, config.multiTarget.squad.count)
+            return success1 or success2
+        else
+            -- Standard ability targeting
+            return self:DoAbilityTarget(ability_id, "MISSILE", missile_key)
+        end
+    end
+    return false
+end
+
+SpaceMarineVehicleTactic.TransportableUnits = {
+    -- Regular Transport (Rhino, Razorback) [1]
+    [1] = {
+        -- Basic Infantry
+        space_marine_squad_servitor_weapons = true,
+        space_marine_squad_scout = true,
+        space_marine_squad_tactical = true,
+        space_marine_squad_devastator = true,
+
+        -- Elite Infantry
+        space_marine_squad_lotd_tactical = true, -- Legion of the Damned
+        space_marine_squad_sternguard_veteran = true,
+        space_marine_squad_vanguard_veteran = true,
+
+        -- Support Infantry
+        space_marine_squad_apothecary = true,
+        space_marine_squad_banner_bearer = true,
+        space_marine_squad_chaplain = true,
+        space_marine_squad_chaplain_advance_sp = true,
+        space_marine_squad_librarian = true,
+
+        -- Commanders
+        space_marine_squad_force_commander = true,
+        space_marine_squad_force_commander_lotd = true,
+        space_marine_squad_force_commander_killeus = true,
+        space_marine_squad_honor_guard_gladiator = true,
+        space_marine_squad_chapter_master = true,
+    },
+
+    -- Heavy Transport (Land Raider) [2]
+    [2] = {
+        -- Terminator Units
+        space_marine_squad_terminator = true,
+        space_marine_squad_terminator_assault = true,
+        space_marine_squad_force_commander_terminator = true,
+
+        -- Also can transport regular infantry
+        space_marine_squad_servitor_weapons = true,
+        space_marine_squad_scout = true,
+        space_marine_squad_tactical = true,
+        space_marine_squad_devastator = true,
+        space_marine_squad_lotd_tactical = true,
+        space_marine_squad_sternguard_veteran = true,
+        space_marine_squad_vanguard_veteran = true,
+        space_marine_squad_apothecary = true,
+        space_marine_squad_banner_bearer = true,
+        space_marine_squad_chaplain = true,
+        space_marine_squad_chaplain_advance_sp = true,
+        space_marine_squad_librarian = true,
+        space_marine_squad_force_commander = true,
+        space_marine_squad_force_commander_lotd = true,
+        space_marine_squad_force_commander_killeus = true,
+        space_marine_squad_honor_guard_gladiator = true,
+        space_marine_squad_chapter_master = true,
+    }
+}
+
+function SpaceMarineVehicleTactic:__init(squad_ai)
+    VehicleTactic.__init(self, squad_ai)
+
+    -- Set default transport properties
+    self.m_iTransportVehicle = 0
+    self.m_iTransportSlots = 0
+    
+    -- Initialize ability IDs lazily
+    self:InitAbilityIDs()
+end
+
+-- Lazy initialization of ability IDs using direct string mapping
+function SpaceMarineVehicleTactic:InitAbilityIDs()
+    -- Only initialize once
+    if self.ability_ids_initialized then
+        return
+    end
+    
+    -- Set initialization flag
+    self.ability_ids_initialized = true
+    
+    -- Initialize all ability ID slots as nil for lazy loading
+    -- Actual ID lookup will happen on first use in GetAbilityID
+end
+
+-- Helper function to get an ability ID by key using direct UA_ prefixed ability names
+function SpaceMarineVehicleTactic:GetAbilityID(key)
+    -- If we don't have the ID yet, look it up
+    if self.ABILITY_IDS[key] == nil then
+        -- Map the key directly to the appropriate UA_ prefixed ability name
+        local name = nil
+        
+        -- Smoke abilities
+        if key == "SMOKE_STANDARD" then name = "UA_marines_smoke_launchers"
+        elseif key == "SMOKE_LAND_RAIDER" then name = "UA_marine_smoke_launchers_landraider"
+        elseif key == "PREDATOR_SMOKE" then name = "UA_marines_smoke_launchers_predator"
+        
+        -- Bike grenades
+        elseif key == "BIKE_FLASHBANG" then name = "UA_marines_flashbang_grenades"
+        elseif key == "BIKE_FRAG" then name = "UA_marines_frag_grenades"
+        elseif key == "BIKE_INFERNO" then name = "UA_marines_inferno_grenades"
+        elseif key == "BIKE_KRAK" then name = "UA_marines_krak_grenades"
+        elseif key == "BIKE_MELTA" then name = "UA_marines_melta_bombs"
+        elseif key == "BIKE_BURNOUT" then name = "UA_marines_burnout"
+        
+        -- Transport abilities
+        elseif key == "TRANSPORT_HEAL" then name = "UA_all_transport_heal"
+        elseif key == "TRANSPORT_REINFORCE" then name = "UA_all_transport_reinforce"
+        elseif key == "TRANSPORT_ABILITY_RECHARGE" then name = "UA_all_transport_abilityrecharge"
+        
+        -- Special vehicle abilities
+        elseif key == "MACHINE_SPIRIT" then name = "UA_marines_machine_spirit"
+        elseif key == "PREDATOR_RELOAD" then name = "UA_marines_predator_reload_sponsons"
+        
+        -- Missile systems
+        elseif key == "MISSILE_WHIRLWIND" then name = "UA_marines_whirlwind_artillery_barrage"
+        elseif key == "MISSILE_INCENDIARY" then name = "UA_marines_incendiary_missiles"
+        elseif key == "MISSILE_HELIOS" then name = "UA_marines_helios_missiles"
+        elseif key == "MISSILE_HK_PRIMARY" then name = "UA_marines_hunter_killer_missile"
+        elseif key == "MISSILE_HK_SECONDARY" then name = "UA_marines_hunter_killer_missile_building"
+        elseif key == "MISSILE_APOCALYPSE" then name = "UA_marines_apocalypse_missile_strike"
+        
+        -- Support systems
+        elseif key == "SENSOR_MAP" then name = "UA_marines_sensor_scan"
+        elseif key == "JAMMER_MAP" then name = "UA_marines_jamming_beacon"
+        elseif key == "SENSOR_MAP_DAMOCLES" then name = "UA_marines_sensor_scan_damocles"
+        elseif key == "JAMMER_MAP_DAMOCLES" then name = "UA_marines_jamming_beacon_damocles"
+        elseif key == "LAY_MINES" then name = "UA_marines_lay_mines"
+        elseif key == "LAY_MINES_STALKER" then name = "UA_marines_lay_mines_stalker"
+        elseif key == "VEHICLE_SABOTAGE" then name = "UA_marines_vehicle_sabotage"
+        elseif key == "TANK_TRAPS" then name = "UA_marines_tank_traps"
+        elseif key == "SCANNING" then name = "UA_marines_scanning"
+        elseif key == "JAMMING" then name = "UA_marines_jamming"
+        
+        -- Other abilities
+        elseif key == "DETECTION" then name = "UA_marines_detection"
+        elseif key == "TAUNT" then name = "UA_marines_taunt"
+        elseif key == "EARTHSHAKER" then name = "UA_marines_earthshaker"
+        elseif key == "MAX_CHARGE" then name = "UA_marines_max_charge"
+        elseif key == "AIR_SUPPORT" then name = "UA_marines_thunderhawk_air_support"
+        end
+        
+        -- Look up and cache the ability ID if we found a name
+        if name then
+            self.ABILITY_IDS[key] = cpu_manager.stats:GetAbilityID(name)
+        end
+    end
+    
+    return self.ABILITY_IDS[key]
+end
+
+-- Common transport ability logic
+function SpaceMarineVehicleTactic:DoTransportAbilities()
+    local abilities = self.Abilities
+
+    -- Check heal ability
+    if self.squad_ai:CanDoAbility(abilities.HEAL) then
+        local iRange = self.squad_ai:GetAbilityRange(abilities.HEAL)
+        local oUnit = Ability.Filters.CloseHurt(self.squad_ai:GetPosition(), iRange, 1)
+        if oUnit and oUnit:IsInCombat() and cpu_manager:GetUnitStrength(oUnit) > 150 then
+            self.squad_ai:DoSpecialAbility(abilities.HEAL)
+        end
+    end
+
+    -- Check ability recharge
+    if self.squad_ai:CanDoAbility(abilities.ABILITY_RECHARGE) then
+        local iRange = self.squad_ai:GetAbilityRange(abilities.ABILITY_RECHARGE)
+        local oUnit = Ability.Filters.CloseHurt(self.squad_ai:GetPosition(), iRange, 1)
+        if oUnit and oUnit:IsInCombat() and cpu_manager:GetUnitStrength(oUnit) > 250 then
+            self.squad_ai:DoSpecialAbility(abilities.ABILITY_RECHARGE)
+        end
+    end
+
+    -- Check reinforce ability
+    if self.squad_ai:CanDoAbility(abilities.REINFORCE) then
+        local iRange = self.squad_ai:GetAbilityRange(abilities.REINFORCE)
+        local oUnit = Ability.Filters.CloseHurt(self.squad_ai:GetPosition(), iRange, 1)
+        if oUnit and oUnit:IsInCombat() and cpu_manager:GetUnitStrength(oUnit) < 150 and oUnit:GetNumTroopers() <= 2 then
+            self.squad_ai:DoSpecialAbilitySquad(abilities.REINFORCE, oUnit:GetSquad())
+        end
+    end
+end
+
+-- Common machine spirit logic
+function SpaceMarineVehicleTactic:DoMachineSpirit()
+    if self.squad_ai:CanDoAbility(self.Abilities.MACHINE_SPIRIT) then
+        if self.squad_ai:WasRecentlyHurt() and
+            not self.squad_ai:IsInStateMove() and
+            not self.squad_ai:IsInStateAttackMove() then
+            self.squad_ai:DoSpecialAbility(self.Abilities.MACHINE_SPIRIT)
+            return true
+        end
+    end
+    return false
+end
+
+function SpaceMarineVehicleTactic:DoAbilities()
+    -- Override in derived classes
+end
+
+function SpaceMarineVehicleTactic:Update()
+    if self:IsComplete() then return end
+
+    -- Update basic vehicle behavior
+    if not VehicleTactic.Update(self) then
+        return
+    end
+
+    -- Check for emergency retreat
+    self:EmergencyRetreat()
+end
+
+-- Utility function to check if unit can be transported
+function SpaceMarineVehicleTactic:CanTransportUnit(unit_name)
+    if not self.m_iTransportVehicle or self.m_iTransportVehicle == 0 then 
+        return false 
+    end
+    return self.TransportableUnits[self.m_iTransportVehicle] and 
+           self.TransportableUnits[self.m_iTransportVehicle][unit_name] == true
+end
+
+function SpaceMarineVehicleTactic:UpdateTransportCapabilities()
+    -- Set transport type based on vehicle type
+    local squad_name = self.squad_ai:GetSquadName()
+    
+    -- Check for transport capabilities
+    if string.find(squad_name, "rhino") or string.find(squad_name, "razorback") then
+        self.m_iTransportVehicle = 1
+    elseif string.find(squad_name, "land_raider") then
+        self.m_iTransportVehicle = 2
+    else
+        self.m_iTransportVehicle = 0
+    end
+end
+
+function SpaceMarineVehicleTactic:ProcessAbilities()
+    -- First check if ABILITY_DATA exists to prevent "table expected got nil" error
+    if self.ABILITY_DATA then
+        -- Process each ability
+        for ability_id, ability in pairs(self.ABILITY_DATA) do
+            if ability.handler and self[ability.handler] then
+                self[ability.handler](self, ability_id)
+            end
+        end
+    else
+        -- Initialize ABILITY_DATA if it doesn't exist
+        self.ABILITY_DATA = {}
+    end
+end
+
+function SpaceMarineVehicleTactic:Update()
+    -- Call parent update
+    VehicleTactic.Update(self)
+    
+    -- Update transport capabilities
+    self:UpdateTransportCapabilities()
+    
+    -- Process abilities
+    self:ProcessAbilities()
+end
+
+return SpaceMarineVehicleTactic

@@ -1,0 +1,958 @@
+----------------------------------------
+-- File: 'chaosbuildbasestrategy.ai'
+-- Edited by Thudmeizer @ 16.11.2016
+-- Edited by Cylarne_04 2011
+-- Edited by CannibalToast 2024
+
+class 'ChaosBuildBaseStrategy' (BuildBaseStrategy)
+
+function ChaosBuildBaseStrategy:__init(baseinfo) super(baseinfo)
+    -- Call parent constructor
+
+    -- Initialize core state variables
+    self.force_tech = true
+    self.m_iMarksofChaosResearch = math.random(1, 5)
+    self.m_iArmyBuild = math.random(4, 4)
+    self.m_iArmyHighestStrength = 0
+    self.m_iNumHQAtStartPos = 1
+
+    -- Define building lookup
+    ChaosBuildBaseStrategy.bldg_Map = {
+        -- Basic building types
+        HQ = "chaos_hq",
+        Generator = "chaos_plasma_generator",
+        BiggerGenerator = "chaos_thermo_plasma_generator",
+        VehicleBuilding = "chaos_machine_pit",
+        ListeningPost = "chaos_listening_post",
+        Turret = "chaos_turret_bolter",
+        Mine = "chaos_mine_field",
+
+        -- Core buildings
+        MainHQ = "chaos_hq",
+        PlasmaGenerator = "chaos_plasma_generator",
+        Temple = "chaos_temple",
+        Armoury = "chaos_armoury",
+
+        -- Military buildings
+        MachinePit = "chaos_machine_pit",
+        SacrificialCircle = "chaos_sacrificial_circle",
+        GreaterSacrificialCircle = "chaos_greater_sacrificial_circle",
+        ThermoPlasmaGenerator = "chaos_thermo_plasma_generator",
+
+        -- Defense buildings
+        BolterTurret = "chaos_turret_bolter",
+        TankTrap = "chaos_tanktrap",
+        Wall = "chaos_wall",
+        ShrineKhorne = "chaos_shrine_khorne",
+
+        -- Advanced buildings
+        Warpforge = "chaos_warpforge",
+        SuperHQ = "chaos_hq_super",
+        Warpgate = "chaos_warpgate",
+    }
+
+    -- Building Categories and Requirements
+    ChaosBuildBaseStrategy.buildings = {
+        Core = {
+            { "chaos_hq",               1, 700, 150, 0, 0 },
+            { "chaos_plasma_generator", 1, 135, 0,   0, 0 },
+            { "chaos_listening_post",   1, 90,  0,   0, 0 },
+            { "chaos_temple",           1, 250, 0,   0, 0 },
+            { "chaos_armoury",          1, 175, 150, 0, 0 }
+        },
+        Military = {
+            { "chaos_machine_pit",                2, 200, 125, 0, 0 },
+            { "chaos_sacrificial_circle",         2, 150, 50,  0, 0 },
+            { "chaos_greater_sacrificial_circle", 3, 300, 100, 0, 0 },
+            { "chaos_thermo_plasma_generator",    2, 250, 0,   0, 0 }
+        },
+        Defense = {
+            { "chaos_turret_bolter", 1, 45,  105,  0, 0 },
+            { "chaos_tanktrap",      1, 5,   0,    0, 0 },
+            { "chaos_wall",          2, 150, 0,    0, 0 },
+            { "chaos_shrine_khorne", 4, 375, 1050, 0, 0 }
+        },
+        Advanced = {
+            { "chaos_warpforge", 5, 270,  120,  0, 0 },
+            { "chaos_hq_super",  5, 2000, 2000, 0, 0 },
+            { "chaos_warpgate",  4, 620,  380,  0, 0 }
+        }
+    }
+
+    -- Define building counts
+    ChaosBuildBaseStrategy.building_counts = {
+        -- Basic building types
+        HQ = { [1] = 1, [2] = 1, [3] = 2, [4] = 2, [5] = 2, [6] = 3 },
+        Generator = { [1] = 6, [2] = 6, [3] = 12, [4] = 12, [5] = 12, [6] = 18 },
+        BiggerGenerator = { [1] = 0, [2] = 0, [3] = 2, [4] = 4, [5] = 6, [6] = 8 },
+        VehicleBuilding = { [1] = 0, [2] = 1, [3] = 2, [4] = 2, [5] = 2, [6] = 3 },
+        ListeningPost = { [1] = 1, [2] = 2, [3] = 3, [4] = 4, [5] = 5, [6] = 6 },
+        Turret = { [1] = 2, [2] = 4, [3] = 6, [4] = 8, [5] = 10, [6] = 12 },
+        Mine = { [1] = 0, [2] = 4, [3] = 8, [4] = 12, [5] = 16, [6] = 20 },
+
+        -- Core buildings
+        Temple = { [1] = 1, [2] = 2, [3] = 2, [4] = 2, [5] = 2, [6] = 3 },
+        Armoury = { [1] = 2, [2] = 3, [3] = 3, [4] = 3, [5] = 3, [6] = 3 },
+
+        -- Military buildings
+        MachinePit = { [1] = 0, [2] = 1, [3] = 2, [4] = 2, [5] = 2, [6] = 3 },
+        SacrificialCircle = { [1] = 0, [2] = 1, [3] = 2, [4] = 2, [5] = 2, [6] = 3 },
+        GreaterSacrificialCircle = { [1] = 0, [2] = 0, [3] = 1, [4] = 2, [5] = 2, [6] = 3 },
+
+        -- Defense buildings
+        TankTrap = { [1] = 3, [2] = 6, [3] = 12, [4] = 18, [5] = 24, [6] = 24 },
+        Wall = { [1] = 0, [2] = 8, [3] = 16, [4] = 24, [5] = 32, [6] = 40 },
+        ShrineKhorne = { [1] = 0, [2] = 0, [3] = 0, [4] = 1, [5] = 2, [6] = 3 },
+
+        -- Advanced buildings
+        Warpforge = { [1] = 0, [2] = 0, [3] = 0, [4] = 0, [5] = 1, [6] = 2 },
+        SuperHQ = { [1] = 0, [2] = 0, [3] = 0, [4] = 0, [5] = 1, [6] = 1 },
+        Warpgate = { [1] = 0, [2] = 0, [3] = 0, [4] = 1, [5] = 2, [6] = 3 }
+    }
+
+    -- Define addon lookup
+    ChaosBuildBaseStrategy.addonLookup = {
+        -- Turret addons
+        ["chaos_turret_addon"] = "chaos_turret_bolter",
+        ["chaos_turret_addon_probe"] = "chaos_turret_bolter",
+
+        -- Listening post addons
+        ["chaos_list_post_addon_1"] = "chaos_listening_post",
+        ["chaos_list_post_addon_2"] = "chaos_listening_post",
+
+        -- HQ addons (Tier progression)
+        ["chaos_hq_addon_1"] = "chaos_hq",
+        ["chaos_hq_addon_2"] = "chaos_hq",
+
+        -- Super HQ addons
+        ["chaos_hq_super_addon_1"] = "chaos_hq_super",
+        ["chaos_hq_super_addon_2"] = "chaos_hq_super",
+        ["addon_superweapon"] = "chaos_hq_super"
+    }
+
+    -- Define unit stats (squad cap, support cap)
+    ChaosBuildBaseStrategy.unitStats = {
+        -- Basic infantry
+        ["chaos_squad_cultist"] = { 1, 0 },
+        ["chaos_squad_renegades"] = { 2, 0 },
+        ["chaos_marine_squad"] = { 2, 0 },
+        ["chaos_marine_icon_bearer_squad"] = { 1, 0 },
+        ["chaos_squad_psyker"] = { 1, 0 },
+
+        -- Advanced infantry
+        ["chaos_havoc_marine_squad"] = { 3, 0 },
+        ["chaos_noise_marine_squad"] = { 3, 0 },
+        ["chaos_plague_marine_squad"] = { 3, 0 },
+        ["chaos_rubric_marine_squad"] = { 3, 0 },
+        ["chaos_raptor_squad"] = { 3, 0 },
+        ["chaos_obliterator_squad"] = { 3, 0 },
+
+        -- Commanders and elite units
+        ["chaos_squad_lord"] = { 3, 0 },
+        ["chaos_squad_sorcerer"] = { 3, 0 },
+        ["chaos_squad_daemon_prince"] = { 4, 0 },
+        ["chaos_terminator_khorne_squad"] = { 4, 0 },
+        ["chaos_terminator_squad"] = { 4, 0 },
+
+        -- Vehicles and support
+        ["chaos_squad_rhino"] = { 0, 1 },
+        ["chaos_squad_defiler"] = { 0, 4 },
+        ["chaos_squad_predator"] = { 0, 4 },
+        ["chaos_squad_dreadnought"] = { 0, 3 },
+        ["chaos_squad_vindicator"] = { 0, 5 },
+        ["chaos_squad_land_raider"] = { 0, 6 },
+
+        -- Special units
+        ["chaos_squad_horror"] = { 1, 0 },
+        ["chaos_squad_possessed_marine"] = { 3, 0 },
+        ["chaos_squad_bloodthirster"] = { 0, 8 },
+        ["chaos_squad_lord_terminator"] = { 3, 0 },
+        ["chaos_squad_lord_advance_sp"] = { 3, 0 },
+        ["chaos_squad_sorcerer_advance_sp"] = { 3, 0 },
+        ["chaos_squad_daemon_prince_advance_sp"] = { 4, 0 }
+    }
+
+    ChaosBuildBaseStrategy.placement_types = {
+        Military = {
+            ["chaos_machine_pit"] = true,
+            ["chaos_temple"] = true,
+        },
+        Front = {
+            ["chaos_turret_bolter"] = true,
+            ["chaos_wall"] = true,
+            ["chaos_shrine_khorne"] = true,
+            ["chaos_tanktrap"] = true
+        },
+        Mine = {
+            ["chaos_mine_field"] = true,
+        },
+        BaseBack = {
+            ["chaos_hq"] = true,
+            ["chaos_hq_super"] = true,
+            ["chaos_warpgate"] = true,
+            ["chaos_warpforge"] = true,
+            ["chaos_sacrificial_circle"] = true,
+            ["chaos_greater_sacrificial_circle"] = true,
+            ["chaos_armoury"] = true,
+            ["chaos_plasma_generator"] = true
+        }
+    }
+
+    -- Addon Tiers
+    ChaosBuildBaseStrategy.addonTiers = {
+        ["chaos_hq_addon_1"] = 2,
+        ["chaos_hq_addon_2"] = 3,
+        ["chaos_list_post_addon_1"] = 2,
+        ["chaos_list_post_addon_2"] = 3,
+        ["chaos_turret_addon"] = 2,
+        ["chaos_turret_addon_probe"] = 2,
+        ["chaos_hq_super_addon_1"] = 5,
+        ["chaos_hq_super_addon_2"] = 6,
+        ["addon_superweapon"] = 5
+    }
+
+    -- Research Tables
+    ChaosBuildBaseStrategy.Research = {
+        Wargear = {
+            { "chaos_wargear_upgrade_01_manreaper_research",          4, 140,  80,  0, 0 },
+            { "chaos_wargear_upgrade_02_accursed_crozius_research",   2, 150,  75,  0, 0 },
+            { "chaos_wargear_upgrade_04_melta_gun_research",          6, 85,   85,  0, 0 },
+            { "chaos_wargear_upgrade_05_helm_of_lorgar_research",     3, 200,  100, 0, 0 },
+            { "chaos_wargear_upgrade_06_daemonic_armor_research",     3, 200,  100, 0, 0 },
+            { "chaos_wargear_upgrade_07_daemonic_gauntlets_research", 3, 200,  100, 0, 0 },
+            { "chaos_wargear_upgrade_08_runic_boots_research",        3, 200,  100, 0, 0 },
+            { "chaos_wargear_upgrade_09_banner_research",             4, 250,  125, 0, 0 },
+            { "chaos_wargear_upgrade_10_daemonic_ascension_research", 3, 1200, 530, 0, 0 },
+        },
+        Commander = {
+            { "chaos_commander_level1_research", 1, 100, 0,   0, 0 },
+            { "chaos_commander_level2_research", 2, 150, 50,  0, 0 },
+            { "chaos_commander_level3_research", 2, 245, 75,  0, 0 },
+            { "chaos_commander_level4_research", 3, 300, 95,  0, 0 },
+            { "chaos_commander_level5_research", 3, 340, 105, 0, 0 },
+            { "chaos_commander_level6_research", 4, 600, 225, 0, 0 },
+            { "chaos_commander_level7_research", 4, 750, 225, 0, 0 },
+        },
+        GlobalUpgrades = {
+            -- Combat upgrades
+            { "chaos_armor_upgrade_research",      1, 100, 50,  0, 0 },
+            { "chaos_armor_upgrade_research_2",    2, 150, 100, 0, 0 },
+            { "chaos_armor_upgrade_research_3",    3, 200, 150, 0, 0 },
+            { "chaos_accuracy_upgrade_research",   1, 100, 50,  0, 0 },
+            { "chaos_accuracy_upgrade_research_2", 2, 150, 100, 0, 0 },
+            { "chaos_accuracy_upgrade_research_3", 3, 200, 150, 0, 0 },
+            { "chaos_health_upgrade_research",     1, 100, 50,  0, 0 },
+            { "chaos_health_upgrade_research_2",   2, 150, 100, 0, 0 },
+            { "chaos_health_upgrade_research_3",   3, 200, 150, 0, 0 },
+            { "chaos_ranged_skill_research",       2, 150, 75,  0, 0 },
+            { "chaos_ranged_skill_research_2",     3, 200, 100, 0, 0 },
+
+            DefenseUpgrades = {
+                { "chaos_turret_upgrade1",        2, 180, 180, 0, 0 },
+                { "chaos_turret_upgrade2",        3, 390, 390, 0, 0 },
+                { "chaos_turret_upgrade3",        3, 110, 65,  0, 0 },
+                { "chaos_listening_post_upgrade", 3, 600, 240, 0, 0 }
+            },
+            VehicleUpgrades = {
+                { "chaos_vehicle_armor_research",  3, 150, 80,  0, 0 },
+                { "chaos_smoke_launcher_research", 2, 75,  25,  0, 0 },
+                { "chaos_titan_armor_research",    5, 600, 600, 0, 0 }
+            }
+        },
+    }
+
+    -- Initialize other components
+    self:InitPrerequisites()
+    self:InitHarassingLeader()
+    self:InitResearchPath()
+end
+
+local math_random = math.random
+
+-- Cache frequently used functions
+local table_getn = table.getn
+local cpu_manager_stats = cpu_manager.stats
+
+function ChaosBuildBaseStrategy:InitPrerequisites()
+    -- Define special items that need bypass for CpuPrerequisites
+    local special_items = {
+        -- Addons
+        { "chaos_turret_addon_probe",             CpuPrerequisites.BT_AddOn },
+        -- Research
+        { "chaos_daemon_prince_research",         CpuPrerequisites.BT_Research },
+        -- Squads
+        { "chaos_squad_lord",                     CpuPrerequisites.BT_Squad },
+        { "chaos_squad_lord_terminator",          CpuPrerequisites.BT_Squad },
+        { "chaos_squad_lord_advance_sp",          CpuPrerequisites.BT_Squad },
+        { "chaos_squad_sorcerer_advance_sp",      CpuPrerequisites.BT_Squad },
+        { "chaos_squad_daemon_prince_advance_sp", CpuPrerequisites.BT_Squad }
+    }
+
+    -- Add all special items to prerequisites
+    for _, item in ipairs(special_items) do
+        CpuPrerequisites2.AddSpecialItem(item[1], item[2])
+    end
+end
+
+function ChaosBuildBaseStrategy:InitHarassingLeader()
+    -- Cache build program result
+    local buildProgram = BuildBaseStrategy.ChooseBuildProgram(self)
+
+    -- Set harassing leader based on build program (1-5)
+    if buildProgram >= 1 and buildProgram <= 5 then
+        g_iHarassingLeader = buildProgram
+        print("BuildController: Selected Harassing Leader: " .. buildProgram)
+    end
+end
+
+function ChaosBuildBaseStrategy:InitResearchPath()
+    -- If we already have a Mark selected, don't choose a new one
+    if self.m_iMarksofChaosResearch and self.m_iMarksofChaosResearch > 0 then
+        return
+    end
+
+    -- Define mark research names
+    local mark_research = {
+        "chaos_mark_khorne_research",
+        "chaos_mark_nurgle_research",
+        "chaos_mark_slaanesh_research",
+        "chaos_mark_tzeentch_research"
+    }
+
+    -- Create completion status table
+    local mark_completion = {}
+    for i, research in ipairs(mark_research) do
+        mark_completion[i] = cpu_manager.cpu_player:IsResearchComplete(research)
+    end
+    -- Add "none" option
+    mark_completion[5] = true
+
+    -- Choose a random uncompleted mark
+    repeat
+        self.m_iMarksofChaosResearch = math_random(1, 5)
+    until not mark_completion[self.m_iMarksofChaosResearch]
+
+    -- Debug output
+    print("BuildController: Selected Mark of Chaos: " .. self.m_iMarksofChaosResearch)
+end
+
+function ChaosBuildBaseStrategy:OnDestroy()
+    -- Unregister events
+    cpu_manager.stats:UnregisterEventHandler(self)
+
+    -- Call parent's destroy
+    BuildBaseStrategy.OnDestroy(self)
+end
+
+function ChaosBuildBaseStrategy:ChooseBuildProgram()
+    -- Check build program count
+    if (table.getn(self.info.BuildPrograms) ~= 4) then
+        return BuildBaseStrategy.ChooseBuildProgram(self)
+    end
+    -- Set probabilities of the strategies according to the map size
+    local iBuildProgram1 -- Normal
+    return 1
+end
+
+function ChaosBuildBaseStrategy:CheckSquadCaps()
+    -- Only check caps every few seconds
+    local currentTime = g_iGMT
+    if self.lastCapCheck and currentTime < self.lastCapCheck + 5 then
+        return
+    end
+    self.lastCapCheck = currentTime
+
+    -- Evaluate squad and support caps
+    self:EvaluateCap()
+end
+
+function ChaosBuildBaseStrategy:EvaluateSquadCap()
+    -- Cache build manager values
+    local iSquadCapLeft = math.max(build_manager:GetSquadCapLeft(), 0)
+    local iSupportCapLeft = math.max(build_manager:GetSupportCapLeft(), 0)
+
+    -- Define research patterns
+    local cap_research = {
+        squad = {
+            base_name = "chaos_squad_cap_research",
+            threshold = iSquadCapLeft < 3,
+            max_count = 3
+        },
+        support = {
+            base_name = "chaos_support_cap_research",
+            threshold = iSupportCapLeft < 3,
+            max_count = 3
+        }
+    }
+
+    -- Process each research type
+    for _, research in pairs(cap_research) do
+        if research.threshold then
+            self:ProcessCapResearch(research.base_name, research.max_count)
+        end
+    end
+end
+
+function ChaosBuildBaseStrategy:ProcessCapResearch(base_name, max_count)
+    local tBuildType = CpuBuildType()
+    tBuildType.btype = CpuPrerequisites.BT_Research
+
+    for i = 0, max_count do
+        local research_name = base_name .. (i > 0 and "_" .. i or "")
+        if not cpu_manager.cpu_player:IsResearchComplete(research_name) then
+            tBuildType.name = research_name
+            if self:TryBuild(tBuildType) then
+                print("BuildController: Dynamic research of " .. tBuildType.name)
+            end
+            break
+        end
+    end
+end
+
+-- Trigger-based resource monitoring
+-- Modify existing OnResourcesChanged to handle economy research
+function ChaosBuildBaseStrategy:OnResourcesChanged()
+    -- Check squad caps first
+    self:CheckSquadCaps()
+    local iRequisition = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Requisition)
+    local iPower = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Power)
+
+    -- Check for excess resources and tier level for superweapons
+    if iRequisition >= 8000 and iPower >= 8000 and self.tierLevel >= 5 then
+        self:DynamicBuild("chaos_hq_super", 5, 2000, 2000, 0, 0)
+    end
+
+    -- Check resource researches based on tier level
+    local research_costs = {
+        ["chaos_generator_boost_research"] = {
+            [1] = { req = 0, pow = 100 },
+            [2] = { req = 0, pow = 150 },
+            [3] = { req = 0, pow = 225 },
+            [4] = { req = 0, pow = 300 },
+            [5] = { req = 0, pow = 400 }
+        },
+        ["chaos_power_research"] = {
+            [1] = { req = 200, pow = 20 },
+            [2] = { req = 350, pow = 40 },
+            [3] = { req = 500, pow = 60 },
+            [4] = { req = 650, pow = 80 },
+            [5] = { req = 800, pow = 100 }
+        },
+        ["chaos_requisition_research"] = {
+            [1] = { req = 75, pow = 250 },
+            [2] = { req = 100, pow = 350 },
+            [3] = { req = 125, pow = 450 },
+            [4] = { req = 150, pow = 550 },
+            [5] = { req = 300, pow = 1100 }
+        }
+    }
+
+    -- Check all research types
+    for research_base, costs in pairs(research_costs) do
+        -- Try to get the research for current tier
+        local research_name = research_base .. "_" .. self.tierLevel
+        local cost = costs[self.tierLevel]
+
+        if cost and not cpu_manager.cpu_player:IsResearchComplete(research_name) then
+            if iRequisition >= cost.req and iPower >= cost.pow then
+                self:DynamicResearch(research_name, self.tierLevel, cost.req, cost.pow, 0, 0)
+            end
+        end
+
+        -- Also try to get any missed lower tier researches
+        for i = 1, self.tierLevel - 1 do
+            local prev_research = research_base .. "_" .. i
+            local prev_cost = costs[i]
+
+            if prev_cost and not cpu_manager.cpu_player:IsResearchComplete(prev_research) then
+                if iRequisition >= prev_cost.req and iPower >= prev_cost.pow then
+                    self:DynamicResearch(prev_research, i, prev_cost.req, prev_cost.pow, 0, 0)
+                end
+            end
+        end
+    end
+end
+
+-- Optimized GetBuildingName function
+function ChaosBuildBaseStrategy:GetBuildingName(sType)
+    return ChaosBuildBaseStrategy.bldg_Map[sType]
+end
+
+-- Optimized GetAddonBuilding function
+function ChaosBuildBaseStrategy:GetAddonBuilding(sType)
+    return ChaosBuildBaseStrategy.addonLookup[sType]
+end
+
+-- Arkhan 01.2006: Inherited method to check if an addon is a tier addon-- Optimized IsTierAddon function
+function ChaosBuildBaseStrategy:IsTierAddon(sName, iTargetTier)
+    return ChaosBuildBaseStrategy.addonTiers[sName] == iTargetTier
+end
+
+-- Simplified GetUnitStats function
+function ChaosBuildBaseStrategy:GetUnitStats(sSquadName)
+    local stats = ChaosBuildBaseStrategy.unitStats[sSquadName]
+    if stats then
+        return stats[1], stats[2] -- Return squad_cap and support_cap separately
+    end
+    return 0, 0                   -- Default values if unit not found
+end
+
+-- Add this helper function to check for commander presence
+function ChaosBuildBaseStrategy:HasCommander()
+    -- List of commander unit names
+    local commanders = {
+        "chaos_squad_lord",
+        "chaos_squad_sorcerer",
+        "chaos_squad_daemon_prince",
+        "chaos_squad_lord_terminator",
+        "chaos_squad_lord_advance_sp",
+        "chaos_squad_sorcerer_advance_sp",
+        "chaos_squad_daemon_prince_advance_sp"
+    }
+
+    -- Check for any commander
+    for _, commander in ipairs(commanders) do
+        if self:CountSquads(commander) > 0 then
+            return true
+        end
+    end
+    return false
+end
+
+-- Modify UpdateTierLevel to clear the processing flag when tier changes
+function ChaosBuildBaseStrategy:UpdateTierLevel()
+    local oldTier = self.tierLevel
+
+    -- Reset tier level
+    self.tierLevel = 1
+
+    -- Get addon IDs once
+    local oStats = cpu_manager.stats:GetPlayerStatsFromID(cpu_manager.player_id)
+
+    -- Create lookup for addon IDs
+    local addonIDs = {}
+    for addonName, _ in pairs(ChaosBuildBaseStrategy.addonTiers) do
+        addonIDs[addonName] = cpu_manager.stats:GetAddOnID(addonName)
+    end
+
+    -- Define research-based tier upgrades
+    local researchTiers = {
+        ["chaos_apocalypse_research"] = 6,
+        ["chaos_sorcerer_research_2"] = 5,
+        ["chaos_projectiles"] = 4
+    }
+
+    -- Check research-based tiers first
+    for research, tier in pairs(researchTiers) do
+        if cpu_manager.cpu_player:IsResearchComplete(research) then
+            self.tierLevel = tier
+            break
+        end
+    end
+
+    -- If we haven't found a research-based tier, check addons
+    if self.tierLevel == 1 then
+        for oBase in oStats:GetBases() do
+            if oBase:IsValid() and not oBase:IsListeningPost() then
+                -- Check each addon
+                for addonName, tier in pairs(ChaosBuildBaseStrategy.addonTiers) do
+                    if addonIDs[addonName] and oBase:HasAddOn(addonIDs[addonName]) then
+                        self.tierLevel = math.max(self.tierLevel, tier)
+                    end
+                end
+            end
+        end
+    end
+
+    -- If tier changed, clear the processing flag
+    if self.tierLevel > oldTier then
+        print(string.format("Tier increased from %d to %d - clearing processing flag", oldTier, self.tierLevel))
+        self.processingTierUpgrade = false
+    end
+end
+
+function ChaosBuildBaseStrategy:BuildFlexible()
+    -- Cache frequently accessed values
+    local iRequisition = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Requisition)
+    local iPower = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Power)
+    local currentTier = self.tierLevel
+
+    -- First, check if we need to do emergency building
+    if self:HQEmergency() then
+        return
+    end
+
+    -- Define build order for categories
+    local buildOrder = {
+        "Core",     -- Essential buildings first
+        "Military", -- Military production second
+        "Defense",  -- Defensive structures third
+        "Advanced"  -- Advanced buildings last
+    }
+
+    -- Process buildings in priority order
+    for _, category in ipairs(buildOrder) do
+        local buildings = ChaosBuildBaseStrategy.buildings[category]
+        if buildings then
+            for _, building_data in ipairs(buildings) do
+                local name = building_data[1]
+                local tier = building_data[2]
+                local req = building_data[3]
+                local pow = building_data[4]
+
+                -- Check if we meet the tier requirement
+                if tier <= currentTier then
+                    -- Get required count for current tier
+                    local required_count = ChaosBuildBaseStrategy.building_counts[name] and
+                        ChaosBuildBaseStrategy.building_counts[name][currentTier] or 1
+                    local current_count = self:GetBuildingCountByName(name)
+
+                    -- Check if we need more of this building
+                    if current_count < required_count then
+                        -- Check if we have resources
+                        if iRequisition >= req and iPower >= pow then
+                            if self:DynamicBuild(name, tier, 1, req, pow, 0, 0) then
+                                print("BuildController: Building " .. category .. " structure: " .. name)
+                                return
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    -- Process research in priority order
+    for category, researches in pairs(ChaosBuildBaseStrategy.Research) do
+        -- Skip commander-related research if no commander is present
+        if (category == "Wargear" or category == "Commander") and not self:HasCommander() then
+            -- In Lua 5.0, we can't use 'continue', so just do nothing and let the loop continue
+        else
+            for _, research_data in ipairs(researches) do
+                local name = research_data[1]
+                local tier = research_data[2]
+                local req = research_data[3]
+                local pow = research_data[4]
+
+                if tier <= currentTier and iRequisition >= req and iPower >= pow then
+                    if not cpu_manager.cpu_player:IsResearchComplete(name) then
+                        if self:DynamicResearch(name, tier, req, pow, 0, 0) then
+                            print("BuildController: Researching " .. category .. ": " .. name)
+                            return
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- Arkhan 01.2006: Method to check if force tech should be computed
+
+function ChaosBuildBaseStrategy:CanAddToProductionQueue(itemName, itemType)
+    -- Get IDs based on type
+    local itemID = (itemType == "Addon") and cpu_manager.stats:GetAddOnID(itemName) or
+        cpu_manager.stats:GetResearchID(itemName)
+
+    -- For addons, we need to check the parent building
+    if itemType == "Addon" then
+        local sAddonBuilding = self:GetAddonBuilding(itemName)
+        local buildChannel = build_manager:GetBuildChannelFromID(cpu_manager.stats:GetBuildingID(sAddonBuilding))
+
+        if buildChannel ~= nil then
+            -- Check if something is being built
+            if buildChannel:IsBuilding() ~= 0 then
+                print(itemName .. " - Building channel is busy")
+                return false
+            end
+
+            -- Check if we can add to queue
+            if buildChannel:CanAddToQueue(BuildChannelAI.PQ_AddOn, itemID) ~= BuildChannelAI.CANBUILD_Ok then
+                print(itemName .. " - Cannot add to queue")
+                return false
+            end
+        end
+    elseif itemType == "Research" then
+        local buildChannel = build_manager:GetBuildChannelFromID(itemID)
+        if buildChannel ~= nil then
+            -- Check if something is being researched
+            if buildChannel:IsBuilding() ~= 0 then
+                print(itemName .. " - Research channel is busy")
+                return false
+            end
+
+            -- Check if we can add to queue
+            if buildChannel:CanAddToQueue(BuildChannelAI.PQ_Research, itemID) ~= BuildChannelAI.CANBUILD_Ok then
+                print(itemName .. " - Cannot add to research queue")
+                return false
+            end
+        end
+    end
+    return true
+end
+
+-- Remove this function as it's redundant
+-- function ChaosBuildBaseStrategy:CheckTierResources(iRequisition, iPower)
+
+function ChaosBuildBaseStrategy:ForceTech()
+    local iTierLevel = self:GetTierLevel()
+    local iRequisition = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Requisition)
+    local iPower = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Power)
+
+    -- Check if anything is being produced
+    if self.processingTierUpgrade then
+        print("Already processing tier upgrade")
+        return false
+    end
+
+    -- Check delay for new attempts
+    if self.lastTechCheck and g_iGMT < self.lastTechCheck + 5 then
+        return false
+    end
+
+    -- Tier 1 -> 2
+    if iTierLevel == 1 then
+        -- Only start tech check if we have Temple or Armoury
+        if self:GetBuildingCountByName("chaos_temple") > 0 or self:GetBuildingCountByName("chaos_armoury") > 0 then
+            self.lastTechCheck = g_iGMT
+            print("Attempting to build addon: chaos_hq_addon_1")
+            if self:DynamicAddon("chaos_hq_addon_1", 100, 1, 400, 130, 0, 0, nil, nil, false) then
+                print("Successfully queued HQ Addon 1")
+                self.processingTierUpgrade = true
+                return true
+            end
+        end
+    end
+
+    -- Tier 2 -> 3
+    if iTierLevel == 2 then
+        -- Only start tech check if we have Machine Pit AND Sacrificial Circle
+        if self:GetBuildingCountByName("chaos_machine_pit") > 0 and
+            self:GetBuildingCountByName("chaos_sacrificial_circle") > 0 then
+            self.lastTechCheck = g_iGMT
+            print("Attempting to build addon: chaos_hq_addon_2")
+            if self:DynamicAddon("chaos_hq_addon_2", 100, 2, 800, 250, 0, 0, nil, nil, false) then
+                print("Successfully queued HQ Addon 2")
+                self.processingTierUpgrade = true
+                self:OnResourcesChanged()
+                return true
+            end
+        end
+    end
+
+    -- Tier 3 -> 4
+    if iTierLevel == 3 then
+        -- Only start tech check if we have Greater Sacrificial Circle
+        if self:GetBuildingCountByName("chaos_greater_sacrificial_circle") > 0 then
+            self.lastTechCheck = g_iGMT
+            print("Attempting research: chaos_projectiles")
+            if self:DynamicResearch("UA_chaos_projectiles", 3, 1000, 1000, 0, 0) then
+                print("Successfully queued Projectiles research")
+                self.processingTierUpgrade = true
+                return true
+            end
+        end
+    end
+
+    -- Tier 4 -> 5
+    if iTierLevel == 4 then
+        -- Only start tech check if we have Warpforge
+        if self:GetBuildingCountByName("chaos_warpforge") > 0 then
+            self.lastTechCheck = g_iGMT
+            print("Attempting research: chaos_sorcerer_research_2")
+            if self:DynamicResearch("UA_chaos_sorcerer_research_2", 3, 400, 200, 0, 0) then
+                print("Successfully queued Sorcerer research")
+                self.processingTierUpgrade = true
+                return true
+            end
+        end
+    end
+
+    -- Tier 5 -> 6
+    if iTierLevel == 5 then
+        -- Only start tech check if we have Super HQ
+        if self:GetBuildingCountByName("chaos_hq_super") > 0 then
+            self.lastTechCheck = g_iGMT
+            print("Attempting research: chaos_apocalypse_research")
+            if self:DynamicResearch("UA_chaos_apocalypse_research", 5, 2000, 2000, 0, 0) then
+                print("Successfully queued Apocalypse research")
+                self.processingTierUpgrade = true
+                return true
+            end
+        end
+    end
+
+    return false
+end
+
+-- Arkhan 03.2006: Return placement type for buildings
+function ChaosBuildBaseStrategy:GetPlacementType(sBuildingName)
+    -- Check each placement type
+    for placementType, buildings in pairs(ChaosBuildBaseStrategy.placement_types) do
+        if buildings[sBuildingName] then
+            return placementType
+        end
+    end
+    return "Basic"
+end
+
+-- Add this function to prevent HQ destruction
+function ChaosBuildBaseStrategy:ShouldDestroyBuilding(building)
+    if building:GetBaseName() == "chaos_hq" then
+        -- Never destroy HQs unless we have more than 3
+        local hqCount = self:GetBuildingCountByName("chaos_hq")
+        return hqCount > 3
+    end
+    return true
+end
+
+function ChaosBuildBaseStrategy:HQEmergency()
+    -- Get HQ
+    local HQ = self:GetBuildingName("chaos_hq")
+    if HQ == nil then
+        return false
+    end
+
+    -- Check HQ health
+    local HQHealth = HQ:GetHealthPercentage()
+    if HQHealth >= 0.6 then
+        return false
+    end
+
+    -- Cache resources
+    local iRequisition = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Requisition)
+    local iPower = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Power)
+
+    -- Emergency building priorities
+    local emergencyBuilds = {
+        -- Building name, requisition, power
+        { "chaos_turret_bolter", 45,  105 },
+        { "chaos_tanktrap",      5,   0 },
+        { "chaos_mine_field",    25,  25 },
+        { "chaos_wall",          150, 0 }
+    }
+
+    -- Try to build defensive structures
+    for _, build in ipairs(emergencyBuilds) do
+        if iRequisition >= build[2] and iPower >= build[3] then
+            if self:DynamicBuild(build[1], 1, 1, build[2], build[3], 0, 0) then
+                print("BuildController: Emergency building " .. build[1] .. " for HQ defense")
+                return true
+            end
+        end
+    end
+
+    -- Try to repair HQ if we can't build defenses
+    if not HQ:IsConstructing() then
+        HQ:DoRepair()
+        print("BuildController: Emergency repairing HQ")
+        return true
+    end
+
+    return false
+end
+
+-- Arkhan 03.2006: Inherited method to modify squad demand
+-- Cache squad IDs at file scope
+local cached_squad_ids = {
+    icon_bearer = nil,
+    psyker = nil,
+    rhino = nil,
+    -- Add all squad types we check for attachments
+    renegades = nil,
+    marine_squad = nil,
+    havoc_marine = nil,
+    noise_marine = nil,
+    plague_marine = nil,
+    rubric_marine = nil,
+    terminator_khorne = nil,
+    terminator = nil
+}
+
+-- Init cache function
+local function InitSquadCache()
+    if not cached_squad_ids.icon_bearer then
+        cached_squad_ids.icon_bearer = cpu_manager.stats:GetSquadID("chaos_marine_icon_bearer_squad")
+        cached_squad_ids.psyker = cpu_manager.stats:GetSquadID("chaos_squad_psyker")
+        cached_squad_ids.rhino = cpu_manager.stats:GetSquadID("chaos_squad_rhino")
+        -- Cache attachment-capable squads
+        cached_squad_ids.renegades = cpu_manager.stats:GetSquadID("chaos_squad_renegades")
+        cached_squad_ids.marine_squad = cpu_manager.stats:GetSquadID("chaos_marine_squad")
+        cached_squad_ids.havoc_marine = cpu_manager.stats:GetSquadID("chaos_havoc_marine_squad")
+        cached_squad_ids.noise_marine = cpu_manager.stats:GetSquadID("chaos_noise_marine_squad")
+        cached_squad_ids.plague_marine = cpu_manager.stats:GetSquadID("chaos_plague_marine_squad")
+        cached_squad_ids.rubric_marine = cpu_manager.stats:GetSquadID("chaos_rubric_marine_squad")
+        cached_squad_ids.terminator_khorne = cpu_manager.stats:GetSquadID("chaos_terminator_khorne_squad")
+        cached_squad_ids.terminator = cpu_manager.stats:GetSquadID("chaos_terminator_squad")
+    end
+end
+
+function ChaosBuildBaseStrategy:ModifySquadDemand(iUnitID)
+    -- Init cache if needed
+    InitSquadCache()
+
+    -- Check for Icon Bearer
+    if iUnitID == cached_squad_ids.icon_bearer then
+        local banner_attach = function(squad_ai)
+            return (squad_ai:GetTactic():GetUnitStrength() >= 250 and squad_ai:CanReceiveAttachment())
+        end
+
+        -- Count squads that can receive banner attachment
+        local num_attach = self:CountSquads("chaos_squad_renegades", banner_attach) +
+            self:CountSquads("chaos_marine_squad", banner_attach) +
+            self:CountSquads("chaos_havoc_marine_squad", banner_attach) +
+            self:CountSquads("chaos_noise_marine_squad", banner_attach) +
+            self:CountSquads("chaos_plague_marine_squad", banner_attach) +
+            self:CountSquads("chaos_rubric_marine_squad", banner_attach) +
+            self:CountSquads("chaos_terminator_khorne_squad", banner_attach) +
+            self:CountSquads("chaos_terminator_squad", banner_attach)
+
+        -- Check if we have enough icon bearers
+        if self:CountSquads("chaos_marine_icon_bearer_squad") >= num_attach then
+            return 0
+        end
+    end
+
+    -- Check for Psykers
+    if iUnitID == cached_squad_ids.psyker then
+        local psyker_attach = function(squad_ai)
+            return (squad_ai:GetTactic():GetUnitStrength() >= 250 and squad_ai:CanReceiveAttachment())
+        end
+
+        -- Count squads that can receive psyker attachment
+        local num_attach = self:CountSquads("chaos_squad_renegades", psyker_attach) +
+            self:CountSquads("chaos_marine_squad", psyker_attach) +
+            self:CountSquads("chaos_havoc_marine_squad", psyker_attach) +
+            self:CountSquads("chaos_noise_marine_squad", psyker_attach) +
+            self:CountSquads("chaos_plague_marine_squad", psyker_attach) +
+            self:CountSquads("chaos_rubric_marine_squad", psyker_attach) +
+            self:CountSquads("chaos_terminator_khorne_squad", psyker_attach) +
+            self:CountSquads("chaos_terminator_squad", psyker_attach)
+
+        -- Check if we have enough psykers (2 psykers per squad)
+        local num_psyker = self:CountSquads("chaos_squad_psyker")
+        if (2 * num_psyker >= num_attach) then
+            return 0
+        end
+    end
+
+    -- Check for Rhinos
+    if iUnitID == cached_squad_ids.rhino then
+        -- Only build rhinos if we have sufficient army strength
+        if cpu_manager:GetArmyStrength() < 4000 then
+            return 0
+        end
+    end
+
+    -- Default to parent behavior
+    return BuildBaseStrategy.ModifySquadDemand(self, iUnitID)
+end
+
+-- Arkhan 11.2006: Virtual method for checking out relic units
+function ChaosBuildBaseStrategy:RelicRequired(sName)
+    -- Check name
+    if ((sName == "chaos_squad_daemon_prince") or (sName == "chaos_commander_level7_research")) then
+        return true
+    end
+    return false
+end

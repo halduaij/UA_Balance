@@ -1,0 +1,28 @@
+----------------------------------------
+-- File: 'daemonsbuildingtactic.ai'
+-- Edited by Thudmeizer	@ 09.05.2016
+
+class 'DaemonsBuildingTactic' (BaseTactic)
+
+DaemonsBuilding = {}
+
+function DaemonsBuildingTactic:__init( base_ai ) super( base_ai )
+
+	self:SetName("Daemons Building Tactic")
+end
+
+function DaemonsBuildingTactic:InitAbilities()
+    if (DaemonsBuilding.repair_id == nil) then
+        DaemonsBuilding.repair_id = 3
+        print("Daemons Repair ID set to: " .. tostring(DaemonsBuilding.repair_id))
+    end
+end
+
+function DaemonsBuildingTactic:DoAbilities()
+    if (self.base_ai:GetHealthPercentage() < 0.5) then
+        if (self.base_ai:CanDoAbility(DaemonsBuilding.repair_id)) then
+            self.base_ai:DoSpecialAbility(DaemonsBuilding.repair_id)
+            print("Attempting repair on Daemons building at " .. tostring(self.base_ai:GetHealthPercentage() * 100) .. "% health")
+        end
+    end
+end

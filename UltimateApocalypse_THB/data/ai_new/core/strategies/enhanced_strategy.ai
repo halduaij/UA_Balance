@@ -1,0 +1,479 @@
+----------------------------------------
+-- File: 'enhanced_strategy.ai'
+-- Enhanced strategy system for Warhammer 40k: Dawn of War Soulstorm
+-- Incorporates modern AI techniques compatible with Lua 5.1
+-- Created by AI Assistant @ 2024
+
+import('Core/ai_improvements.ai')
+
+-- Enhanced Strategy class that extends the base Strategy
+class 'EnhancedStrategy'
+
+-- Strategy states for better state management
+EnhancedStrategy.States = {
+    IDLE = "idle",
+    BUILDING = "building",
+    ATTACKING = "attacking",
+    DEFENDING = "defending",
+    RETREATING = "retreating",
+    HARASSING = "harassing",
+    EXPANDING = "expanding"
+}
+
+-- Strategy priorities with dynamic adjustment
+EnhancedStrategy.Priorities = {
+    EMERGENCY_DEFENSE = 1000,
+    CRITICAL_ATTACK = 900,
+    RESOURCE_CRISIS = 800,
+    BUILD_ORDER = 700,
+    EXPANSION = 600,
+    HARASSMENT = 500,
+    TECH_UPGRADE = 400,
+    UNIT_PRODUCTION = 300,
+    BUILDING_MAINTENANCE = 200,
+    IDLE_ACTIONS = 100
+}
+
+function EnhancedStrategy:__init(info)
+    -- Call parent constructor
+    Strategy.__init(self, info)
+    
+    -- Enhanced state management
+    self.current_state = EnhancedStrategy.States.IDLE
+    self.state_timer = 0
+    self.state_duration = 0
+    
+    -- Performance monitoring
+    self.performance_monitor = AI_Improvements.PerformanceMonitor
+    
+    -- Enhanced decision making
+    self.decision_history = {}
+    self.success_rate = {}
+    self.adaptation_factor = 1.0
+    
+    -- Threat assessment
+    self.last_threat_assessment = 0
+    self.threat_level = 0
+    self.enemy_composition = {}
+    
+    -- Resource management
+    self.resource_efficiency = {}
+    self.last_efficiency_check = 0
+    
+    -- Formation management
+    self.current_formation = "line"
+    self.formation_positions = {}
+    
+    -- Tactical memory
+    self.tactical_memory = {
+        successful_attacks = {},
+        failed_attacks = {},
+        enemy_patterns = {},
+        map_analysis = {}
+    }
+    
+    -- Adaptive parameters
+    self.adaptive_params = {
+        aggression_level = 0.5,
+        defense_focus = 0.3,
+        resource_focus = 0.2,
+        tech_priority = 0.4
+    }
+end
+
+-- Enhanced state management
+function EnhancedStrategy:SetState(new_state, duration)
+    if self.current_state ~= new_state then
+        self:OnStateExit(self.current_state)
+        self.current_state = new_state
+        self.state_timer = 0
+        self.state_duration = duration or 0
+        self:OnStateEnter(new_state)
+    end
+end
+
+function EnhancedStrategy:OnStateEnter(state)
+    -- Override in subclasses
+end
+
+function EnhancedStrategy:OnStateExit(state)
+    -- Override in subclasses
+end
+
+function EnhancedStrategy:UpdateState(delta_time)
+    self.state_timer = self.state_timer + delta_time
+    
+    if self.state_duration > 0 and self.state_timer >= self.state_duration then
+        self:OnStateTimeout()
+    end
+end
+
+function EnhancedStrategy:OnStateTimeout()
+    -- Default timeout behavior
+    self:SetState(EnhancedStrategy.States.IDLE)
+end
+
+-- Enhanced threat assessment
+function EnhancedStrategy:AssessThreats()
+    local current_time = cpu_manager.cpu_player:GetGameTime()
+    
+    -- Only reassess threats periodically
+    if current_time - self.last_threat_assessment < 2.0 then
+        return self.threat_level
+    end
+    
+    self.performance_monitor:StartTimer("threat_assessment")
+    
+    local enemy_squads = cpu_manager.stats:GetEnemySquads()
+    local friendly_position = cpu_manager.start_pos
+    
+    local threats, total_threat = AI_Improvements.AssessThreat(enemy_squads, friendly_position)
+    
+    -- Update threat level
+    self.threat_level = total_threat
+    
+    -- Analyze enemy composition
+    self.enemy_composition = AI_Improvements.AnalyzeSquadComposition(enemy_squads)
+    
+    -- Store tactical information
+    self:StoreTacticalInfo(threats)
+    
+    self.last_threat_assessment = current_time
+    self.performance_monitor:EndTimer("threat_assessment")
+    
+    return total_threat
+end
+
+-- Enhanced decision making with learning
+function EnhancedStrategy:MakeDecision(context)
+    self.performance_monitor:StartTimer("decision_making")
+    
+    -- Get available options
+    local options = self:GetAvailableOptions(context)
+    
+    -- Apply learning from past decisions
+    local adjusted_options = self:ApplyLearning(options, context)
+    
+    -- Use weighted random selection for variety
+    local decision = AI_Improvements.WeightedRandomChoice(adjusted_options)
+    
+    -- Store decision for learning
+    self:StoreDecision(decision, context)
+    
+    self.performance_monitor:EndTimer("decision_making")
+    
+    return decision
+end
+
+function EnhancedStrategy:GetAvailableOptions(context)
+    local options = {}
+    
+    -- Build options based on current state and context
+    if self.current_state == EnhancedStrategy.States.IDLE then
+        if self.threat_level > 1000 then
+            table.insert(options, { value = "defend", weight = 80 })
+            table.insert(options, { value = "retreat", weight = 20 })
+        elseif self:CanAttack() then
+            table.insert(options, { value = "attack", weight = 60 })
+            table.insert(options, { value = "harass", weight = 30 })
+            table.insert(options, { value = "expand", weight = 10 })
+        else
+            table.insert(options, { value = "build", weight = 70 })
+            table.insert(options, { value = "tech", weight = 30 })
+        end
+    elseif self.current_state == EnhancedStrategy.States.DEFENDING then
+        if self.threat_level < 500 then
+            table.insert(options, { value = "counter_attack", weight = 50 })
+            table.insert(options, { value = "idle", weight = 30 })
+            table.insert(options, { value = "build", weight = 20 })
+        else
+            table.insert(options, { value = "continue_defend", weight = 80 })
+            table.insert(options, { value = "retreat", weight = 20 })
+        end
+    end
+    
+    return options
+end
+
+function EnhancedStrategy:ApplyLearning(options, context)
+    local adjusted_options = AI_Improvements.TableShallowCopy(options)
+    
+    -- Adjust weights based on success rate
+    for i, option in adjusted_options do
+        local success_rate = self.success_rate[option.value] or 0.5
+        local adjustment = (success_rate - 0.5) * 0.3  -- ±30% adjustment
+        
+        option.weight = math.max(1, option.weight * (1 + adjustment))
+    end
+    
+    -- Apply adaptive parameters
+    for i, option in adjusted_options do
+        if option.value == "attack" then
+            option.weight = option.weight * self.adaptive_params.aggression_level
+        elseif option.value == "defend" then
+            option.weight = option.weight * self.adaptive_params.defense_focus
+        elseif option.value == "build" then
+            option.weight = option.weight * self.adaptive_params.resource_focus
+        end
+    end
+    
+    return adjusted_options
+end
+
+function EnhancedStrategy:StoreDecision(decision, context)
+    table.insert(self.decision_history, {
+        decision = decision,
+        context = context,
+        time = cpu_manager.cpu_player:GetGameTime(),
+        state = self.current_state,
+        threat_level = self.threat_level
+    })
+    
+    -- Keep only recent history
+    if table.getn(self.decision_history) > 50 then
+        table.remove(self.decision_history, 1)
+    end
+end
+
+function EnhancedStrategy:UpdateSuccessRate(decision, success)
+    if not self.success_rate[decision] then
+        self.success_rate[decision] = 0.5
+    end
+    
+    -- Exponential moving average
+    local alpha = 0.1
+    self.success_rate[decision] = self.success_rate[decision] * (1 - alpha) + (success and 1 or 0) * alpha
+end
+
+-- Enhanced resource management
+function EnhancedStrategy:UpdateResourceEfficiency()
+    local current_time = cpu_manager.cpu_player:GetGameTime()
+    
+    if current_time - self.last_efficiency_check < 5.0 then
+        return self.resource_efficiency
+    end
+    
+    self.performance_monitor:StartTimer("resource_efficiency")
+    
+    local player_stats = cpu_manager.stats:GetPlayerStatsFromID(cpu_manager.player_id)
+    self.resource_efficiency = AI_Improvements.CalculateResourceEfficiency(player_stats)
+    
+    -- Adjust adaptive parameters based on efficiency
+    if self.resource_efficiency.overall_efficiency < 0.5 then
+        self.adaptive_params.resource_focus = math.min(1.0, self.adaptive_params.resource_focus + 0.1)
+        self.adaptive_params.aggression_level = math.max(0.1, self.adaptive_params.aggression_level - 0.05)
+    elseif self.resource_efficiency.overall_efficiency > 0.8 then
+        self.adaptive_params.resource_focus = math.max(0.1, self.adaptive_params.resource_focus - 0.05)
+        self.adaptive_params.aggression_level = math.min(1.0, self.adaptive_params.aggression_level + 0.1)
+    end
+    
+    self.last_efficiency_check = current_time
+    self.performance_monitor:EndTimer("resource_efficiency")
+    
+    return self.resource_efficiency
+end
+
+-- Enhanced formation management
+function EnhancedStrategy:UpdateFormation(squads)
+    if not squads or table.getn(squads) == 0 then
+        return
+    end
+    
+    -- Choose formation based on situation
+    local new_formation = self:ChooseFormation(squads)
+    
+    if new_formation ~= self.current_formation then
+        self.current_formation = new_formation
+        self:ApplyFormation(squads, new_formation)
+    end
+end
+
+function EnhancedStrategy:ChooseFormation(squads)
+    local squad_count = table.getn(squads)
+    
+    if self.current_state == EnhancedStrategy.States.ATTACKING then
+        if squad_count <= 3 then
+            return "line"
+        elseif squad_count <= 6 then
+            return "wedge"
+        else
+            return "circle"
+        end
+    elseif self.current_state == EnhancedStrategy.States.DEFENDING then
+        return "circle"
+    else
+        return "line"
+    end
+end
+
+function EnhancedStrategy:ApplyFormation(squads, formation_type)
+    -- Calculate center position
+    local center_x, center_y, center_z = 0, 0, 0
+    local count = 0
+    
+    for squad in squads do
+        local pos = squad:GetPosition()
+        center_x = center_x + pos.x
+        center_y = center_y + pos.y
+        center_z = center_z + pos.z
+        count = count + 1
+    end
+    
+    if count > 0 then
+        center_x = center_x / count
+        center_y = center_y / count
+        center_z = center_z / count
+    end
+    
+    local center_position = { x = center_x, y = center_y, z = center_z }
+    self.formation_positions = AI_Improvements.CalculateFormation(squads, center_position, formation_type)
+    
+    -- Apply positions to squads
+    for squad in squads do
+        if self.formation_positions[squad] then
+            local target_pos = self.formation_positions[squad]
+            squad:MoveTo(target_pos.x, target_pos.y, target_pos.z)
+        end
+    end
+end
+
+-- Enhanced tactical memory
+function EnhancedStrategy:StoreTacticalInfo(threats)
+    local current_time = cpu_manager.cpu_player:GetGameTime()
+    
+    -- Store enemy patterns
+    for _, threat in threats do
+        local squad_name = threat.squad:GetSquadName()
+        if not self.tactical_memory.enemy_patterns[squad_name] then
+            self.tactical_memory.enemy_patterns[squad_name] = {}
+        end
+        
+        table.insert(self.tactical_memory.enemy_patterns[squad_name], {
+            position = threat.position,
+            time = current_time,
+            threat = threat.threat
+        })
+        
+        -- Keep only recent patterns
+        if table.getn(self.tactical_memory.enemy_patterns[squad_name]) > 20 then
+            table.remove(self.tactical_memory.enemy_patterns[squad_name], 1)
+        end
+    end
+end
+
+function EnhancedStrategy:GetTacticalMemory(squad_name)
+    return self.tactical_memory.enemy_patterns[squad_name] or {}
+end
+
+-- Enhanced update method
+function EnhancedStrategy:Update()
+    self.performance_monitor:StartTimer("strategy_update")
+    
+    -- Call parent update
+    Strategy.Update(self)
+    
+    -- Update state
+    self:UpdateState(0.05)  -- Assuming 0.05 second intervals
+    
+    -- Update threat assessment
+    self:AssessThreats()
+    
+    -- Update resource efficiency
+    self:UpdateResourceEfficiency()
+    
+    -- Make decisions based on current state
+    self:UpdateDecisions()
+    
+    -- Cleanup performance monitoring
+    self.performance_monitor:Cleanup()
+    
+    self.performance_monitor:EndTimer("strategy_update")
+end
+
+function EnhancedStrategy:UpdateDecisions()
+    local context = {
+        threat_level = self.threat_level,
+        resource_efficiency = self.resource_efficiency,
+        current_state = self.current_state,
+        enemy_composition = self.enemy_composition
+    }
+    
+    local decision = self:MakeDecision(context)
+    self:ExecuteDecision(decision)
+end
+
+function EnhancedStrategy:ExecuteDecision(decision)
+    if decision == "attack" then
+        self:SetState(EnhancedStrategy.States.ATTACKING, 30.0)
+        self:ExecuteAttack()
+    elseif decision == "defend" then
+        self:SetState(EnhancedStrategy.States.DEFENDING, 20.0)
+        self:ExecuteDefense()
+    elseif decision == "retreat" then
+        self:SetState(EnhancedStrategy.States.RETREATING, 10.0)
+        self:ExecuteRetreat()
+    elseif decision == "build" then
+        self:SetState(EnhancedStrategy.States.BUILDING, 15.0)
+        self:ExecuteBuild()
+    elseif decision == "harass" then
+        self:SetState(EnhancedStrategy.States.HARASSING, 25.0)
+        self:ExecuteHarassment()
+    elseif decision == "expand" then
+        self:SetState(EnhancedStrategy.States.EXPANDING, 40.0)
+        self:ExecuteExpansion()
+    end
+end
+
+-- Abstract methods to be implemented by subclasses
+function EnhancedStrategy:ExecuteAttack()
+    -- Override in subclasses
+end
+
+function EnhancedStrategy:ExecuteDefense()
+    -- Override in subclasses
+end
+
+function EnhancedStrategy:ExecuteRetreat()
+    -- Override in subclasses
+end
+
+function EnhancedStrategy:ExecuteBuild()
+    -- Override in subclasses
+end
+
+function EnhancedStrategy:ExecuteHarassment()
+    -- Override in subclasses
+end
+
+function EnhancedStrategy:ExecuteExpansion()
+    -- Override in subclasses
+end
+
+function EnhancedStrategy:CanAttack()
+    -- Override in subclasses
+    return true
+end
+
+-- Enhanced priority calculation
+function EnhancedStrategy:GetPriority()
+    local base_priority = Strategy.GetPriority(self)
+    
+    -- Adjust priority based on current state and threats
+    local state_multiplier = 1.0
+    
+    if self.current_state == EnhancedStrategy.States.DEFENDING then
+        state_multiplier = 1.5
+    elseif self.current_state == EnhancedStrategy.States.ATTACKING then
+        state_multiplier = 1.3
+    elseif self.current_state == EnhancedStrategy.States.RETREATING then
+        state_multiplier = 2.0
+    end
+    
+    -- Threat-based adjustment
+    local threat_multiplier = 1.0 + (self.threat_level / 10000)
+    
+    return base_priority * state_multiplier * threat_multiplier
+end
+
+-- Export the enhanced strategy
+return EnhancedStrategy 

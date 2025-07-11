@@ -1,0 +1,1396 @@
+import('Races/space_marine_race/Tactics/SpaceMarineInfantryTactic.ai')
+import("core/logging.ai")
+-- chaplain class
+
+class 'ChaplainTactic' (SpaceMarineInfantryTactic)
+
+Chaplain = {}
+
+function ChaplainTactic:__init(squad_ai)
+    super(squad_ai)
+
+    self:SetName("Chaplain Tactic")
+end
+
+function ChaplainTactic:AutoBuildAddOn(addonSlot)
+    for e in self.squad_ai:GetEntities() do
+        local buildChannelChaplain = build_manager:GetBuildChannelFromID(e:GetID())
+        if (buildChannelChaplain ~= nil) then
+            local addOnID = buildChannelChaplain:GetItemIDAt(BuildChannelAI.PQ_AddOn, addonSlot)
+            if (buildChannelChaplain:IsBuilding() == 0 and buildChannelChaplain:CanAddToQueue(BuildChannelAI.PQ_AddOn, addOnID) == BuildChannelAI.CANBUILD_Ok) then
+                buildChannelChaplain:BuildAddOn(addOnID)
+                return
+            end
+        end
+    end
+    return
+end
+
+function ChaplainTactic:IsAttacker()
+    return self:IsCommanderAttacker()
+end
+
+function ChaplainTactic:IsDefender()
+    return self:IsCommanderDefender()
+end
+
+-- Chaplain is allowed to retreat even directly after a jump
+function ChaplainTactic:SetTarget(target, variant_type)
+    self.variant_type = variant_type
+    self.variant_type = variant_type
+    if self.variant_type == Tactic.Variant.Vector then
+        self.target = Vector3f(target)
+    elseif self.variant_type == Tactic.Variant.SquadAI then
+        self.target = target
+    elseif self.variant_type == Tactic.Variant.BaseAI then
+        self.target = target
+    end
+    self.m_iMoveDelay = 0
+    self.last_jump = 0
+end
+
+-- Arkhan 03.2006: Inherited method used by commanders which are able to jump with an attached squad
+function ChaplainTactic:CanJumpAttached()
+    return true
+end
+
+-- Chaplain Class
+function ChaplainTactic:DoAbilities()
+    -- Call parent abilities
+    SpaceMarineCommanderTactic.DoAbilities(self)
+
+    -- Cache ability ID in local variable for better performance
+    local demoralize_id = self.ABILITY_IDS["DEMORALIZE"]
+    
+    -- Chaplain specific demoralize ability
+    if self.squad_ai:WasRecentlyHurt() and self.squad_ai:GetHealthPercentage() < 0.4 then
+        Ability.DoAbilityTarget(self.squad_ai, demoralize_id, Ability.Filters.CloseInfantryEnemy, 4)
+    else
+        Ability.DoAbilityTarget(self.squad_ai, demoralize_id, Ability.Filters.CloseInfantryEnemy, 8)
+    end
+    
+    -- Use grenades if available
+    self:DoGrenades(self.allowed_grenades)
+
+    -- Check for run ability
+    self:CheckForRun()
+end
+
+function ChaplainTactic:Upgrade()
+    --	self:AutoBuildAddOn(0)	--	[addon_01] space_marine_commander_plasma_pistol_addon
+    --	self:AutoBuildAddOn(1)	--	[addon_02] space_marine_commander_bolter_addon
+    --	self:AutoBuildAddOn(2)	--	[addon_03] space_marine_commander_storm_bolter_addon
+    --	self:AutoBuildAddOn(3)	--	[addon_04] space_marine_commander_powerfist_addon
+
+    --	self:AutoBuildAddOn(4)	--	[addon_08] addon_commanders_cap_squad			4/1
+    --	self:AutoBuildAddOn(5)	-- 	[addon_09] addon_commanders_cap_support			5/1
+    --	self:AutoBuildAddOn(6)	-- 	[addon_10] addon_commanders_cap_relic			6/1
+    --	self:AutoBuildAddOn(7)	-- 	[addon_11] addon_commanders_increase_production		5/1
+    --	self:AutoBuildAddOn(8)	-- 	[addon_12] addon_commanders_increase_health		6/1
+    --	self:AutoBuildAddOn(9)	-- 	[addon_13] addon_commanders_increase_morale		6/1
+    --	self:AutoBuildAddOn(10)	-- 	[addon_14] addon_commanders_cap_squad_2			6
+    --	self:AutoBuildAddOn(11)	-- 	[addon_15] addon_commanders_cap_support_2		8
+    --	self:AutoBuildAddOn(12)	-- 	[addon_16] addon_commanders_increase_production_2	8
+
+    -- Figure out my enemy's favourite class
+    local enemy = cpu_manager:FindClosestEnemyPlayer()
+    if (enemy == nil) then
+        return
+    end
+
+    local class_type = enemy:GetMajorityClassType()
+
+    -- Hard counter upgrade for infantry
+    if (class_type == UnitStatsAI.UC_LightInfantryLow) or
+        (class_type == UnitStatsAI.UC_LightInfantryMed) or
+        (class_type == UnitStatsAI.UC_LightInfantryHigh) or
+        (class_type == UnitStatsAI.UC_HeavyInfantryMed) or
+        (class_type == UnitStatsAI.UC_MonsterMed) then
+        if (cpu_manager:GetTierLevel() >= 2) then
+            local addon_random_infantry_wargear = math.random(0, 1)
+            self:AutoBuildAddOn(addon_random_infantry_wargear) -- Randomize between Plasm Pistol and Bolter weapons
+        end
+        -- Hard counter upgrade for Vehicles
+    elseif (class_type == UnitStatsAI.UC_HeavyInfantryHigh) or
+        (class_type == UnitStatsAI.UC_VehicleLow) or
+        (class_type == UnitStatsAI.UC_VehicleMed) or
+        (class_type == UnitStatsAI.UC_VehicleHigh) or
+        (class_type == UnitStatsAI.UC_MonsterHigh) then
+        if (cpu_manager:GetTierLevel() >= 2) then
+            local addon_random_vehicle_wargear = math.random(2, 3)
+            self:AutoBuildAddOn(addon_random_vehicle_wargear) -- Randomize between Storbolter and PowerFist weapons
+        end
+    end
+
+    if (cpu_manager:GetTierLevel() <= 4) then
+        local addon_random_commander_upgrades = math.random(4, 12) -- Randomize these addons
+        self:AutoBuildAddOn(addon_random_commander_upgrades)
+    end
+
+    if (cpu_manager:GetTierLevel() > 4) then
+        self:AutoBuildAddOn(6) -- Always build in late tiers to support the construction of Titans and late game ubers.
+    end
+end
+
+function ChaplainTactic:Update()
+    if (self:IsComplete()) then
+        return
+    end
+
+    -- State machine
+    if (not InfantryTactic.Update(self)) then
+        return
+    end
+
+    -- Attach to melee in tier2+
+    if (cpu_manager:GetTierLevel() > 1) then
+        if (self:TryAttachSquad(true, true, 50, 100, nil) ~= nil) then
+            return
+        end
+    end
+    if (self:TryAttachSquad(false, true, 50, 100, self.m_fCommanderAttachHealth) == nil) then
+        self:TryAttachSquadMelee()
+    end
+
+    -- Check if we are in serious trouble
+    self:EmergencyRetreat()
+end
+
+-- chaplainterminator class
+
+
+
+class 'ChaplainTerminatorTactic' (SpaceMarineInfantryTactic)
+
+ChaplainTerminator = {}
+
+function ChaplainTerminatorTactic:__init(squad_ai)
+    super(squad_ai)
+
+    self:SetName("Chaplain Terminator Tactic")
+end
+
+function ChaplainTerminatorTactic:AutoBuildAddOn(addonSlot)
+    for e in self.squad_ai:GetEntities() do
+        local buildChannelChaplainTerminator = build_manager:GetBuildChannelFromID(e:GetID())
+        if (buildChannelChaplainTerminator ~= nil) then
+            local addOnID = buildChannelChaplainTerminator:GetItemIDAt(BuildChannelAI.PQ_AddOn, addonSlot)
+            if (buildChannelChaplainTerminator:IsBuilding() == 0 and buildChannelChaplainTerminator:CanAddToQueue(BuildChannelAI.PQ_AddOn, addOnID) == BuildChannelAI.CANBUILD_Ok) then
+                buildChannelChaplainTerminator:BuildAddOn(addOnID)
+                return
+            end
+        end
+    end
+    return
+end
+
+function ChaplainTerminatorTactic:IsAttacker()
+    return self:IsCommanderAttacker()
+end
+
+function ChaplainTerminatorTactic:IsDefender()
+    return self:IsCommanderDefender()
+end
+
+-- ChaplainTerminator is allowed to retreat even directly after a jump
+function ChaplainTerminatorTactic:SetTarget(target, variant_type)
+    self.variant_type = variant_type
+    self.variant_type = variant_type
+    if self.variant_type == Tactic.Variant.Vector then
+        self.target = Vector3f(target)
+    elseif self.variant_type == Tactic.Variant.SquadAI then
+        self.target = target
+    elseif self.variant_type == Tactic.Variant.BaseAI then
+        self.target = target
+    end
+    self.m_iMoveDelay = 0
+    self.last_jump = 0
+end
+
+-- Arkhan 03.2006: Inherited method used by commanders which are able to jump with an attached squad
+function ChaplainTerminatorTactic:CanJumpAttached()
+    return true
+end
+
+function ChaplainTerminatorTactic:DoAbilities()
+    SpaceMarineCommanderTactic.DoAbilities(self)
+
+    -- Cache ability ID in local variable for better performance
+    local demoralize_id = self.ABILITY_IDS["DEMORALIZE"]
+    
+    -- Chaplain specific demoralize ability
+    if self.squad_ai:WasRecentlyHurt() and self.squad_ai:GetHealthPercentage() < 0.4 then
+        Ability.DoAbilityTarget(self.squad_ai, demoralize_id, Ability.Filters.CloseInfantryEnemy, 4)
+    else
+        Ability.DoAbilityTarget(self.squad_ai, demoralize_id, Ability.Filters.CloseInfantryEnemy, 8)
+    end
+    
+    -- Use grenades if available
+    self:DoGrenades(self.allowed_grenades)
+
+    -- Check for run ability
+    self:CheckForRun()
+end
+
+function ChaplainTerminatorTactic:Upgrade()
+    --	self:AutoBuildAddOn(0)	--	[addon_01] addon_commanders_cap_squad			4/1
+    --	self:AutoBuildAddOn(1)	-- 	[addon_02] addon_commanders_cap_support			5/1
+    --	self:AutoBuildAddOn(2)	-- 	[addon_03] addon_commanders_cap_relic			6/1
+    --	self:AutoBuildAddOn(3)	-- 	[addon_04] addon_commanders_increase_production		5/1
+    --	self:AutoBuildAddOn(4)	-- 	[addon_05] addon_commanders_increase_health		6/1
+    --	self:AutoBuildAddOn(5)	-- 	[addon_06] addon_commanders_increase_morale		6/1
+    --	self:AutoBuildAddOn(6)	-- 	[addon_07] addon_commanders_cap_squad_2			6
+    --	self:AutoBuildAddOn(7)	-- 	[addon_08] addon_commanders_cap_support_2		8
+    --	self:AutoBuildAddOn(8)	-- 	[addon_09] addon_commanders_increase_production_2	8
+
+    if (cpu_manager:GetTierLevel() <= 4) then
+        local addon_random_commander_upgrades = math.random(0, 8) -- Randomize these addons
+        self:AutoBuildAddOn(addon_random_commander_upgrades)
+    end
+
+    if (cpu_manager:GetTierLevel() > 4) then
+        self:AutoBuildAddOn(2) -- Always build in late tiers to support the construction of Titans and late game ubers.
+    end
+end
+
+function ChaplainTerminatorTactic:Update()
+    if (self:IsComplete()) then
+        return
+    end
+
+    -- State machine
+    if (not InfantryTactic.Update(self)) then
+        return
+    end
+
+    -- Attach to melee in tier2+
+    if (cpu_manager:GetTierLevel() > 1) then
+        if (self:TryAttachSquad(true, true, 50, 100, nil) ~= nil) then
+            return
+        end
+    end
+    if (self:TryAttachSquad(false, true, 50, 100, self.m_fCommanderAttachHealth) == nil) then
+        self:TryAttachSquadMelee()
+    end
+
+    -- Check if we are in serious trouble
+    self:EmergencyRetreat()
+end
+
+-- chaptermaster class
+
+
+class 'ChapterMasterTactic' (SpaceMarineInfantryTactic)
+
+ChapterMaster = {}
+
+function ChapterMasterTactic:__init(squad_ai)
+    super(squad_ai)
+
+    self:SetName("Chapter Master Tactic")
+end
+
+function ChapterMasterTactic:AutoBuildAddOn(addonSlot)
+    for e in self.squad_ai:GetEntities() do
+        local buildChannelChapterMaster = build_manager:GetBuildChannelFromID(e:GetID())
+        if (buildChannelChapterMaster ~= nil) then
+            local addOnID = buildChannelChapterMaster:GetItemIDAt(BuildChannelAI.PQ_AddOn, addonSlot)
+            if (buildChannelChapterMaster:IsBuilding() == 0 and buildChannelChapterMaster:CanAddToQueue(BuildChannelAI.PQ_AddOn, addOnID) == BuildChannelAI.CANBUILD_Ok) then
+                buildChannelChapterMaster:BuildAddOn(addOnID)
+                return
+            end
+        end
+    end
+    return
+end
+
+function ChapterMasterTactic:IsAttacker()
+    return self:IsCommanderAttacker()
+end
+
+function ChapterMasterTactic:IsDefender()
+    return self:IsCommanderDefender()
+end
+
+-- Chapter Master is allowed to retreat even directly after a jump
+function ChapterMasterTactic:SetTarget(target, variant_type)
+    self.variant_type = variant_type
+    self.variant_type = variant_type
+    if self.variant_type == Tactic.Variant.Vector then
+        self.target = Vector3f(target)
+    elseif self.variant_type == Tactic.Variant.SquadAI then
+        self.target = target
+    elseif self.variant_type == Tactic.Variant.BaseAI then
+        self.target = target
+    end
+    self.m_iMoveDelay = 0
+    self.last_jump = 0
+end
+
+-- Arkhan 03.2006: Inherited method used by commanders which are able to jump with an attached squad
+function ChapterMasterTactic:CanJumpAttached()
+    return true
+end
+
+function ChapterMasterTactic:DoAbilities()
+    local iRequisition = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Requisition)
+    local iPower = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Power)
+
+    -- Call parent abilities
+    SpaceMarineCommanderTactic.DoAbilities(self)
+
+    -- Cache ability IDs in local variables for better performance
+    local all_out_war_id = self.ABILITY_IDS["ALL_OUT_WAR"]
+    local commander_bomb_id = self.ABILITY_IDS["COMMANDER_BOMB"]
+    local hellstorm_id = self.ABILITY_IDS["HELLSTORM"]
+    
+    -- Chapter Master specific abilities
+    Ability.DoAbility(self.squad_ai, all_out_war_id, Ability.Filters.IsInCombat)
+
+    -- Commander bomb
+    Ability.DoAbilityPos(self.squad_ai, commander_bomb_id, Ability.Filters.CloseEnemy, 24)
+    Ability.DoAbilityPos(self.squad_ai, commander_bomb_id, Ability.EntityFilters.CloseBaseEntityEnemy, 3)
+
+    -- Hellstorm ability when resources are available
+    if iRequisition >= 1000 and iPower >= 1000 then
+        Ability.DoAbilityPos(self.squad_ai, hellstorm_id, Ability.Filters.CloseEnemy, 25)
+        Ability.DoAbilityPos(self.squad_ai, hellstorm_id, Ability.EntityFilters.CloseBaseEntityEnemy, 5)
+    end
+    
+    -- Use grenades if available
+    self:DoGrenades(self.allowed_grenades)
+
+    -- Check for run ability
+    self:CheckForRun()
+end
+
+function ChapterMasterTactic:Upgrade()
+    --	self:AutoBuildAddOn(0)	--	[addon_01] addon_commanders_cap_squad			4/1
+    --	self:AutoBuildAddOn(1)	-- 	[addon_02] addon_commanders_cap_support			5/1
+    --	self:AutoBuildAddOn(2)	-- 	[addon_03] addon_commanders_cap_relic			6/1
+    --	self:AutoBuildAddOn(3)	-- 	[addon_04] addon_commanders_increase_production		5/1
+    --	self:AutoBuildAddOn(4)	-- 	[addon_05] addon_commanders_increase_health		6/1
+    --	self:AutoBuildAddOn(5)	-- 	[addon_06] addon_commanders_increase_morale		6/1
+    --	self:AutoBuildAddOn(6)	-- 	[addon_07] addon_commanders_cap_squad_2			6
+    --	self:AutoBuildAddOn(7)	-- 	[addon_08] addon_commanders_cap_support_2		8
+    --	self:AutoBuildAddOn(8)	-- 	[addon_09] addon_commanders_increase_production_2	8
+
+    if (cpu_manager:GetTierLevel() <= 4) then
+        local addon_random_commander_upgrades = math.random(0, 8) -- Randomize these addons
+        self:AutoBuildAddOn(addon_random_commander_upgrades)
+    end
+
+    if (cpu_manager:GetTierLevel() > 4) then
+        self:AutoBuildAddOn(2) -- Always build in late tiers to support the construction of Titans and late game ubers.
+    end
+end
+
+function ChapterMasterTactic:Update()
+    if (self:IsComplete()) then
+        return
+    end
+
+    -- State machine
+    if (not InfantryTactic.Update(self)) then
+        return
+    end
+
+    -- Attach to melee in tier3+
+    if (cpu_manager:GetTierLevel() > 2) then
+        if (self:TryAttachSquad(true, true, 50, 100, nil) ~= nil) then
+            return
+        end
+    end
+    if (self:TryAttachSquad(false, true, 50, 100, self.m_fCommanderAttachHealth) == nil) then
+        self:TryAttachSquadMelee()
+    end
+
+    -- Check if we are in serious trouble
+    self:EmergencyRetreat()
+end
+
+-- forcecommanderadvanced class
+
+
+class 'ForceCommanderAdvancedTactic' (SpaceMarineInfantryTactic)
+
+ForceCommanderAdvanced = {}
+
+function ForceCommanderAdvancedTactic:__init(squad_ai)
+    super(squad_ai)
+
+    self:SetName("Force Commander Advanced Tactic")
+end
+
+function ForceCommanderAdvancedTactic:AutoBuildAddOn(addonSlot)
+    for e in self.squad_ai:GetEntities() do
+        local buildChannelForceCommanderAdvanced = build_manager:GetBuildChannelFromID(e:GetID())
+        if (buildChannelForceCommanderAdvanced ~= nil) then
+            local addOnID = buildChannelForceCommanderAdvanced:GetItemIDAt(BuildChannelAI.PQ_AddOn, addonSlot)
+            if (buildChannelForceCommanderAdvanced:IsBuilding() == 0 and buildChannelForceCommanderAdvanced:CanAddToQueue(BuildChannelAI.PQ_AddOn, addOnID) == BuildChannelAI.CANBUILD_Ok) then
+                buildChannelForceCommanderAdvanced:BuildAddOn(addOnID)
+                return
+            end
+        end
+    end
+    return
+end
+
+function ForceCommanderAdvancedTactic:IsAttacker()
+    return self:IsCommanderAttacker()
+end
+
+function ForceCommanderAdvancedTactic:IsDefender()
+    return self:IsCommanderDefender()
+end
+
+-- Chapter Master is allowed to retreat even directly after a jump
+function ForceCommanderAdvancedTactic:SetTarget(target, variant_type)
+    self.variant_type = variant_type
+    self.variant_type = variant_type
+    if self.variant_type == Tactic.Variant.Vector then
+        self.target = Vector3f(target)
+    elseif self.variant_type == Tactic.Variant.SquadAI then
+        self.target = target
+    elseif self.variant_type == Tactic.Variant.BaseAI then
+        self.target = target
+    end
+    self.m_iMoveDelay = 0
+    self.last_jump = 0
+end
+
+-- Arkhan 03.2006: Inherited method used by commanders which are able to jump with an attached squad
+function ForceCommanderAdvancedTactic:CanJumpAttached()
+    return true
+end
+
+function ForceCommanderAdvancedTactic:DoAbilities()
+    -- Call parent abilities
+    SpaceMarineCommanderTactic.DoAbilities(self)
+
+    -- Cache ability IDs in local variables for better performance
+    local commander_bomb_id = self.ABILITY_IDS["COMMANDER_BOMB"]
+    local hellstorm_id = self.ABILITY_IDS["HELLSTORM"]
+    
+    -- Regular specific abilities
+    Ability.DoAbilityPos(self.squad_ai, commander_bomb_id, Ability.Filters.CloseEnemy, 24)
+    Ability.DoAbilityPos(self.squad_ai, commander_bomb_id, Ability.EntityFilters.CloseBaseEntityEnemy, 3)
+
+    -- Hellstorm ability when resources are available
+    local iRequisition = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Requisition)
+    local iPower = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Power)
+    if iRequisition >= 1000 and iPower >= 1000 then
+        Ability.DoAbilityPos(self.squad_ai, hellstorm_id, Ability.Filters.CloseEnemy, 25)
+        Ability.DoAbilityPos(self.squad_ai, hellstorm_id, Ability.EntityFilters.CloseBaseEntityEnemy, 5)
+    end
+    
+    -- Use grenades if available
+    self:DoGrenades(self.allowed_grenades)
+
+    -- Check for run ability
+    self:CheckForRun()
+end
+
+function ForceCommanderAdvancedTactic:Upgrade()
+    --	self:AutoBuildAddOn(0)	--	[addon_01] addon_commanders_cap_squad			4/1
+    --	self:AutoBuildAddOn(1)	-- 	[addon_02] addon_commanders_cap_support			5/1
+    --	self:AutoBuildAddOn(2)	-- 	[addon_03] addon_commanders_cap_relic			6/1
+    --	self:AutoBuildAddOn(3)	-- 	[addon_04] addon_commanders_increase_production		5/1
+    --	self:AutoBuildAddOn(4)	-- 	[addon_05] addon_commanders_increase_health		6/1
+    --	self:AutoBuildAddOn(5)	-- 	[addon_06] addon_commanders_increase_morale		6/1
+    --	self:AutoBuildAddOn(6)	-- 	[addon_07] addon_commanders_cap_squad_2			6
+    --	self:AutoBuildAddOn(7)	-- 	[addon_08] addon_commanders_cap_support_2		8
+    --	self:AutoBuildAddOn(8)	-- 	[addon_09] addon_commanders_increase_production_2	8
+
+    if (cpu_manager:GetTierLevel() <= 4) then
+        local addon_random_commander_upgrades = math.random(0, 8) -- Randomize these addons
+        self:AutoBuildAddOn(addon_random_commander_upgrades)
+    end
+
+    if (cpu_manager:GetTierLevel() > 4) then
+        self:AutoBuildAddOn(2) -- Always build in late tiers to support the construction of Titans and late game ubers.
+    end
+end
+
+function ForceCommanderAdvancedTactic:Update()
+    if (self:IsComplete()) then
+        return
+    end
+
+    -- State machine
+    if (not InfantryTactic.Update(self)) then
+        return
+    end
+
+    -- Attach to melee in tier3+
+    if (cpu_manager:GetTierLevel() > 2) then
+        if (self:TryAttachSquad(true, true, 50, 100, nil) ~= nil) then
+            return
+        end
+    end
+    if (self:TryAttachSquad(false, true, 50, 100, self.m_fCommanderAttachHealth) == nil) then
+        self:TryAttachSquadMelee()
+    end
+
+    -- Check if we are in serious trouble
+    self:EmergencyRetreat()
+end
+
+-- forcecommandercampaign class
+
+
+class 'ForceCommanderCampaignTactic' (SpaceMarineInfantryTactic)
+
+ForceCommanderCampaign = {}
+
+function ForceCommanderCampaignTactic:__init(squad_ai)
+    super(squad_ai)
+
+    self:SetName("Force Commander Campaign Tactic")
+    
+    -- Initialize ability IDs if parent hasn't done so already
+    if not self.ABILITY_IDS["BATTLECRY"] then
+        self.ABILITY_IDS["BATTLECRY"] = cpu_manager.stats:GetAbilityID("marines_battlecry")
+    end
+    
+    if not self.ABILITY_IDS["ORBITAL_BOMBARDMENT"] then
+        self.ABILITY_IDS["ORBITAL_BOMBARDMENT"] = cpu_manager.stats:GetAbilityID("marines_orbital_bombardment")
+    end
+end
+
+function ForceCommanderCampaignTactic:IsAttacker()
+    return self:IsCommanderAttacker()
+end
+
+function ForceCommanderCampaignTactic:IsDefender()
+    return self:IsCommanderDefender()
+end
+
+-- Force Commander is allowed to retreat even directly after a jump
+function ForceCommanderCampaignTactic:SetTarget(target, variant_type)
+    self.variant_type = variant_type
+    self.variant_type = variant_type
+    if self.variant_type == Tactic.Variant.Vector then
+        self.target = Vector3f(target)
+    elseif self.variant_type == Tactic.Variant.SquadAI then
+        self.target = target
+    elseif self.variant_type == Tactic.Variant.BaseAI then
+        self.target = target
+    end
+    self.m_iMoveDelay = 0
+    self.last_jump = 0
+end
+
+-- Assassinate win condition -- never jump into combat
+function ForceCommanderCampaignTactic:JumpAttack()
+    if (not cpu_manager.assassinate) then
+        Tactic.JumpAttack(self)
+    end
+end
+
+function ForceCommanderCampaignTactic:CanJumpAttached()
+    return true
+end
+
+function ForceCommanderCampaignTactic:DoAbilities()
+    -- Cache ability IDs locally for better performance
+    local battlecry_id = self.ABILITY_IDS["BATTLECRY"]
+    local orbital_b_id = self.ABILITY_IDS["ORBITAL_BOMBARDMENT"]
+    
+    -- Try to use battlecry
+    Ability.DoAbilityArea(self.squad_ai, battlecry_id, Ability.Filters.CloseInCombat, 10)
+
+    -- Try to use orbital bombardment
+    Ability.DoAbilityPos(self.squad_ai, orbital_b_id, Ability.Filters.CloseEnemy, 24)
+    Ability.DoAbilityPos(self.squad_ai, orbital_b_id, Ability.EntityFilters.CloseBaseEntityEnemy, 3)
+    
+    -- Use grenades if available
+    self:DoGrenades(self.allowed_grenades)
+    
+    -- Check for run ability
+    self:CheckForRun()
+end
+
+function ForceCommanderCampaignTactic:Update()
+    if (self:IsComplete()) then
+        return
+    end
+
+    -- State machine
+    if (not InfantryTactic.Update(self)) then
+        return
+    end
+
+    -- Attach to melee in tier3+
+    if (cpu_manager:GetTierLevel() > 2) then
+        if (self:TryAttachSquad(true, true, 50, 100, nil) ~= nil) then
+            return
+        end
+    end
+    if (self:TryAttachSquad(false, true, 50, 100, self.m_fCommanderAttachHealth) == nil) then
+        self:TryAttachSquadMelee()
+    end
+
+    -- Check if we are in serious trouble
+    self:EmergencyRetreat()
+end
+
+-- forcecommanderlotd class
+
+
+class 'ForceCommanderLotdTactic' (SpaceMarineInfantryTactic)
+
+ForceCommanderLotd = {}
+
+function ForceCommanderLotdTactic:__init(squad_ai)
+    super(squad_ai)
+
+    self:SetName("Force Commander Lotd Tactic")
+end
+
+function ForceCommanderLotdTactic:AutoBuildAddOn(addonSlot)
+    for e in self.squad_ai:GetEntities() do
+        local buildChannelForceCommanderLotd = build_manager:GetBuildChannelFromID(e:GetID())
+        if (buildChannelForceCommanderLotd ~= nil) then
+            local addOnID = buildChannelForceCommanderLotd:GetItemIDAt(BuildChannelAI.PQ_AddOn, addonSlot)
+            if (buildChannelForceCommanderLotd:IsBuilding() == 0 and buildChannelForceCommanderLotd:CanAddToQueue(BuildChannelAI.PQ_AddOn, addOnID) == BuildChannelAI.CANBUILD_Ok) then
+                buildChannelForceCommanderLotd:BuildAddOn(addOnID)
+                return
+            end
+        end
+    end
+    return
+end
+
+function ForceCommanderLotdTactic:IsAttacker()
+    self:IsCommanderAttacker()
+end
+
+function ForceCommanderLotdTactic:IsDefender()
+    self:IsCommanderDefender()
+end
+
+-- Force Commander is allowed to retreat even directly after a jump
+function ForceCommanderLotdTactic:SetTarget(target, variant_type)
+    self.variant_type = variant_type
+    self.variant_type = variant_type
+    if self.variant_type == Tactic.Variant.Vector then
+        self.target = Vector3f(target)
+    elseif self.variant_type == Tactic.Variant.SquadAI then
+        self.target = target
+    elseif self.variant_type == Tactic.Variant.BaseAI then
+        self.target = target
+    end
+    self.m_iMoveDelay = 0
+    self.last_jump = 0
+end
+
+function ForceCommanderLotdTactic:JumpAttack()
+    Tactic.JumpAttack(self)
+end
+
+function ForceCommanderLotdTactic:CanJumpAttached()
+    return true
+end
+
+function ForceCommanderLotdTactic:DoAbilities()
+    -- Call parent abilities
+    SpaceMarineCommanderTactic.DoAbilities(self)
+
+    -- Cache ability IDs locally for better performance
+    local commander_bomb_id = self.ABILITY_IDS["COMMANDER_BOMB"]
+    local hellstorm_id = self.ABILITY_IDS["HELLSTORM"]
+    
+    -- Regular specific abilities
+    Ability.DoAbilityPos(self.squad_ai, commander_bomb_id, Ability.Filters.CloseEnemy, 24)
+    Ability.DoAbilityPos(self.squad_ai, commander_bomb_id, Ability.EntityFilters.CloseBaseEntityEnemy, 3)
+
+    -- Hellstorm ability when resources are available
+    local iRequisition = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Requisition)
+    local iPower = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Power)
+    if iRequisition >= 1000 and iPower >= 1000 then
+        Ability.DoAbilityPos(self.squad_ai, hellstorm_id, Ability.Filters.CloseEnemy, 25)
+        Ability.DoAbilityPos(self.squad_ai, hellstorm_id, Ability.EntityFilters.CloseBaseEntityEnemy, 5)
+    end
+    
+    -- Use grenades if available
+    self:DoGrenades(self.allowed_grenades)
+    
+    -- Check for run ability
+    self:CheckForRun()
+end
+
+function ForceCommanderLotdTactic:Upgrade()
+    --	self:AutoBuildAddOn(0)	--	[addon_01] addon_commanders_cap_squad			4/1
+    --	self:AutoBuildAddOn(1)	-- 	[addon_02] addon_commanders_cap_support			5/1
+    --	self:AutoBuildAddOn(2)	-- 	[addon_03] addon_commanders_cap_relic			6/1
+    --	self:AutoBuildAddOn(3)	-- 	[addon_04] addon_commanders_increase_production		5/1
+    --	self:AutoBuildAddOn(4)	-- 	[addon_05] addon_commanders_increase_health		6/1
+    --	self:AutoBuildAddOn(5)	-- 	[addon_06] addon_commanders_increase_morale		6/1
+    --	self:AutoBuildAddOn(6)	-- 	[addon_07] addon_commanders_cap_squad_2			6
+    --	self:AutoBuildAddOn(7)	-- 	[addon_08] addon_commanders_cap_support_2		8
+    --	self:AutoBuildAddOn(8)	-- 	[addon_09] addon_commanders_increase_production_2	8
+
+    if (cpu_manager:GetTierLevel() <= 4) then
+        local addon_random_commander_upgrades = math.random(0, 8) -- Randomize these addons
+        self:AutoBuildAddOn(addon_random_commander_upgrades)
+    end
+
+    if (cpu_manager:GetTierLevel() > 4) then
+        self:AutoBuildAddOn(2) -- Always build in late tiers to support the construction of Titans and late game ubers.
+    end
+end
+
+function ForceCommanderLotdTactic:Update()
+    if (self:IsComplete()) then
+        return
+    end
+
+    -- State machine
+    if (not InfantryTactic.Update(self)) then
+        return
+    end
+
+    -- Attach to melee in tier3+
+    if (cpu_manager:GetTierLevel() > 2) then
+        if (self:TryAttachSquad(true, true, 50, 100, nil) ~= nil) then
+            return
+        end
+    end
+    if (self:TryAttachSquad(false, true, 50, 100, self.m_fCommanderAttachHealth) == nil) then
+        self:TryAttachSquadMelee()
+    end
+
+    -- Check if we are in serious trouble
+    self:EmergencyRetreat()
+end
+
+-- forcecommander class
+
+
+
+
+class 'ForceCommanderTactic' (SpaceMarineInfantryTactic)
+
+ForceCommander = {}
+
+function ForceCommanderTactic:__init(squad_ai)
+    super(squad_ai)
+
+    self:SetName("Force Commander Tactic")
+end
+
+function ForceCommanderTactic:AutoBuildAddOn(addonSlot)
+    for e in self.squad_ai:GetEntities() do
+        local buildChannelForceCommander = build_manager:GetBuildChannelFromID(e:GetID())
+        if (buildChannelForceCommander ~= nil) then
+            local addOnID = buildChannelForceCommander:GetItemIDAt(BuildChannelAI.PQ_AddOn, addonSlot)
+            if (buildChannelForceCommander:IsBuilding() == 0 and buildChannelForceCommander:CanAddToQueue(BuildChannelAI.PQ_AddOn, addOnID) == BuildChannelAI.CANBUILD_Ok) then
+                buildChannelForceCommander:BuildAddOn(addOnID)
+                return
+            end
+        end
+    end
+    return
+end
+
+-- Assassinate win condition -- never attack
+function ForceCommanderTactic:IsAttacker()
+    return (not cpu_manager.assassinate and self:IsCommanderAttacker())
+end
+
+-- Assassinate win condition -- never defend
+function ForceCommanderTactic:IsDefender()
+    return (not cpu_manager.assassinate and self:IsCommanderDefender())
+end
+
+-- Force Commander is allowed to retreat even directly after a jump
+function ForceCommanderTactic:SetTarget(target, variant_type)
+    self.variant_type = variant_type
+    self.variant_type = variant_type
+    if self.variant_type == Tactic.Variant.Vector then
+        self.target = Vector3f(target)
+    elseif self.variant_type == Tactic.Variant.SquadAI then
+        self.target = target
+    elseif self.variant_type == Tactic.Variant.BaseAI then
+        self.target = target
+    end
+    self.m_iMoveDelay = 0
+    self.last_jump = 0
+end
+
+-- Assassinate win condition -- never jump into combat
+function ForceCommanderTactic:JumpAttack()
+    if (not cpu_manager.assassinate) then
+        Tactic.JumpAttack(self)
+    end
+end
+
+function ForceCommanderTactic:CanJumpAttached()
+    return true
+end
+
+function ForceCommanderTactic:DoAbilities()
+    -- Call parent abilities
+    SpaceMarineCommanderTactic.DoAbilities(self)
+
+    -- Cache ability IDs locally for better performance
+    local commander_bomb_id = self.ABILITY_IDS["COMMANDER_BOMB"]
+    local hellstorm_id = self.ABILITY_IDS["HELLSTORM"]
+    
+    -- Regular specific abilities
+    Ability.DoAbilityPos(self.squad_ai, commander_bomb_id, Ability.Filters.CloseEnemy, 24)
+    Ability.DoAbilityPos(self.squad_ai, commander_bomb_id, Ability.EntityFilters.CloseBaseEntityEnemy, 3)
+
+    -- Hellstorm ability when resources are available
+    local iRequisition = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Requisition)
+    local iPower = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Power)
+    if iRequisition >= 1000 and iPower >= 1000 then
+        Ability.DoAbilityPos(self.squad_ai, hellstorm_id, Ability.Filters.CloseEnemy, 25)
+        Ability.DoAbilityPos(self.squad_ai, hellstorm_id, Ability.EntityFilters.CloseBaseEntityEnemy, 5)
+    end
+    
+    -- Use grenades if available
+    self:DoGrenades(self.allowed_grenades)
+    
+    -- Check for run ability
+    self:CheckForRun()
+end
+
+function ForceCommanderTactic:Upgrade()
+    --	self:AutoBuildAddOn(0)	--	[addon_01] addon_commanders_cap_squad			4/1
+    --	self:AutoBuildAddOn(1)	-- 	[addon_02] addon_commanders_cap_support			5/1
+    --	self:AutoBuildAddOn(2)	-- 	[addon_03] addon_commanders_cap_relic			6/1
+    --	self:AutoBuildAddOn(3)	-- 	[addon_04] addon_commanders_increase_production		5/1
+    --	self:AutoBuildAddOn(4)	-- 	[addon_05] addon_commanders_increase_health		6/1
+    --	self:AutoBuildAddOn(5)	-- 	[addon_06] addon_commanders_increase_morale		6/1
+    --	self:AutoBuildAddOn(6)	-- 	[addon_07] addon_commanders_cap_squad_2			6
+    --	self:AutoBuildAddOn(7)	-- 	[addon_08] addon_commanders_cap_support_2		8
+    --	self:AutoBuildAddOn(8)	-- 	[addon_09] addon_commanders_increase_production_2	8
+
+    if (cpu_manager:GetTierLevel() <= 4) then
+        local addon_random_commander_upgrades = math.random(0, 8) -- Randomize these addons
+        self:AutoBuildAddOn(addon_random_commander_upgrades)
+    end
+
+    if (cpu_manager:GetTierLevel() > 4) then
+        self:AutoBuildAddOn(2) -- Always build in late tiers to support the construction of Titans and late game ubers.
+    end
+end
+
+function ForceCommanderTactic:Update()
+    if (self:IsComplete()) then
+        return
+    end
+
+    -- State machine
+    if (not InfantryTactic.Update(self)) then
+        return
+    end
+
+    -- Assassinate win condition -- never attach to a squad
+    if (not cpu_manager.assassinate) then
+        -- Attach to melee in tier3+
+        if (cpu_manager:GetTierLevel() > 2) then
+            if (self:TryAttachSquad(true, true, 50, 100, nil) ~= nil) then
+                return
+            end
+        end
+        if (self:TryAttachSquad(false, true, 50, 100, self.m_fCommanderAttachHealth) == nil) then
+            self:TryAttachSquadMelee()
+        end
+    end
+
+    -- Check if we are in serious trouble
+    self:EmergencyRetreat()
+end
+
+-- forcecommanderterminator class
+
+
+
+
+class 'ForceCommanderTerminatorTactic' (SpaceMarineInfantryTactic)
+
+ForceCommanderTerminator = {}
+
+function ForceCommanderTerminatorTactic:__init(squad_ai)
+    super(squad_ai)
+
+    self:SetName("Force Commander Terminator Tactic")
+
+    self.m_iForceCommanderTerminatorUpgradePath = math.random(0, 2)
+end
+
+function ForceCommanderTerminatorTactic:AutoBuildAddOn(addonSlot)
+    for e in self.squad_ai:GetEntities() do
+        local buildChannelForceCommanderTerminator = build_manager:GetBuildChannelFromID(e:GetID())
+        if (buildChannelForceCommanderTerminator ~= nil) then
+            local addOnID = buildChannelForceCommanderTerminator:GetItemIDAt(BuildChannelAI.PQ_AddOn, addonSlot)
+            if (buildChannelForceCommanderTerminator:IsBuilding() == 0 and buildChannelForceCommanderTerminator:CanAddToQueue(BuildChannelAI.PQ_AddOn, addOnID) == BuildChannelAI.CANBUILD_Ok) then
+                buildChannelForceCommanderTerminator:BuildAddOn(addOnID)
+                return
+            end
+        end
+    end
+    return
+end
+
+-- Assassinate win condition -- never attack
+function ForceCommanderTerminatorTactic:IsAttacker()
+    return (not cpu_manager.assassinate and self:IsCommanderAttacker())
+end
+
+-- Assassinate win condition -- never defend
+function ForceCommanderTerminatorTactic:IsDefender()
+    return (not cpu_manager.assassinate and self:IsCommanderDefender())
+end
+
+-- Force Commander is allowed to retreat even directly after a jump
+function ForceCommanderTerminatorTactic:SetTarget(target, variant_type)
+    self.variant_type = variant_type
+    self.variant_type = variant_type
+    if self.variant_type == Tactic.Variant.Vector then
+        self.target = Vector3f(target)
+    elseif self.variant_type == Tactic.Variant.SquadAI then
+        self.target = target
+    elseif self.variant_type == Tactic.Variant.BaseAI then
+        self.target = target
+    end
+    self.m_iMoveDelay = 0
+    self.last_jump = 0
+end
+
+-- Assassinate win condition -- never jump into combat
+function ForceCommanderTerminatorTactic:JumpAttack()
+    if (not cpu_manager.assassinate) then
+        Tactic.JumpAttack(self)
+    end
+end
+
+function ForceCommanderTerminatorTactic:CanJumpAttached()
+    return true
+end
+
+-- Force Commander Terminator Class
+function ForceCommanderTerminatorTactic:DoAbilities()
+    -- Call parent abilities
+    SpaceMarineCommanderTactic.DoAbilities(self)
+
+    -- Cache ability IDs locally for better performance
+    local commander_bomb_id = self.ABILITY_IDS["COMMANDER_BOMB"]
+    local hellstorm_id = self.ABILITY_IDS["HELLSTORM"]
+    
+    -- Terminator specific abilities
+    Ability.DoAbilityPos(self.squad_ai, commander_bomb_id, Ability.Filters.CloseEnemy, 24)
+    Ability.DoAbilityPos(self.squad_ai, commander_bomb_id, Ability.EntityFilters.CloseBaseEntityEnemy, 3)
+
+    -- Hellstorm ability when resources are available
+    local iRequisition = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Requisition)
+    local iPower = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Power)
+    if iRequisition >= 1000 and iPower >= 1000 then
+        Ability.DoAbilityPos(self.squad_ai, hellstorm_id, Ability.Filters.CloseEnemy, 25)
+        Ability.DoAbilityPos(self.squad_ai, hellstorm_id, Ability.EntityFilters.CloseBaseEntityEnemy, 5)
+    end
+    
+    -- Use grenades if available
+    self:DoGrenades(self.allowed_grenades)
+    
+    -- Run if safe
+    self:CheckForRun()
+end
+
+function ForceCommanderTerminatorTactic:Upgrade()
+    --	self:AutoBuildAddOn(0)	--	[addon_01] space_marine_commander_thunderhammer_addon		-- 1/3 Mutual Melee Weapon
+    --	self:AutoBuildAddOn(1)	-- 	[addon_02] space_marine_commander_lightningclaws_addon		-- 2/3 Mutual Melee Weapon
+    --	self:AutoBuildAddOn(2)	-- 	[addon_03] space_marine_commander_flamer_addon			-- 1/2 Mutual Ranged Weapon
+    --	self:AutoBuildAddOn(3)	-- 	[addon_04] space_marine_commander_assaultcannon_addon		-- 2/2 Mutual Ranged Weapon
+    --	self:AutoBuildAddOn(4)	-- 	[addon_05] space_marine_commander_missile_launcher_addon	-- Build only if Thunderhammer or Lightning Claws are NOT built
+    --	self:AutoBuildAddOn(5)	-- 	[addon_06] space_marine_commander_chainfist_addon		-- 3/3 Mutual Melee Weapon allows flamer or assault cannon
+    --	self:AutoBuildAddOn(6)	-- 	[addon_07] space_marine_commander_teleporter_addon		-- Always build
+
+    --	self:AutoBuildAddOn(7)	--	[addon_08] addon_commanders_cap_squad			4/1
+    --	self:AutoBuildAddOn(8)	-- 	[addon_09] addon_commanders_cap_support			5/1
+    --	self:AutoBuildAddOn(9)	-- 	[addon_10] addon_commanders_cap_relic			6/1
+    --	self:AutoBuildAddOn(10)	-- 	[addon_11] addon_commanders_increase_production		5/1
+    --	self:AutoBuildAddOn(11)	-- 	[addon_12] addon_commanders_increase_health		6/1
+    --	self:AutoBuildAddOn(12)	-- 	[addon_13] addon_commanders_increase_morale		6/1
+    --	self:AutoBuildAddOn(13)	-- 	[addon_14] addon_commanders_cap_squad_2			6
+    --	self:AutoBuildAddOn(14)	-- 	[addon_15] addon_commanders_cap_support_2		8
+    --	self:AutoBuildAddOn(15)	-- 	[addon_16] addon_commanders_increase_production_2	8
+
+    if (cpu_manager:GetTierLevel() <= 4) then
+        local addon_random_commander_upgrades = math.random(7, 15) -- Randomize these addons
+        self:AutoBuildAddOn(addon_random_commander_upgrades)
+    end
+
+    if (cpu_manager:GetTierLevel() > 4) then
+        self:AutoBuildAddOn(9) -- Always build in late tiers to support the construction of Titans and late game ubers.
+    end
+    --[[
+	-- Figure out my enemy's favourite class
+	local enemy = cpu_manager:FindClosestEnemyPlayer()
+	if (enemy == nil) then
+		return
+	end
+
+	local class_type = enemy:GetMajorityClassType()
+
+	-- Hard counter upgrade for infantry
+	if (class_type == UnitStatsAI.UC_LightInfantryLow) or
+		(class_type == UnitStatsAI.UC_LightInfantryMed) or
+		(class_type == UnitStatsAI.UC_LightInfantryHigh) or
+		(class_type == UnitStatsAI.UC_HeavyInfantryMed) or
+		(class_type == UnitStatsAI.UC_HeavyInfantryHigh) or
+		(class_type == UnitStatsAI.UC_MonsterMed) then
+   		if (cpu_manager:GetTierLevel() >= 2) then
+			local addon_random_infantry_wargear = math.random( 0,1 )
+			self:AutoBuildAddOn(addon_random_infantry_wargear )
+		end
+	-- Hard counter upgrade for Vehicles
+	elseif (class_type == UnitStatsAI.UC_VehicleLow) or
+		(class_type == UnitStatsAI.UC_VehicleMed) or
+		(class_type == UnitStatsAI.UC_VehicleHigh) or
+		(class_type == UnitStatsAI.UC_MonsterHigh) then
+   		if (cpu_manager:GetTierLevel() >= 2) then
+			local addon_random_vehicle_wargear = math.random( 2,3 )
+			self:AutoBuildAddOn(addon_random_vehicle_wargear )
+		end
+	end
+]]
+    --local ForceCommanderTerminatorUpgradePath = math.random( 0,2 )
+
+    -- Choose a Wargear Path
+    if (self.m_iForceCommanderTerminatorUpgradePath == 0) then
+        --if (ForceCommanderTerminatorUpgradePath == 0) then
+        self:AutoBuildAddOn(2) -- Flamer
+        self:AutoBuildAddOn(4) -- Missile Launcher
+        self:AutoBuildAddOn(5) -- Chainfist
+    elseif (self.m_iForceCommanderTerminatorUpgradePath == 1) then
+        --elseif (ForceCommanderTerminatorUpgradePath == 1) then
+        self:AutoBuildAddOn(3) -- Assault Cannon
+        self:AutoBuildAddOn(4) -- Missile Launcher
+        self:AutoBuildAddOn(5) -- Chainfist
+    elseif (self.m_iForceCommanderTerminatorUpgradePath == 2) then
+        --elseif (ForceCommanderTerminatorUpgradePath == 2) then
+        local addon_random_melee_weapons = math.random(0, 1) -- Randomize between Thunder Hammer or Lightning Claws
+        self:AutoBuildAddOn(addon_random_melee_weapons)
+    end
+
+    -- Always build missile launcher addon
+    --self:AutoBuildAddOn(4)
+
+    -- Always build teleport addon
+    self:AutoBuildAddOn(6)
+end
+
+function ForceCommanderTerminatorTactic:Update()
+    if (self:IsComplete()) then
+        return
+    end
+
+    -- State machine
+    if (not InfantryTactic.Update(self)) then
+        return
+    end
+
+    -- Assassinate win condition -- never attach to a squad
+    if (not cpu_manager.assassinate) then
+        -- Attach to melee in tier3+
+        if (cpu_manager:GetTierLevel() > 2) then
+            if (self:TryAttachSquad(true, true, 50, 100, nil) ~= nil) then
+                return
+            end
+        end
+        if (self:TryAttachSquad(false, true, 50, 100, self.m_fCommanderAttachHealth) == nil) then
+            self:TryAttachSquadMelee()
+        end
+    end
+
+    -- Check if we are in serious trouble
+    self:EmergencyRetreat()
+end
+
+-- honourguard class
+
+
+class 'HonourGuardTactic' (SpaceMarineInfantryTactic)
+
+HonourGuard = {}
+
+function HonourGuardTactic:__init(squad_ai)
+    super(squad_ai)
+
+    self:SetName("Honour Guard Tactic")
+end
+
+-- Honor Guard Class
+function HonourGuardTactic:DoAbilities()
+    -- Do standard grenade abilities
+    self:DoGrenades()
+
+    -- Use Sabotage on enemy vehicles or buildings
+    Ability.DoAbilityTarget(self.squad_ai, SpaceMarineInfantryTactic.ABILITY_IDS.SABOTAGE,
+        Ability.Filters.CloseVehicleEnemy, 1)
+    Ability.DoAbilityTargetEntity(self.squad_ai, SpaceMarineInfantryTactic.ABILITY_IDS.SABOTAGE,
+        Ability.EntityFilters.CloseBaseEntityEnemy, 1)
+
+    -- Try to place turret
+    Ability.DoAbilityPos(self.squad_ai, SpaceMarineInfantryTactic.ABILITY_IDS.TURRET, Ability.Filters.CloseEnemy, 10)
+    Ability.DoAbilityPos(self.squad_ai, SpaceMarineInfantryTactic.ABILITY_IDS.TURRET,
+        Ability.EntityFilters.CloseBaseEntityEnemy, 2)
+    -- Run if safe
+    self:CheckForRun()
+
+    -- Call standard method
+    SpaceMarineInfantryTactic.DoAbilities(self)
+end
+
+function HonourGuardTactic:Upgrade()
+    -- If I am broken, don't upgrade!
+    if (self:IsAffectedByMorale() and self.squad_ai:IsBroken()) then
+        return
+    end
+
+    -- If there are no ressources available, don't upgrade!
+    if (not Tactic.Options.can_reinforce) then
+        return
+    end
+
+    -- Only upgrade if not reinforcing
+    if (not self.squad_ai:IsReinforcing()) then
+        if (self.squad_ai:HasUpgradableTrooper()) then
+            local class_type = cpu_manager:FindClosestEnemyPlayer():GetMajorityClassType()
+            self.squad_ai:DoBestUpgrade(class_type)
+        end
+    end
+end
+
+function HonourGuardTactic:Reinforce()
+    --always try for the actual leader first
+    if not self.squad_ai:IsReinforcing() then
+        if self.squad_ai:CanReinforce(false, 0) then
+            self.squad_ai:DoReinforce(false, 0)
+        end
+    end
+
+    if not self.squad_ai:IsReinforcing() then
+        -- try for different types of squad members
+        local ApothecaryIndex = 0
+        local BannerIndex = 1
+        local SkullIndex = 2
+        local ThunderfireIndex = 3
+
+        local numApothecaries = self.squad_ai:GetLeaderCount(ApothecaryIndex)
+        local numBanners = self.squad_ai:GetLeaderCount(BannerIndex)
+        local numSkulls = self.squad_ai:GetLeaderCount(SkullIndex)
+        local numThunderfires = self.squad_ai:GetLeaderCount(ThunderfireIndex)
+
+        -- Desired number of each leader type
+        local desiredApothecaries = math.random(0, 1)
+        local desiredBanners = math.random(0, 1)
+        local desiredSkulls = math.random(0, 1)
+        local desiredThunderfires = math.random(0, 1)
+
+        -- Desired order of reinforcing
+        if numApothecaries < desiredApothecaries then
+            if self.squad_ai:CanReinforce(true, ApothecaryIndex) then
+                self.squad_ai:DoReinforce(true, ApothecaryIndex)
+            end
+        elseif numBanners < desiredBanners then
+            if self.squad_ai:CanReinforce(true, BannerIndex) then
+                self.squad_ai:DoReinforce(true, BannerIndex)
+            end
+        elseif numSkulls < desiredSkulls then
+            if self.squad_ai:CanReinforce(true, SkullIndex) then
+                self.squad_ai:DoReinforce(true, SkullIndex)
+            end
+        elseif numThunderfires < desiredThunderfires then
+            if self.squad_ai:CanReinforce(true, ThunderfireIndex) then
+                self.squad_ai:DoReinforce(true, ThunderfireIndex)
+            end
+        end
+    end
+end
+
+-- librarian class
+
+
+
+class 'LibrarianTactic' (SpaceMarineInfantryTactic)
+
+Librarian = {}
+
+function LibrarianTactic:__init(squad_ai)
+    super(squad_ai)
+
+    self:SetName("Librarian Tactic")
+end
+
+function LibrarianTactic:AutoBuildAddOn(addonSlot)
+    for e in self.squad_ai:GetEntities() do
+        local buildChannelLibrarian = build_manager:GetBuildChannelFromID(e:GetID())
+        if (buildChannelLibrarian ~= nil) then
+            local addOnID = buildChannelLibrarian:GetItemIDAt(BuildChannelAI.PQ_AddOn, addonSlot)
+            if (buildChannelLibrarian:IsBuilding() == 0 and buildChannelLibrarian:CanAddToQueue(BuildChannelAI.PQ_AddOn, addOnID) == BuildChannelAI.CANBUILD_Ok) then
+                buildChannelLibrarian:BuildAddOn(addOnID)
+                return
+            end
+        end
+    end
+    return
+end
+
+function LibrarianTactic:IsAttacker()
+    return self:IsCommanderAttacker()
+end
+
+function LibrarianTactic:IsDefender()
+    return self:IsCommanderDefender()
+end
+
+-- Librarian is allowed to retreat even directly after a jump
+function LibrarianTactic:SetTarget(target, variant_type)
+    self.variant_type = variant_type
+    self.variant_type = variant_type
+    if self.variant_type == Tactic.Variant.Vector then
+        self.target = Vector3f(target)
+    elseif self.variant_type == Tactic.Variant.SquadAI then
+        self.target = target
+    elseif self.variant_type == Tactic.Variant.BaseAI then
+        self.target = target
+    end
+    self.m_iMoveDelay = 0
+    self.last_jump = 0
+end
+
+-- Arkhan 03.2006: Inherited method used by commanders which are able to jump with an attached squad
+function LibrarianTactic:CanJumpAttached()
+    return true
+end
+
+function LibrarianTactic:DoAbilities()
+    -- Basic buff abilities
+    Ability.DoAbility(self.squad_ai, SpaceMarineInfantryTactic.ABILITY_IDS.WORD_EMPEROR, Ability.Filters.IsInCombat)
+    Ability.DoAbility(self.squad_ai, SpaceMarineInfantryTactic.ABILITY_IDS.HASTE, Ability.Filters.IsInCombat)
+
+    -- Combat abilities based on health
+    if self.squad_ai:WasRecentlyHurt() and self.squad_ai:GetHealthPercentage() < 0.4 then
+        Ability.DoAbilityTarget(self.squad_ai, SpaceMarineInfantryTactic.ABILITY_IDS.SMITE,
+            Ability.Filters.CloseInfantryEnemy, 4)
+        Ability.DoAbilityTarget(self.squad_ai, SpaceMarineInfantryTactic.ABILITY_IDS.WEAKEN_RESOLVE,
+            Ability.Filters.CloseInfantryEnemy, 4)
+        Ability.DoAbilityTarget(self.squad_ai, SpaceMarineInfantryTactic.ABILITY_IDS.INQUISITION_LIBRARIAN,
+            Ability.Filters.CloseInfantryEnemy, 4)
+        Ability.DoAbilityTarget(self.squad_ai, SpaceMarineInfantryTactic.ABILITY_IDS.FIREBOLT,
+            Ability.Filters.CloseInfantryEnemy, 4)
+        Ability.DoAbilityTarget(self.squad_ai, SpaceMarineInfantryTactic.ABILITY_IDS.MIND_WAR,
+            Ability.Filters.CloseInfantryEnemy, 1)
+        Ability.DoAbilityTarget(self.squad_ai, SpaceMarineInfantryTactic.ABILITY_IDS.MACHINE_SPIRIT,
+            Ability.Filters.CloseVehicleEnemy, 1)
+    else
+        Ability.DoAbilityTarget(self.squad_ai, SpaceMarineInfantryTactic.ABILITY_IDS.SMITE,
+            Ability.Filters.CloseInfantryEnemy, 6)
+        Ability.DoAbilityTarget(self.squad_ai, SpaceMarineInfantryTactic.ABILITY_IDS.WEAKEN_RESOLVE,
+            Ability.Filters.CloseInfantryEnemy, 6)
+        Ability.DoAbilityTarget(self.squad_ai, SpaceMarineInfantryTactic.ABILITY_IDS.INQUISITION_LIBRARIAN,
+            Ability.Filters.CloseInfantryEnemy, 8)
+        Ability.DoAbilityTarget(self.squad_ai, SpaceMarineInfantryTactic.ABILITY_IDS.FIREBOLT,
+            Ability.Filters.CloseInfantryEnemy, 8)
+        Ability.DoAbilityTarget(self.squad_ai, SpaceMarineInfantryTactic.ABILITY_IDS.MIND_WAR,
+            Ability.Filters.CloseInfantryEnemy, 2)
+        Ability.DoAbilityTarget(self.squad_ai, SpaceMarineInfantryTactic.ABILITY_IDS.MACHINE_SPIRIT,
+            Ability.Filters.CloseVehicleEnemy, 2)
+
+
+        -- Run if safe
+        self:CheckForRun()
+    end
+end
+
+function LibrarianTactic:Upgrade()
+    --	self:AutoBuildAddOn(0)	--	[addon_01] addon_commanders_cap_squad			4/1
+    --	self:AutoBuildAddOn(1)	-- 	[addon_02] addon_commanders_cap_support			5/1
+    --	self:AutoBuildAddOn(2)	-- 	[addon_03] addon_commanders_cap_relic			6/1
+    --	self:AutoBuildAddOn(3)	-- 	[addon_04] addon_commanders_increase_production		5/1
+    --	self:AutoBuildAddOn(4)	-- 	[addon_05] addon_commanders_increase_health		6/1
+    --	self:AutoBuildAddOn(5)	-- 	[addon_06] addon_commanders_increase_morale		6/1
+    --	self:AutoBuildAddOn(6)	-- 	[addon_07] addon_commanders_cap_squad_2			6
+    --	self:AutoBuildAddOn(7)	-- 	[addon_08] addon_commanders_cap_support_2		8
+    --	self:AutoBuildAddOn(8)	-- 	[addon_09] addon_commanders_increase_production_2	8
+
+    if (cpu_manager:GetTierLevel() <= 4) then
+        local addon_random_commander_upgrades = math.random(0, 8) -- Randomize these addons
+        self:AutoBuildAddOn(addon_random_commander_upgrades)
+    end
+
+    if (cpu_manager:GetTierLevel() > 4) then
+        self:AutoBuildAddOn(2) -- Always build in late tiers to support the construction of Titans and late game ubers.
+    end
+end
+
+function LibrarianTactic:Update()
+    if (self:IsComplete()) then
+        return
+    end
+
+    -- State machine
+    if (not InfantryTactic.Update(self)) then
+        return
+    end
+
+    -- Attach to melee in tier3+
+    if (cpu_manager:GetTierLevel() > 2) then
+        if (self:TryAttachSquad(true, true, 50, 100, nil) ~= nil) then
+            return
+        end
+    end
+    if (self:TryAttachSquad(false, true, 50, 100, self.m_fCommanderAttachHealth) == nil) then
+        self:TryAttachSquadMelee()
+    end
+
+    -- Check if we are in serious trouble
+    self:EmergencyRetreat()
+end
+-- Debugging 
+--[[
+local stats = cpu_manager.stats
+local GetID = stats.GetAbilityID
+
+    -- Basic abilities
+    debug_print("Orbital Bombardment ID: " .. tostring(GetID(stats, "UA_marines_orbital_bombardment")))
+    debug_print("Orbital Bombardment Terminator ID: " .. tostring(GetID(stats, "UA_marines_orbital_bombardment_terminator")))
+    debug_print("Battlecry ID: " .. tostring(GetID(stats, "UA_marines_battlecry")))
+    debug_print("Commander Bomb ID: " .. tostring(GetID(stats, "UA_marines_commander_bomb")))
+    debug_print("Hellstorm ID: " .. tostring(GetID(stats, "UA_marines_hellstorm")))
+    debug_print("All Out War ID: " .. tostring(GetID(stats, "UA_marines_all_out_war")))
+    debug_print("Run ID: " .. tostring(GetID(stats, "UA_all_run!")))
+
+    -- Grenades
+    debug_print("Flashbang ID: " .. tostring(GetID(stats, "UA_marines_flashbang_grenades")))
+    debug_print("Frag ID: " .. tostring(GetID(stats, "UA_marines_frag_grenades")))
+    debug_print("Inferno ID: " .. tostring(GetID(stats, "UA_marines_inferno_grenades")))
+    debug_print("Krak ID: " .. tostring(GetID(stats, "UA_marines_krak_grenades")))
+    debug_print("Melta ID: " .. tostring(GetID(stats, "UA_marines_melta_bombs")))
+    debug_print("Smoke ID: " .. tostring(GetID(stats, "UA_marines_smoke_grenades")))
+
+    -- Special abilities
+    debug_print("Demoralize ID: " .. tostring(GetID(stats, "UA_marines_demoralize")))
+    debug_print("Sabotage ID: " .. tostring(GetID(stats, "UA_marines_sabotage")))
+    debug_print("Turret ID: " .. tostring(GetID(stats, "UA_marines_layturret")))
+
+    -- Librarian abilities
+    debug_print("Smite ID: " .. tostring(GetID(stats, "UA_marines_smite")))
+    debug_print("Word of Emperor ID: " .. tostring(GetID(stats, "UA_marines_word_of_emperer")))
+    debug_print("Weaken Resolve ID: " .. tostring(GetID(stats, "UA_marines_weaken_resolve")))
+    debug_print("Haste ID: " .. tostring(GetID(stats, "UA_marines_haste")))
+    debug_print("Curse Machine Spirits ID: " .. tostring(GetID(stats, "UA_marines_curse_machine_spirits")))
+    debug_print("Inquisition ID: " .. tostring(GetID(stats, "UA_marines_inquisition_librarian")))
+    debug_print("Firebolt ID: " .. tostring(GetID(stats, "UA_marines_firebolt")))
+    debug_print("Mind War ID: " .. tostring(GetID(stats, "UA_marines_mind_war")))
+    debug_print("SM Force Commander Teleport: " .. tostring(GetID(stats, "UA_marine_personalteleporter")))
+    debug_print("SM Force Commander Rally: " .. tostring(GetID(stats, "UA_marine_rally")))
+    debug_print("SM DEMOLITION ID: " .. tostring(GetID(stats, "UA_marines_demo_charge")))
+    debug_print("SM DEMOLITION DETONATE ID: " .. tostring(GetID(stats, "UA_marines_demo_charge_detonate")))
+    debug_print("SM DEATHWATCH INFERNO ID: " .. tostring(GetID(stats, "UA_marines_inferno_grenades_deathwatch")))
+]]

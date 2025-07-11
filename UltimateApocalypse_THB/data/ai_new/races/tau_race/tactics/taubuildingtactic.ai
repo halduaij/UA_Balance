@@ -1,0 +1,28 @@
+----------------------------------------
+-- File: 'taubuildingtactic.ai'
+-- Edited by Thudmeizer	@ 16.03.2016
+
+class 'TauBuildingTactic' (BaseTactic)
+
+TauBuilding = {}
+
+function TauBuildingTactic:__init( base_ai ) super( base_ai )
+
+	self:SetName("Tau Building Tactic")
+end
+
+function TauBuildingTactic:InitAbilities()
+    if (TauBuilding.repair_id == nil) then
+        TauBuilding.repair_id = 3
+        print("Tau Repair ID set to: " .. tostring(TauBuilding.repair_id))
+    end
+end
+
+function TauBuildingTactic:DoAbilities()
+    if (self.base_ai:GetHealthPercentage() < 0.5) then
+        if (self.base_ai:CanDoAbility(TauBuilding.repair_id)) then
+            self.base_ai:DoSpecialAbility(TauBuilding.repair_id)
+            print("Attempting repair on Tau building at " .. tostring(self.base_ai:GetHealthPercentage() * 100) .. "% health")
+        end
+    end
+end

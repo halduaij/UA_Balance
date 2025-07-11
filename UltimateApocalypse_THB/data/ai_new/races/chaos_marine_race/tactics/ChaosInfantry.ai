@@ -1,0 +1,1295 @@
+----------------------------------------
+-- File: 'etherealtactic.ai'
+-- Edited by Thudmeizer @ 12.02.2016
+
+class 'HeldrakeTactic' (ChaosMarineInfantryTactic)
+
+
+
+function HeldrakeTactic:__init( squad_ai ) super( squad_ai )
+
+	self.timedDirectSpawnAbility = Timer( HeldrakeTactic.DoDirectSpawnAbility, self, 5 )
+
+	self:SetName("Heldrake Tactic")
+end
+
+function HeldrakeTactic:AlwaysAttack()
+	return true
+end
+
+function HeldrakeTactic:InitAbilities()
+
+end
+
+function HeldrakeTactic:DoAbilities()
+
+	-- Try to spawn hell talons
+	if (self.timedDirectSpawnAbility ~= nil) then
+		self.timedDirectSpawnAbility:Call()
+	else
+		HeldrakeTactic.DoDirectSpawnAbility(self)
+	end
+end
+
+function HeldrakeTactic:DoDirectSpawnAbility()
+
+	-- Spawn hell talons in combat
+	if (self.squad_ai:CanDirectSpawn()) then
+		self.squad_ai:DoDirectSpawn()
+	end
+end
+
+function HeldrakeTactic:Update()
+
+	if (self:IsComplete()) then
+		return
+	end
+
+	-- State machine
+	if (not InfantryTactic.Update(self)) then
+		return
+	end
+end
+
+----------------------------------------
+-- File: 'raptorsquadtactic.ai'
+-- Edited by Thudmeizer	@ 26.10.2008
+
+class 'RaptorSquadTactic' (ChaosMarineInfantryTactic)
+
+
+
+function RaptorSquadTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Raptor Squad Tactic")
+end
+
+-- RaptorSquadTactic
+function RaptorSquadTactic:DoAbilities()
+    if (self.squad_ai:IsInCombat() and not self.squad_ai:IsCapturing() and not self.squad_ai:IsBroken()) then
+        -- Check if I can go berserk while stationary
+        if (not self:IsMoving()) then
+            if (self.squad_ai:CanDoAbility(148)) then  -- chaos_furious_rage
+                self.squad_ai:DoSpecialAbility(148)
+            end
+        end
+    end
+
+    -- Check if jump squad can speed up with boost
+    if ((not self.squad_ai:IsInCombat() and self.squad_ai:IsInStateMove()) or self.stateID ~= Tactic.StateID.NoState) then
+        if (self.squad_ai:CanDoAbility(231)) then  -- chaos_speed_fiend
+            self.squad_ai:DoSpecialAbility(231)
+        end
+    end
+end
+
+----------------------------------------
+-- File: 'marinesquadtactic.ai'
+-- Edited by Thudmeizer	@ 26.10.2008
+
+class 'MarineSquadTactic' (ChaosMarineInfantryTactic)
+
+function MarineSquadTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Marine Squad Tactic")
+end
+
+function MarineSquadTactic:DoAbilities()
+
+	if (self.squad_ai:IsInCombat() and not self.squad_ai:IsCapturing() and not self.squad_ai:IsBroken()) then
+        -- Check if I can go berserk while stationary
+        if (not self:IsMoving()) then
+            if (self.squad_ai:CanDoAbility(148)) then  -- chaos_furious_rage
+                self.squad_ai:DoSpecialAbility(148)
+            end
+        end
+    end
+
+	-- Call basic DoAbilities methods
+	ChaosMarineInfantryTactic.DoAbilities(self)
+end
+
+----------------------------------------
+-- File: 'loctactic.ai'
+-- Edited by Cylarne_04 2011
+-- Edited by Thudmeizer	@	28.02.2016
+
+class 'LocTactic' (ChaosMarineInfantryTactic)
+
+
+
+function LocTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Loc Tactic")
+end
+
+function LocTactic:IsAttacker()
+	return self:IsCommanderAttacker()
+end
+
+function LocTactic:IsDefender()
+	return self:IsCommanderDefender()
+end
+
+-- Lord of Change is allowed to retreat even directly after a jump
+function LocTactic:SetTarget( target, variant_type )
+
+	self.variant_type = variant_type
+	self.variant_type = variant_type
+       if self.variant_type==Tactic.Variant.Vector then
+    self.target = Vector3f(target)
+       elseif self.variant_type==Tactic.Variant.SquadAI then
+    self.target = target
+       elseif self.variant_type==Tactic.Variant.BaseAI then
+    self.target = target
+       end
+	self.m_iMoveDelay = 0
+	self.last_jump = 0
+end
+
+function LocTactic:DoAbilities()
+    -- Winds of Change
+    Ability.DoAbilityArea(self.squad_ai, 321, Ability.Filters.CloseEnemy, 20, 10)  -- chaos_winds_loc
+
+    -- Search a squad for Invulnerability
+    local oUnit = Ability.Filters.CloseHurt(self.squad_ai:GetPosition(), 50, 4)
+    if (oUnit ~= nil and oUnit:IsInCombat() and cpu_manager:GetUnitStrength(oUnit) > 150) then
+        if (self.squad_ai:CanDoAbility(179)) then  -- chaos_invulnerability
+            self.squad_ai:DoSpecialAbility(179)
+        end
+    end
+
+    -- We are dying, lower requisites for attacks
+    if (self.squad_ai:WasRecentlyHurt() and self.squad_ai:GetHealthPercentage() < 0.4) then
+        -- Greater Bolt of Change
+        Ability.DoAbilityPos(self.squad_ai, 58, Ability.Filters.CloseSquadEnemy, 4)  -- chaos_bolt_of_change_loc
+        Ability.DoAbilityPos(self.squad_ai, 58, Ability.Filters.CloseVehicleEnemy, 1)
+        Ability.DoAbilityPos(self.squad_ai, 58, Ability.EntityFilters.CloseBaseEntityEnemy, 2)
+
+        -- Summon Mini Warp Storm
+        Ability.DoAbilityPos(self.squad_ai, 274, Ability.Filters.CloseEnemy, 6)  -- chaos_warp_storm_mini
+    else
+        Ability.DoAbilityPos(self.squad_ai, 58, Ability.Filters.CloseSquadEnemy, 6)
+        Ability.DoAbilityPos(self.squad_ai, 58, Ability.Filters.CloseVehicleEnemy, 2)
+        Ability.DoAbilityPos(self.squad_ai, 58, Ability.EntityFilters.CloseBaseEntityEnemy, 3)
+        Ability.DoAbilityPos(self.squad_ai, 274, Ability.Filters.CloseEnemy, 12)
+    end
+
+    -- Run if safe
+    if ((not self.squad_ai:IsInCombat() and self.squad_ai:IsInStateMove()) or self.stateID ~= Tactic.StateID.NoState) then
+        if (self.squad_ai:CanDoAbility(34)) then  -- UA_all_run!
+            self.squad_ai:DoSpecialAbility(34)
+        end
+    end
+end
+
+function LocTactic:Update()
+
+	if (self:IsComplete()) then
+		return
+	end
+
+	-- State machine
+	if (not InfantryTactic.Update( self )) then
+		return
+	end
+
+	-- Check if we are in serious trouble
+	self:EmergencyRetreat()
+end
+
+----------------------------------------
+-- File: 'kostactic.ai'
+-- Edited by Thudmeizer	@ 17.02.2016
+
+class 'KOSTactic' (ChaosMarineInfantryTactic)
+
+
+
+function KOSTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("KOS Tactic")
+end
+
+function KOSTactic:AutoBuildAddOn( addonSlot )
+	for e in self.squad_ai:GetEntities() do
+		local buildChannelKOS = build_manager:GetBuildChannelFromID(e:GetID())
+		if (buildChannelKOS ~= nil) then
+			local addOnID = buildChannelKOS:GetItemIDAt(BuildChannelAI.PQ_AddOn, addonSlot)
+			if (buildChannelKOS:IsBuilding() == 0 and buildChannelKOS:CanAddToQueue(BuildChannelAI.PQ_AddOn, addOnID) == BuildChannelAI.CANBUILD_Ok) then
+				buildChannelKOS:BuildAddOn(addOnID)
+				return
+			end
+		end
+	end
+	return
+end
+
+function KOSTactic:AlwaysAttack()
+	return true
+end
+
+function KOSTactic:InitAbilities()
+
+end
+
+function KOSTactic:DoAbilities()
+
+	-- Call basic DoAbilities methods
+	ChaosMarineInfantryTactic.DoAbilities(self)
+end
+
+function KOSTactic:Upgrade()
+
+--	self:AutoBuildAddOn(0)	--	[addon_01] addon_commanders_cap_squad			4/1
+--	self:AutoBuildAddOn(1)	-- 	[addon_02] addon_commanders_cap_support			5/1
+--	self:AutoBuildAddOn(2)	-- 	[addon_03] addon_commanders_cap_relic			6/1
+--	self:AutoBuildAddOn(3)	-- 	[addon_04] addon_commanders_increase_production		5/1
+--	self:AutoBuildAddOn(4)	-- 	[addon_05] addon_commanders_increase_health		6/1
+--	self:AutoBuildAddOn(5)	-- 	[addon_06] addon_commanders_increase_morale		6/1
+--	self:AutoBuildAddOn(6)	-- 	[addon_07] addon_commanders_cap_squad_2			6
+--	self:AutoBuildAddOn(7)	-- 	[addon_08] addon_commanders_cap_support_2		8
+--	self:AutoBuildAddOn(8)	-- 	[addon_09] addon_commanders_increase_production_2	8
+
+   	if (cpu_manager:GetTierLevel() <= 4) then
+		local addon_random_commander_upgrades = math.random( 0,8 )	-- Randomize these addons
+		self:AutoBuildAddOn(addon_random_commander_upgrades)
+	end
+
+   	if (cpu_manager:GetTierLevel() > 4) then
+		self:AutoBuildAddOn(2)	-- Always build in late tiers to support the construction of Titans and late game ubers.
+	end
+end
+
+----------------------------------------
+-- File: 'bannerbearertactic.ai'
+-- Edited by Thudmeizer   @ 11.02.2016
+
+class 'IconBearerTactic' (ChaosMarineInfantryTactic)
+
+
+
+function IconBearerTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Icon Bearer Tactic")
+end
+
+function IconBearerTactic:IsAttacker()
+	return self:IsCommanderAttacker()
+end
+
+function IconBearerTactic:IsDefender()
+	return self:IsCommanderDefender()
+end
+
+function IconBearerTactic:Update()
+
+   if self:IsComplete() then
+      return
+   end
+
+	--state machine
+	if not InfantryTactic.Update( self ) then
+		return
+	end
+
+   --attach to squad
+   self:TryAttachSquad( false, false, 1000, 200, nil )
+
+end
+
+----------------------------------------
+-- File: 'hellsmithtactic.ai'
+-- Edited by Cylarne_04 2011
+-- Edited by Thudmeizer/Gambit @ 03.03.2016
+
+class 'HellSmithTactic' (ChaosMarineInfantryTactic)
+
+
+
+function HellSmithTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("HellSmith Tactic")
+
+	-- Engineer Tactic Settings, modify as required
+	self.iBusy = g_iGMT
+	self.iSquadName = self.squad_ai:GetSquadName()   --> The name of the SQUAD with the dual role, so that not to repair itself!
+	self.iRepairVehicleRange = 40   --> The range within which the squad will perform the vehicle repairs
+	self.iRepairSuperVehiclesWhenInCombat = true  --> Will repair super vehicles, even if in combat
+	self.iRepairStrongVehiclesWhenInCombat = true  --> Will also repair super vehicles if true
+	self.isBuildingsRepairer  = true  --> Will also repair nearby structures if true
+	self.isBuildingsAssistant  = true  --> Will also help build nearby unfinished structures if true
+	self.iFixBuildingsRange = 30  --> The range within which the squad will perform building duties
+end
+
+function HellSmithTactic:IsAttacker()
+	return false
+end
+
+function HellSmithTactic:IsDefender()
+	return false
+end
+
+function HellSmithTactic:DoAbilities()
+    -- Try Frag Grenades
+    Ability.DoAbilityTarget(self.squad_ai, 141, Ability.Filters.CloseSquadEnemy, 4)  -- chaos_frag_grenades
+
+    -- Try Krak Bombs
+    Ability.DoAbilityTarget(self.squad_ai, 180, Ability.Filters.CloseVehicleEnemy, 1)  -- chaos_krak_grenades
+    Ability.DoAbilityTargetEntity(self.squad_ai, 180, Ability.EntityFilters.CloseBaseEntityEnemy, 1)
+
+    -- Forced labour if we're doing well and building
+    if (self.squad_ai:GetHealthPercentage() > 0.6 and self.squad_ai:IsBuildProgressing() and not self.forced_labour) then
+        -- Turn on ability
+        self.squad_ai:DoSpecialAbility(139)  -- chaos_forced_labor
+        self.forced_labour = true
+    elseif (self.forced_labour and self.squad_ai:GetHealthPercentage() < 0.6) then
+        -- Turn off ability
+        self.squad_ai:DoSpecialAbility(139)  -- chaos_forced_labor
+        self.forced_labour = false
+    end
+
+    -- Run if safe
+    if ((not self.squad_ai:IsInCombat() and self.squad_ai:IsInStateMove()) or self.stateID ~= Tactic.StateID.NoState) then
+        if (self.squad_ai:CanDoAbility(34)) then  -- UA_all_run!
+            self.squad_ai:DoSpecialAbility(34)
+        end
+    end
+
+    -- Need to preserve engineer duties logic
+    self:DoEngineerDuties()
+end
+
+-----------------------------------------
+-- Update tactic for dual-duty squads  --
+-----------------------------------------
+
+function HellSmithTactic:Update()
+
+	-- State machine
+	if not Tactic.Update( self ) then
+		return false
+	end
+
+	-- Reinforce squads
+	self:Reinforce()
+
+	-- Upgrade weapons
+	self:Upgrade()
+
+	-- Do abilities even if this means interrupting engineer duties.
+	-- Place the following two lines AFTER the locked check below,
+	--  if you do not want abilities to interrupt them.
+	-- Alternative, make specific IF checks, in case you want each
+	--  ability to have different behaviour.
+	self:InitAbilities()
+	self:DoAbilities()
+
+	-- Check if locked, and not attacked while being so, so that to fulfil his tasks
+	if (self.squad_ai:IsLocked() and not self.squad_ai:WasRecentlyHurt()) then
+		return true
+   	end
+
+	if self.squad_ai:CanJump() then
+		self.tolerance_default = self.squad_ai:GetJumpDistance()
+	else
+		self.tolerance_default = 100
+	end
+
+	-- Update commander attach/detach health
+	local iSupportCap = build_manager:GetSupportCapCurrentMax() - build_manager:GetSupportCapLeft()
+	if (iSupportCap >= 4) then
+		self.m_fCommanderAttachHealth = 0.3
+	else
+		self.m_fCommanderAttachHealth = 0.1
+	end
+
+	self:SyncSubState()
+
+	self:CheckForBroken()
+
+	-- If not already in substate
+	if (self.stateID == Tactic.StateID.NoState) then
+
+		-- Check dance mode
+		if (CpuManager.AISettings.iDancing == 2) then
+		 	self:CheckForDeath()
+			if (self.stateID == Tactic.StateID.NoState) then
+				self:CheckForDance()
+				if (self.stateID == Tactic.StateID.NoState) then
+					self:CheckForStealthTroops()
+				end
+			end
+		elseif (CpuManager.AISettings.iDancing == 1 and g_iGMT > self.m_iDancing + 10) then
+			self:CheckForDeath()
+			if (self.stateID == Tactic.StateID.NoState) then
+				self:CheckForDance()
+				if (self.stateID == Tactic.StateID.NoState) then
+					self:CheckForStealthTroops()
+				end
+			end
+		end
+	end
+
+	if (self.stateID == Tactic.StateID.NoState) then
+
+		for i in self.commander do
+
+			if self.squad_ai:HasSquadAttached( self.commander[i][1] ) and self.commander[i][2] then
+
+				--if I'm nearly dead, run away
+				if self.squad_ai:GetAttachedHealthPercentage() < 0.7 then
+				   self.squad_ai:DoMoveToClosestSafePoint( self.safe_point, self.tolerance )
+				end
+				return
+			end
+		end
+	end
+
+	if (self.squad_ai:IsAttached()) then
+		self:CheckForDetach()
+	end
+
+	-- Special moves after a while
+	if g_iGMT > self.iBusy + 6 then
+		self:CloseOnEnemy()
+	end
+
+	-- Check stance
+	self:UpdateStance()
+
+	-- Perform engineer duties
+	self:DoEngineerDuties()
+
+	-- If no tasks after a while, or attacked while building a structure, engage closest enemy.
+	if ((not (self:IsMoving() or self.squad_ai:IsInCombat()) and g_iGMT > self.iBusy + 6) or
+	(self.squad_ai:IsBuilding() ~= 0 and self.squad_ai:WasRecentlyHurt())) then
+		self:EngageClosestEnemyIfNeeded()
+	end
+
+	-- Return success
+	return true
+end
+
+------------------------------------------------
+-- Code for dual-duty squads (also engineers) --
+------------------------------------------------
+
+-- Moves the squad to engage the enemy. Usually called if idle, or attacked during building a structure
+function HellSmithTactic:EngageClosestEnemyIfNeeded()
+	-- Define squad filter functor
+	local oSquadFilter = function( oSquadAI )
+		return not oSquadAI:IsBroken()
+	end
+	-- Get closest enemy squad to engage
+    local oEnemySquad = cpu_manager:FindClosestEnemy(self.squad_ai:GetPosition(), 1512, oSquadFilter)
+    if (oEnemySquad ~= nil) then
+		local targetPosition = oEnemySquad:GetPosition()
+		if Ability.Filters.CloseHurt(targetPosition, 40, 1) ~= nil then
+			self.squad_ai:DoMove(targetPosition)
+		end
+	end
+end
+
+
+-- Performs the repair and building tasks
+function HellSmithTactic:DoEngineerDuties()
+	-- Assisting boolean, so that not to call GetDmgdOrUnfnsdBuildingWithin twice
+	local iCheck = true
+
+	-- Try to repair a nearby damaged vehicle. If no vehicle, find a damaged building
+	if self.squad_ai:CanRepair() then
+		-- First, find the closest vehicle that can be repaired
+		local oVehicleToRepair = self:GetDamagedVehicleWithin(self.iRepairVehicleRange)
+		if (oVehicleToRepair ~= nil) then
+			-- Prefer to repair a powerful vehicle, even in battle
+			local superVehicle = false
+			local strongVehicle = false
+			if self.iRepairSuperVehiclesWhenInCombat then
+				local vStats = oVehicleToRepair:GetStats()
+				if  vStats ~= nil then
+					local vClass = vStats:GetClass()
+					if vClass ~= nil then
+						if vClass == UnitStatsAI.UC_VehicleHigh then
+							superVehicle = true
+						end
+					end
+				end
+			elseif self.iRepairStrongVehiclesWhenInCombat then
+				local vStats = oVehicleToRepair:GetStats()
+				if  vStats ~= nil then
+					local vClass = vStats:GetClass()
+					if vClass ~= nil then
+						if vClass == UnitStatsAI.UC_VehicleMed then
+							strongVehicle = true
+						end
+					end
+				end
+			end
+			if not self.squad_ai:IsInCombat() or superVehicle or strongVehicle then
+				aitrace("EngineerTactic: Repairing vehicle...")
+				self.squad_ai:DoRepairSquad(oVehicleToRepair)
+				self.iBusy = g_iGMT
+				return true
+			end
+		end
+		-- Then, find the closest building that can be repaired
+		if self.isBuildingsRepairer then
+			self:GetDmgdOrUnfnsdBuildingWithin(self.iFixBuildingsRange)
+			iCheck = false
+			if not self.squad_ai:IsInCombat() then
+				local oBuildingToRepair = self:GetDamagedBuilding()
+				if (oBuildingToRepair ~= nil) then
+					aitrace("EngineerTactic: Repairing building...")
+					self.squad_ai:DoRepairBase(oBuildingToRepair)
+					self.iBusy = g_iGMT
+					return true
+				end
+			end
+		end
+	end
+	-- Then, try to help finish a building
+	if self.isBuildingsAssistant then
+		if self.squad_ai:IsEngineer() and not self.squad_ai:IsInCombat() then
+			if iCheck then
+				self:GetDmgdOrUnfnsdBuildingWithin(self.iFixBuildingsRange)
+			end
+			local oBuildingToFinish = self:GetUnfinishedBuilding()
+			if (oBuildingToFinish ~= nil) then
+				aitrace("EngineerTactic: Help finishing a building...")
+				self.squad_ai:DoFinishBuilding(oBuildingToFinish)
+				self.iBusy = g_iGMT
+				return true
+			end
+		end
+	end
+end
+
+
+-- Called directly to find an ally repairable and damaged squad within range.
+function HellSmithTactic:GetDamagedVehicleWithin(iRange)
+local iEngineerSquadPosition = self.squad_ai:GetPosition()
+for oPlayer in cpu_manager.stats:GetPlayerStats() do
+	if not oPlayer:IsPlayerDead() then
+		if not cpu_manager.player_stats:IsEnemy(oPlayer) then
+			for oSquad in oPlayer:GetSquads() do
+				if oSquad:IsValid() then
+					if oSquad:CanBeRepaired() and oSquad:GetHealthPercentage() < 1.0
+					and oSquad:GetSquadName() ~= self.iSquadName then
+						if distance(oSquad:GetPosition(),iEngineerSquadPosition) < iRange then
+							return oSquad
+						end
+					end
+				end
+			end
+		end
+	end
+end
+return nil
+end
+
+
+-- Called indirectly, to find an ally repairable and damaged building, or an unfinished within range.
+function HellSmithTactic:GetDmgdOrUnfnsdBuildingWithin(iRange)
+self.damagedBuilding = nil
+self.unfinishedBuilding = nil
+local iEngineerSquadPosition = self.squad_ai:GetPosition()
+for oPlayer in cpu_manager.stats:GetPlayerStats() do
+	if (not oPlayer:IsPlayerDead()) then
+		if (not cpu_manager.player_stats:IsEnemy(oPlayer)) then
+			for oBuilding in oPlayer:GetBases() do
+				if oBuilding:IsValid() then
+					if distance(oBuilding:GetPosition(),iEngineerSquadPosition) < iRange then
+						if (self.isBuildingsRepairer and oBuilding:CanBeRepaired() and oBuilding:GetHealthPercentage() < 1.0) then
+							self.damagedBuilding = oBuilding
+							return
+						elseif (self.isBuildingsAssistant and not oBuilding:IsConstructionDone()) then
+							self.unfinishedBuilding = oBuilding:GetEntity()
+							return
+						end
+					end
+				end
+			end
+		end
+	end
+end
+end
+
+
+function HellSmithTactic:GetDamagedBuilding()
+	return self.damagedBuilding
+end
+
+
+function HellSmithTactic:GetUnfinishedBuilding()
+	return self.unfinishedBuilding
+end
+
+----------------------------------------
+-- File: 'etherealtactic.ai'
+-- Edited by Thudmeizer @ 12.02.2016
+
+class 'HeldrakeTactic' (ChaosMarineInfantryTactic)
+
+
+
+function HeldrakeTactic:__init( squad_ai ) super( squad_ai )
+
+	self.timedDirectSpawnAbility = Timer( HeldrakeTactic.DoDirectSpawnAbility, self, 5 )
+
+	self:SetName("Heldrake Tactic")
+end
+
+function HeldrakeTactic:AlwaysAttack()
+	return true
+end
+
+function HeldrakeTactic:InitAbilities()
+
+end
+
+function HeldrakeTactic:DoAbilities()
+
+	-- Try to spawn hell talons
+	if (self.timedDirectSpawnAbility ~= nil) then
+		self.timedDirectSpawnAbility:Call()
+	else
+		HeldrakeTactic.DoDirectSpawnAbility(self)
+	end
+end
+
+function HeldrakeTactic:DoDirectSpawnAbility()
+
+	-- Spawn hell talons in combat
+	if (self.squad_ai:CanDirectSpawn()) then
+		self.squad_ai:DoDirectSpawn()
+	end
+end
+
+function HeldrakeTactic:Update()
+
+	if (self:IsComplete()) then
+		return
+	end
+
+	-- State machine
+	if (not InfantryTactic.Update(self)) then
+		return
+	end
+end
+
+----------------------------------------
+-- File: 'guotactic.ai'
+-- Edited by Thudmeizer	@ 17.02.2016
+-- Edited by Cylarne_04 2011
+
+class 'GUOTactic' (ChaosMarineInfantryTactic)
+
+
+
+function GUOTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("GUO Tactic")
+end
+
+function GUOTactic:AutoBuildAddOn( addonSlot )
+	for e in self.squad_ai:GetEntities() do
+		local buildChannelGUO = build_manager:GetBuildChannelFromID(e:GetID())
+		if (buildChannelGUO ~= nil) then
+			local addOnID = buildChannelGUO:GetItemIDAt(BuildChannelAI.PQ_AddOn, addonSlot)
+			if (buildChannelGUO:IsBuilding() == 0 and buildChannelGUO:CanAddToQueue(BuildChannelAI.PQ_AddOn, addOnID) == BuildChannelAI.CANBUILD_Ok) then
+				buildChannelGUO:BuildAddOn(addOnID)
+				return
+			end
+		end
+	end
+	return
+end
+
+function GUOTactic:AlwaysAttack()
+	return true
+end
+
+function GUOTactic:DoAbilities()
+    -- Puke and Spit abilities with direct IDs
+    Ability.DoAbilityPos(self.squad_ai, 161, Ability.Filters.CloseEnemy, 6)  -- chaos_guo_puke
+    Ability.DoAbilityPos(self.squad_ai, 161, Ability.EntityFilters.CloseBaseEntityEnemy, 3)
+    Ability.DoAbilityPos(self.squad_ai, 163, Ability.Filters.CloseEnemy, 8)  -- chaos_guo_spit
+    Ability.DoAbilityPos(self.squad_ai, 163, Ability.EntityFilters.CloseBaseEntityEnemy, 3)
+
+    -- Call basic DoAbilities methods
+    ChaosMarineInfantryTactic.DoAbilities(self)
+end
+
+function GUOTactic:Upgrade()
+
+--	self:AutoBuildAddOn(0)	--	[addon_01] addon_commanders_cap_squad			4/1
+--	self:AutoBuildAddOn(1)	-- 	[addon_02] addon_commanders_cap_support			5/1
+--	self:AutoBuildAddOn(2)	-- 	[addon_03] addon_commanders_cap_relic			6/1
+--	self:AutoBuildAddOn(3)	-- 	[addon_04] addon_commanders_increase_production		5/1
+--	self:AutoBuildAddOn(4)	-- 	[addon_05] addon_commanders_increase_health		6/1
+--	self:AutoBuildAddOn(5)	-- 	[addon_06] addon_commanders_increase_morale		6/1
+--	self:AutoBuildAddOn(6)	-- 	[addon_07] addon_commanders_cap_squad_2			6
+--	self:AutoBuildAddOn(7)	-- 	[addon_08] addon_commanders_cap_support_2		8
+--	self:AutoBuildAddOn(8)	-- 	[addon_09] addon_commanders_increase_production_2	8
+
+   	if (cpu_manager:GetTierLevel() <= 4) then
+		local addon_random_commander_upgrades = math.random( 0,8 )	-- Randomize these addons
+		self:AutoBuildAddOn(addon_random_commander_upgrades)
+	end
+
+   	if (cpu_manager:GetTierLevel() > 4) then
+		self:AutoBuildAddOn(2)	-- Always build in late tiers to support the construction of Titans and late game ubers.
+	end
+end
+
+----------------------------------------
+-- File: 'cultistactic.ai'
+-- Edited by LarkinVB	@ 19.08.2005
+-- Edited by Arkhan	@ 12.01.2006
+-- Edited by Thudmeizer	@ 03.05.2016
+
+class 'CultistTactic' (ChaosMarineInfantryTactic)
+
+
+
+function CultistTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Cultist Tactic")
+end
+
+function CultistTactic:IsAttacker()
+	return (cpu_manager:GetTierLevel() >= 2)
+end
+
+-- CultistTactic
+function CultistTactic:DoAbilities()
+    if (self.squad_ai:GetHealthPercentage() >= 0.6) then
+        -- Search a squad
+        local oUnit = Ability.Filters.CloseHurt(self.squad_ai:GetPosition(), 20, 2)
+        if (oUnit ~= nil and oUnit:IsInCombat() and cpu_manager:GetUnitStrength(oUnit) > 60) then
+            -- Direct ID usage for worship abilities
+            if (self.squad_ai:CanDoAbility(92)) then  -- chaos_cultist_worship_khorne
+                self.squad_ai:DoSpecialAbility(92)
+            end
+
+            if (self.squad_ai:CanDoAbility(93)) then  -- chaos_cultist_worship_nurgle
+                self.squad_ai:DoSpecialAbility(93)
+            end
+
+            if (self.squad_ai:CanDoAbility(94)) then  -- chaos_cultist_worship_slaanesh
+                self.squad_ai:DoSpecialAbility(94)
+            end
+
+            if (self.squad_ai:CanDoAbility(95)) then  -- chaos_cultist_worship_tzeentch
+                self.squad_ai:DoSpecialAbility(95)
+            end
+        end
+    end
+
+    -- Sacrifice a cultist to reduce nearby enemy morale
+    if (self.squad_ai:CanDoAbility(91)) then  -- chaos_cultist_explode
+        local oUnit = Ability.Filters.CloseEnemy(self.squad_ai:GetPosition(), 20, 4)
+        if (oUnit ~= nil) then
+            self.squad_ai:DoSpecialAbility(91)
+        end
+    end
+end
+
+function CultistTactic:Upgrade()
+
+ 	-- If I am broken, don't upgrade!
+	if (self:IsAffectedByMorale() and self.squad_ai:IsBroken()) then
+		return
+	end
+
+	-- If there are no ressources available, don't upgrade!
+	if (not Tactic.Options.can_reinforce) then
+		return
+	end
+
+	if (not self.squad_ai:IsReinforcing() and cpu_manager:GetTierLevel() >= 2) then
+
+		-- Try for upgrade if we've a leader and more than 6 troopers
+		if (self.squad_ai:HasUpgradableTrooper() and self.squad_ai:GetNumTroopers() > 6 and self.squad_ai:HasLeader()) then
+			local class_type = cpu_manager:FindClosestEnemyPlayer():GetMajorityClassType()
+			self.squad_ai:DoBestUpgrade( class_type )
+		end
+	end
+end
+
+function CultistTactic:Reinforce()
+
+	-- If I am broken, don't upgrade/reinforce!
+	if (self:IsAffectedByMorale() and self.squad_ai:IsBroken()) then
+	   return
+	end
+
+	if not self.squad_ai:IsReinforcing() then
+
+		-- try for different types of squad members
+		local iChampionIndex = 0
+        	local iIconBearerIndex = 1
+
+		local iNumChampion = self.squad_ai:GetLeaderCount( iChampionIndex )
+		local iNumIconBearer = self.squad_ai:GetLeaderCount( iIconBearerIndex )
+
+		-- Desired number of each leader type
+		local iDesiredChampion = 1
+		local iDesiredIconBearer = 1
+
+		-- Desired order of reinforcing
+		if iNumChampion < iDesiredChampion then
+			if self.squad_ai:CanReinforce( true, iChampionIndex ) then
+				self.squad_ai:DoReinforce( true, iChampionIndex )
+			end
+		elseif iNumIconBearer < iDesiredIconBearer then
+			if self.squad_ai:CanReinforce( true, iIconBearerIndex ) then
+				self.squad_ai:DoReinforce( true, iIconBearerIndex )
+			end
+		end
+	end
+
+	-- Don't reinforce squads in critical condition
+	if (self.squad_ai:GetNumTroopers() <= self.squad_ai:GetMaxTroopers() / 3 and self.squad_ai:IsUnderAttack()) then
+		return
+	end
+
+	-- Check resources
+	local iRequisition = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Requisition)
+	if ((iRequisition < 900) and not Tactic.Options.can_reinforce) then
+		return
+	end
+
+	-- Don't reinforce more than 12 squad members -- they both get stuck or don't capture points properly
+	if (not self.squad_ai:IsReinforcing() and self.squad_ai:GetNumTroopers() < 12) then
+        	if (self.squad_ai:CanReinforce(true, 0)) then
+            		self.squad_ai:DoReinforce(true, 0)
+       		elseif (self.squad_ai:CanReinforce(false, 0)) then
+            		self.squad_ai:DoReinforce(false, 0)
+		end
+	end
+end
+
+function CultistTactic:Update()
+
+	if (self:IsComplete()) then
+		return
+	end
+
+	-- State machine
+	if (not InfantryTactic.Update( self )) then
+		return
+	end
+
+    -- Set unit on ranged stance in tier 3+
+    if (cpu_manager:GetTierLevel() >= 3 and self.squad_ai:GetMeleeStance() ~= SquadAI.MSTANCE_Ranged) then
+    	self.squad_ai:DoSetMeleeStance(SquadAI.MSTANCE_Ranged)
+    end
+end
+
+----------------------------------------
+-- File: 'chaosrubricsquadtactic.ai'
+-- Edited by Thudmeizer	@ 04.05.2016
+
+class 'ChaosRubricSquadTactic' (ChaosMarineInfantryTactic)
+
+
+
+function ChaosRubricSquadTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Chaos Rubric Squad Tactic")
+end
+
+-- ChaosRubricSquadTactic
+function ChaosRubricSquadTactic:DoAbilities()
+    -- Bolt of Change
+    Ability.DoAbilityPos(self.squad_ai, 53, Ability.Filters.CloseSquadEnemy, 4)  -- chaos_bolt_of_change_aspiringsorcerer
+    Ability.DoAbilityPos(self.squad_ai, 53, Ability.Filters.CloseVehicleEnemy, 1)
+
+    -- Warp Time
+    if (self.squad_ai:IsInCombat()) then
+        if (self.squad_ai:CanDoAbility(320)) then  -- chaos_warp_time_aspiringsorcerer
+            self.squad_ai:DoSpecialAbility(320)
+        end
+    end
+end
+
+function ChaosRubricSquadTactic:Upgrade()
+
+	-- If I am broken, don't upgrade!
+	if (self:IsAffectedByMorale() and self.squad_ai:IsBroken()) then
+		return
+	end
+
+	-- If there are no ressources available, don't upgrade!
+	if (not Tactic.Options.can_reinforce) then
+		return
+	end
+
+	-- Only upgrade if not reinforcing
+	if (not self.squad_ai:IsReinforcing()) then
+
+		if (self.squad_ai:HasUpgradableTrooper()) then
+			local class_type = cpu_manager:FindClosestEnemyPlayer():GetMajorityClassType()
+			self.squad_ai:DoBestUpgrade( class_type )
+		end
+	end
+end
+
+----------------------------------------
+-- File: 'chaosplaguesquadtactic.ai'
+-- Edited by Thudmeizer	@ 28.02.2016
+
+class 'ChaosPlagueSquadTactic' (ChaosMarineInfantryTactic)
+
+
+
+function ChaosPlagueSquadTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Chaos Plague Squad Tactic")
+end
+
+-- ChaosPlagueSquad
+function ChaosPlagueSquadTactic:DoAbilities()
+    -- Handle grenades through base class
+    ChaosMarineInfantryTactic.DoGrenadeAbilities(self)
+
+    -- Fumigating Smoke
+    if (self.squad_ai:IsInCombat()) then
+        if (self.squad_ai:CanDoAbility(146)) then  -- chaos_fumigating_smoke
+            self.squad_ai:DoSpecialAbility(146)
+        end
+    end
+
+    -- Call base class abilities (includes run and furious rage)
+    ChaosMarineInfantryTactic.DoAbilities(self)
+end
+
+function ChaosPlagueSquadTactic:Upgrade()
+
+	-- If I am broken, don't upgrade!
+	if (self:IsAffectedByMorale() and self.squad_ai:IsBroken()) then
+		return
+	end
+
+	-- If there are no ressources available, don't upgrade!
+	if (not Tactic.Options.can_reinforce) then
+		return
+	end
+
+	-- Only upgrade if not reinforcing
+	if (not self.squad_ai:IsReinforcing()) then
+
+		if (self.squad_ai:HasUpgradableTrooper()) then
+			local class_type = cpu_manager:FindClosestEnemyPlayer():GetMajorityClassType()
+			self.squad_ai:DoBestUpgrade( class_type )
+		end
+	end
+end
+
+function ChaosPlagueSquadTactic:Reinforce()
+
+  --always try for the actual leader first
+	if not self.squad_ai:IsReinforcing() then
+		if self.squad_ai:CanReinforce( false, 0 ) then
+		   self.squad_ai:DoReinforce( false, 0 )
+		end
+	end
+
+	if not self.squad_ai:IsReinforcing() then
+
+		-- try for different types of squad members
+		local iChampionIndex = 0
+        	local iIconBearerIndex = 1
+
+		local iNumChampion = self.squad_ai:GetLeaderCount( iChampionIndex )
+		local iNumIconBearer = self.squad_ai:GetLeaderCount( iIconBearerIndex )
+
+		-- Desired number of each leader type
+		local iDesiredChampion = 1
+		local iDesiredIconBearer = 1
+
+		-- Desired order of reinforcing
+		if iNumChampion < iDesiredChampion then
+			if self.squad_ai:CanReinforce( true, iChampionIndex ) then
+				self.squad_ai:DoReinforce( true, iChampionIndex )
+			end
+		elseif iNumIconBearer < iDesiredIconBearer then
+			if self.squad_ai:CanReinforce( true, iIconBearerIndex ) then
+				self.squad_ai:DoReinforce( true, iIconBearerIndex )
+			end
+		end
+	end
+end
+
+----------------------------------------
+-- File: 'chaosnoisesquadtactic.ai'
+-- Edited by Thudmeizer	@ 28.02.2016
+
+class 'ChaosNoiseSquadTactic' (ChaosMarineInfantryTactic)
+
+
+
+function ChaosNoiseSquadTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Chaos Noise Squad Tactic")
+end
+
+-- ChaosNoiseSquad
+function ChaosNoiseSquadTactic:DoAbilities()
+    -- Handle grenades through base class
+    ChaosMarineInfantryTactic.DoGrenadeAbilities(self)
+
+    -- Doom Siren
+    if (self.squad_ai:IsInCombat()) then
+        if (self.squad_ai:CanDoAbility(107)) then  -- chaos_doom_siren
+            self.squad_ai:DoSpecialAbility(107)
+        end
+    end
+
+    -- Call base class abilities (includes run and furious rage)
+    ChaosMarineInfantryTactic.DoAbilities(self)
+end
+
+function ChaosNoiseSquadTactic:Upgrade()
+
+	-- If I am broken, don't upgrade!
+	if (self:IsAffectedByMorale() and self.squad_ai:IsBroken()) then
+		return
+	end
+
+	-- If there are no ressources available, don't upgrade!
+	if (not Tactic.Options.can_reinforce) then
+		return
+	end
+
+	-- Only upgrade if not reinforcing
+	if (not self.squad_ai:IsReinforcing()) then
+
+		if (self.squad_ai:HasUpgradableTrooper()) then
+			local class_type = cpu_manager:FindClosestEnemyPlayer():GetMajorityClassType()
+			self.squad_ai:DoBestUpgrade( class_type )
+		end
+	end
+end
+
+function ChaosNoiseSquadTactic:Reinforce()
+
+  --always try for the actual leader first
+	if not self.squad_ai:IsReinforcing() then
+		if self.squad_ai:CanReinforce( false, 0 ) then
+		   self.squad_ai:DoReinforce( false, 0 )
+		end
+	end
+
+	if not self.squad_ai:IsReinforcing() then
+
+		-- try for different types of squad members
+		local iChampionIndex = 0
+        	local iIconBearerIndex = 1
+
+		local iNumChampion = self.squad_ai:GetLeaderCount( iChampionIndex )
+		local iNumIconBearer = self.squad_ai:GetLeaderCount( iIconBearerIndex )
+
+		-- Desired number of each leader type
+		local iDesiredChampion = 1
+		local iDesiredIconBearer = 1
+
+		-- Desired order of reinforcing
+		if iNumChampion < iDesiredChampion then
+			if self.squad_ai:CanReinforce( true, iChampionIndex ) then
+				self.squad_ai:DoReinforce( true, iChampionIndex )
+			end
+		elseif iNumIconBearer < iDesiredIconBearer then
+			if self.squad_ai:CanReinforce( true, iIconBearerIndex ) then
+				self.squad_ai:DoReinforce( true, iIconBearerIndex )
+			end
+		end
+	end
+end
+
+----------------------------------------
+-- File: 'chaosmarinesquadtactic.ai'
+-- Edited by Thudmeizer	@ 28.02.2016
+
+class 'ChaosMarineSquadTactic' (ChaosMarineInfantryTactic)
+
+
+
+function ChaosMarineSquadTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Chaos Marine Squad Tactic")
+end
+
+function ChaosMarineSquadTactic:DoAbilities()
+    -- Handle grenades through base class
+    ChaosMarineInfantryTactic.DoGrenadeAbilities(self)
+
+    -- Check if we can launch smoke
+    if (self.squad_ai:CanDoAbility(224)) then  -- chaos_smoke_grenades
+        local iRange = self.squad_ai:GetAbilityRange(224)
+        local oUnit = Ability.Filters.CloseHurt(self.squad_ai:GetPosition(), iRange, 1)
+        if (oUnit ~= nil and oUnit:IsInCombat() and cpu_manager:GetUnitStrength(oUnit) > 40) then
+            self.squad_ai:DoSpecialAbilitySquad(224, oUnit:GetSquad())
+        end
+    end
+
+    -- Call base class abilities (includes run and furious rage)
+    ChaosMarineInfantryTactic.DoAbilities(self)
+end
+
+function ChaosMarineSquadTactic:Upgrade()
+
+	-- If I am broken, don't upgrade!
+	if (self:IsAffectedByMorale() and self.squad_ai:IsBroken()) then
+		return
+	end
+
+	-- If there are no ressources available, don't upgrade!
+	if (not Tactic.Options.can_reinforce) then
+		return
+	end
+
+	-- Only upgrade if not reinforcing
+	if (not self.squad_ai:IsReinforcing()) then
+
+		if (self.squad_ai:HasUpgradableTrooper()) then
+			local class_type = cpu_manager:FindClosestEnemyPlayer():GetMajorityClassType()
+			self.squad_ai:DoBestUpgrade( class_type )
+		end
+	end
+end
+
+function ChaosMarineSquadTactic:Reinforce()
+
+  --always try for the actual leader first
+	if not self.squad_ai:IsReinforcing() then
+		if self.squad_ai:CanReinforce( false, 0 ) then
+		   self.squad_ai:DoReinforce( false, 0 )
+		end
+	end
+
+	if not self.squad_ai:IsReinforcing() then
+
+		-- try for different types of squad members
+		local iChampionIndex = 0
+        	local iIconBearerIndex = 1
+
+		local iNumChampion = self.squad_ai:GetLeaderCount( iChampionIndex )
+		local iNumIconBearer = self.squad_ai:GetLeaderCount( iIconBearerIndex )
+
+		-- Desired number of each leader type
+		local iDesiredChampion = 1
+		local iDesiredIconBearer = 1
+
+		-- Desired order of reinforcing
+		if iNumChampion < iDesiredChampion then
+			if self.squad_ai:CanReinforce( true, iChampionIndex ) then
+				self.squad_ai:DoReinforce( true, iChampionIndex )
+			end
+		elseif iNumIconBearer < iDesiredIconBearer then
+			if self.squad_ai:CanReinforce( true, iIconBearerIndex ) then
+				self.squad_ai:DoReinforce( true, iIconBearerIndex )
+			end
+		end
+	end
+end
+
+----------------------------------------
+-- File: 'bloodthirstertactic.ai'
+-- Edited by Thudmeizer	@ 17.02.2016
+
+class 'BloodThirsterTactic' (ChaosMarineInfantryTactic)
+
+
+
+function BloodThirsterTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("BloodThirster Tactic")
+end
+
+function BloodThirsterTactic:AutoBuildAddOn( addonSlot )
+	for e in self.squad_ai:GetEntities() do
+		local buildChannelBloodThirster = build_manager:GetBuildChannelFromID(e:GetID())
+		if (buildChannelBloodThirster ~= nil) then
+			local addOnID = buildChannelBloodThirster:GetItemIDAt(BuildChannelAI.PQ_AddOn, addonSlot)
+			if (buildChannelBloodThirster:IsBuilding() == 0 and buildChannelBloodThirster:CanAddToQueue(BuildChannelAI.PQ_AddOn, addOnID) == BuildChannelAI.CANBUILD_Ok) then
+				buildChannelBloodThirster:BuildAddOn(addOnID)
+				return
+			end
+		end
+	end
+	return
+end
+
+function BloodThirsterTactic:AlwaysAttack()
+	return true
+end
+
+function BloodThirsterTactic:DoAbilities()
+
+    Ability.DoAbility(self.squad_ai, 48, Ability.Filters.IsInCombat)  -- chaos_blood_lust
+
+    -- Call basic DoAbilities methods
+    ChaosMarineInfantryTactic.DoAbilities(self)
+end
+
+function BloodThirsterTactic:Upgrade()
+
+--	self:AutoBuildAddOn(0)	--	[addon_01] addon_commanders_cap_squad			4/1
+--	self:AutoBuildAddOn(1)	-- 	[addon_02] addon_commanders_cap_support			5/1
+--	self:AutoBuildAddOn(2)	-- 	[addon_03] addon_commanders_cap_relic			6/1
+--	self:AutoBuildAddOn(3)	-- 	[addon_04] addon_commanders_increase_production		5/1
+--	self:AutoBuildAddOn(4)	-- 	[addon_05] addon_commanders_increase_health		6/1
+--	self:AutoBuildAddOn(5)	-- 	[addon_06] addon_commanders_increase_morale		6/1
+--	self:AutoBuildAddOn(6)	-- 	[addon_07] addon_commanders_cap_squad_2			6
+--	self:AutoBuildAddOn(7)	-- 	[addon_08] addon_commanders_cap_support_2		8
+--	self:AutoBuildAddOn(8)	-- 	[addon_09] addon_commanders_increase_production_2	8
+
+   	if (cpu_manager:GetTierLevel() <= 4) then
+		local addon_random_commander_upgrades = math.random( 0,8 )	-- Randomize these addons
+		self:AutoBuildAddOn(addon_random_commander_upgrades)
+	end
+
+   	if (cpu_manager:GetTierLevel() > 4) then
+		self:AutoBuildAddOn(2)	-- Always build in late tiers to support the construction of Titans and late game ubers.
+	end
+end
+
+----------------------------------------
+-- File: 'bannerbearertactic.ai'
+-- Edited by Thudmeizer   @ 11.02.2016
+
+class 'IconBearerTactic' (ChaosMarineInfantryTactic)
+
+
+
+function IconBearerTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Icon Bearer Tactic")
+end
+
+function IconBearerTactic:IsAttacker()
+	return self:IsCommanderAttacker()
+end
+
+function IconBearerTactic:IsDefender()
+	return self:IsCommanderDefender()
+end
+
+function IconBearerTactic:Update()
+
+   if self:IsComplete() then
+      return
+   end
+
+	--state machine
+	if not InfantryTactic.Update( self ) then
+		return
+	end
+
+   --attach to squad
+   self:TryAttachSquad( false, false, 1000, 200, nil )
+
+end

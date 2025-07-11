@@ -1,0 +1,109 @@
+----------------------------------------
+-- File: 'necronvehicletactic.ai'
+-- Created by Thudmeizer @ 11.11.2016
+
+class 'NecronVehicleTactic' (VehicleTactic)
+
+function NecronVehicleTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Necron Vehicle Tactic")
+
+-- Disabled as limited deepstriking/summoning range makes it impractical for the AI to use.
+--[[
+	-- Vehicles are able to deepstrike
+	local sSquadName = squad_ai:GetSquadName()
+	if (sSquadName == "necron_aeonic_orb_squad" or
+		sSquadName == "necron_annihilation_barge_squad" or
+		sSquadName == "necron_doomsday_ark_squad" or
+		sSquadName == "necron_doomsday_monolith_squad" or
+		sSquadName == "necron_ghost_ark_squad" or
+		sSquadName == "necron_night_scythe_squad" or
+		sSquadName == "necron_obelisk_squad" or
+		sSquadName == "necron_restored_monolith_squad" or
+		sSquadName == "necron_siege_monolith_squad") then
+
+		-- Vehicles are able to enter deepstrike building
+		self.m_iDeepStrikeBlueprintID = cpu_manager.stats:GetBuildingID( "necron_summoning_core_big" )
+	end
+]]
+	-- Set Stuck Unit Positions
+	self.initialPosition = self.squad_ai:GetPosition()
+	self.isStuck = false
+end
+
+-- Check if the vehicle should dance away in melee
+function NecronVehicleTactic:CheckVehicleDance(sName)
+
+	if (sName == "necron_destroyer_squad" or
+		sName == "necron_heavy_destroyer_squad") then
+		return true
+	end
+	return false
+end
+
+function NecronVehicleTactic:DoAbilities()
+--[[
+	-- Gauss Weapon Overcharge: the squad will receive a boost in maximum damage, but a critical reduction in movement speed for a duration.
+	local truegauss_id = cpu_manager.stats:GetAbilityID( "UA_necron_truegauss" )
+	if (self.squad_ai:CanDoAbility( truegauss_id )) then
+		if (self.squad_ai:IsInCombat() and self.squad_ai:GetHealthPercentage() > 0.5) then
+			Ability.DoAbilityArea( self.squad_ai, truegauss_id, Ability.Filters.CloseEnemy, 20, 5 )
+		end
+	end
+
+	-- RAM!!! - The vehicle will sacrifice combat accuracy in exchange for extra speed and the ability to knock down infantry wherever the vehicle goes.
+	-- Vehicle gains a 60% movement speed increase and will knock down infantry continuously on contact.
+	local rammingspeed_id = cpu_manager.stats:GetAbilityID( "UA_all_bumpertank" )
+	if (self.squad_ai:IsInCombat() and self.squad_ai:IsInStateMove()) then
+		if (self.squad_ai:CanDoAbility( rammingspeed_id )) then
+			self.squad_ai:DoSpecialAbility( rammingspeed_id )
+		end
+	end
+]]
+	-- Jump squads' unstuck code call.
+	-- Checks jump-able stuck squads, and force them to jump nearby
+   	if self.squad_ai:CanJump() then
+        	self:SolveStuckCase()
+	end
+
+	-- Call standard method
+	VehicleTactic.DoAbilities(self)
+end
+
+-- Unstuck Code
+function NecronVehicleTactic:SolveStuckCase()
+
+	local iPosition = self.squad_ai:GetPosition()
+    	if iPosition.x ~= self.initialPosition.x or iPosition.z ~= self.initialPosition.z then
+        	self.isStuck = false
+    	elseif (self.squad_ai:IsInStateMove() or self.squad_ai:IsInStateAttackMove()) and not self.squad_ai:IsInCombat()
+    		and iPosition.x == self.initialPosition.x and iPosition.z == self.initialPosition.z then
+        	self.isStuck = true
+    	end
+    	if self.isStuck then
+        	self:ForceSquadJumpNear(iPosition)
+	end
+    	self.initialPosition = self.squad_ai:GetPosition()
+end
+
+function NecronVehicleTactic:ForceSquadJumpNear(pos)
+
+	-- Try to jump somewhere near, perform 16 checks for a viable position
+    	local jumpDisSqr = sqr(self.squad_ai:GetJumpDistance())
+    	for iLoop1 = 1, 16 do
+        	-- Create a jump position
+        	local vJumpPosition = pos
+        	local vDir = cpu_manager:GetDirectionToEnemy(pos)
+        	vJumpPosition.x = vJumpPosition.x + vDir.x * math.random(-20, 50)
+        	vJumpPosition.z = vJumpPosition.z + vDir.z * math.random(-20, 50)
+        	-- Check if target position is in range and if unit is able to jump to target position
+        	local iDistance = distance_sqr(vJumpPosition, pos)
+        	if iDistance < jumpDisSqr and self.squad_ai:CanJumpToPosition(vJumpPosition) then
+            		-- Jump to position
+            		self.squad_ai:DoJump(vJumpPosition)
+            		self.last_jump = g_iGMT
+            		self.m_iLastGatherMove = self.last_jump - 10
+            		return
+		end
+	end
+end

@@ -1,0 +1,101 @@
+----------------------------------------
+-- File: 'razorbacktactic.ai'
+-- Created by CornCobMan	@ 25.06.2009
+-- Edited by Thudmeizer 	@ 04.05.2016
+
+class 'RazorbackTactic' (SpaceMarineVehicleTactic)
+
+Razorback = {}
+
+function RazorbackTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Razorback Tactic")
+	
+	-- Vehicle is a light transport
+	self.m_iTransportVehicle = 1
+	self.m_iTransportSlots = 1
+end
+
+function RazorbackTactic:InitAbilities()
+
+	-- Init ability ID's
+	if (Razorback.smoke_id == nil) then
+		Razorback.smoke_id = cpu_manager.stats:GetAbilityID( "marines_smoke_launchers" )	
+	end
+
+	if (Razorback.laymines_id == nil) then
+		Razorback.laymines_id = cpu_manager.stats:GetAbilityID( "marines_laymines" )
+	end
+
+	if (Razorback.abilityrecharge_id == nil) then
+		Razorback.abilityrecharge_id = cpu_manager.stats:GetAbilityID( "all_transport_abilityrecharge" )
+	end
+
+	if (Razorback.heal_id == nil) then
+		Razorback.heal_id = cpu_manager.stats:GetAbilityID( "all_transport_heal" )
+	end
+
+	if (Razorback.reinforce_id == nil) then
+		Razorback.reinforce_id = cpu_manager.stats:GetAbilityID( "all_transport_reinforce" )
+	end
+end
+
+function RazorbackTactic:DoAbilities()
+
+	-- Check if we can launch smoke
+	if (self.squad_ai:CanDoAbility(Razorback.smoke_id)) then
+	
+		-- Search a squad
+		local iRange = self.squad_ai:GetAbilityRange(Razorback.smoke_id)
+		local oUnit = Ability.Filters.CloseHurt(self.squad_ai:GetPosition(), iRange, 1)
+		if (oUnit ~= nil and oUnit:IsInCombat() and cpu_manager:GetUnitStrength(oUnit) > 150) then
+			self.squad_ai:DoSpecialAbilitySquad(Razorback.smoke_id, oUnit:GetSquad())
+		end
+	end
+
+	local iRequisition = resource_manager:GetResourceAmount():Get( ResourceAmount.RT_Requisition )
+	local iPower = resource_manager:GetResourceAmount():Get( ResourceAmount.RT_Power )
+	
+	-- Try to activate abilities.
+	if (self.squad_ai:CanDoAbility( Razorback.laymines_id )) then
+		if (iRequisition >= 4000 and iPower >= 4000 and self:IsMoving()) or 
+			(iRequisition >= 1000 and iPower >= 1000 and self.squad_ai:IsInCombat()) then
+			self.squad_ai:DoSpecialAbility( Razorback.laymines_id )
+		end
+	end
+
+	-- Search a squad to heal
+	local iRange = self.squad_ai:GetAbilityRange(Razorback.heal_id)
+	local oUnit = Ability.Filters.CloseHurt(self.squad_ai:GetPosition(), iRange, 1)
+	if (oUnit ~= nil and oUnit:IsInCombat() and cpu_manager:GetUnitStrength(oUnit) > 150) then
+		self.squad_ai:DoSpecialAbility(Razorback.heal_id)
+	end
+
+	-- Search a squad to recharge abilities
+	local iRange = self.squad_ai:GetAbilityRange(Razorback.abilityrecharge_id)
+	local oUnit = Ability.Filters.CloseHurt(self.squad_ai:GetPosition(), iRange, 1)
+	if (oUnit ~= nil and oUnit:IsInCombat() and cpu_manager:GetUnitStrength(oUnit) > 250) then
+		self.squad_ai:DoSpecialAbility(Razorback.abilityrecharge_id)
+	end
+
+	-- Search a squad to help reinforce
+	local iRange = self.squad_ai:GetAbilityRange(Razorback.reinforce_id)
+	local oUnit = Ability.Filters.CloseHurt(self.squad_ai:GetPosition(), iRange, 1)
+	if (oUnit ~= nil and oUnit:IsInCombat() and cpu_manager:GetUnitStrength(oUnit) < 150 and oUnit:GetNumTroopers() <= 2) then
+		self.squad_ai:DoSpecialAbilitySquad(Razorback.reinforce_id, oUnit:GetSquad())
+	end
+
+	-- Call standard method
+	SpaceMarineVehicleTactic.DoAbilities(self)
+end
+
+function RazorbackTactic:Upgrade()
+
+	-- If there are no ressources available, don't upgrade!
+	if (not Tactic.Options.can_reinforce) then
+		return
+	end
+  
+	local class_type = cpu_manager:FindClosestEnemyPlayer():GetMajorityClassType()
+		self.squad_ai:DoBestUpgrade( class_type )
+end

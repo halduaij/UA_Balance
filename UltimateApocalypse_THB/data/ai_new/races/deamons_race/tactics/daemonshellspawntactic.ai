@@ -1,0 +1,125 @@
+----------------------------------------
+-- File: 'daemonshellspawntactic.ai'
+-- Edited by Thudmeizer @ 11.05.2016
+-- Edited by Cylarne_04 2011
+-- Edited by CornCobMan 03/06/2013
+
+class 'DaemonsHellSpawnTactic' (DaemonsInfantryTactic)
+
+DaemonsHellSpawn = {}
+
+function DaemonsHellSpawnTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Daemons Hell Spawn Tactic")
+
+	self.timedDirectSpawnAbility = Timer( DaemonsHellSpawnTactic.DoDirectSpawnAbility, self, 5 )
+end
+
+function DaemonsHellSpawnTactic:AutoBuildResearch( researchSlot )
+	for e in self.squad_ai:GetEntities() do
+		local buildChannelDaemonsHellSpawn = build_manager:GetBuildChannelFromID(e:GetID())
+		if (buildChannelDaemonsHellSpawn ~= nil) then
+			local ResearchID = buildChannelDaemonsHellSpawn:GetItemIDAt(BuildChannelAI.PQ_Research, researchSlot)
+			if (buildChannelDaemonsHellSpawn:IsBuilding() == 0 and buildChannelDaemonsHellSpawn:CanAddToQueue(BuildChannelAI.PQ_Research, ResearchID) == BuildChannelAI.CANBUILD_Ok) then			
+				buildChannelDaemonsHellSpawn:BuildResearch(ResearchID)
+				return
+			end
+		end
+	end
+	return
+end
+
+function DaemonsHellSpawnTactic:IsAttacker()
+	return false
+end
+
+function DaemonsHellSpawnTactic:IsDefender()
+	return true
+end
+
+-- Hellspawn is allowed to retreat even directly after a jump
+function DaemonsHellSpawnTactic:SetTarget( target, variant_type )
+
+	self.variant_type = variant_type
+	self.variant_type = variant_type
+       if self.variant_type==Tactic.Variant.Vector then
+    self.target = Vector3f(target)
+       elseif self.variant_type==Tactic.Variant.SquadAI then
+    self.target = target
+       elseif self.variant_type==Tactic.Variant.BaseAI then
+    self.target = target
+       end
+	self.m_iMoveDelay = 0
+	self.last_jump = 0
+end
+
+function DaemonsHellSpawnTactic:InitAbilities()
+
+	-- Init ability ID's
+	if (DaemonsHellSpawn.doomblast_id == nil) then
+		DaemonsHellSpawn.doomblast_id = cpu_manager.stats:GetAbilityID( "UA_daemons_doom_blast" )	
+	end
+	
+	if (DaemonsHellSpawn.portal_id == nil) then
+		DaemonsHellSpawn.portal_id = cpu_manager.stats:GetAbilityID( "UA_daemons_warp_portal_hellspawn" )	
+	end
+
+	if (DaemonsHellSpawn.warpfire_id == nil) then
+		DaemonsHellSpawn.warpfire_id = cpu_manager.stats:GetAbilityID( "UA_daemons_warpfire" )	
+	end	
+end
+
+function DaemonsHellSpawnTactic:DoAbilities()
+
+	local iPower = resource_manager:GetResourceAmount():Get( ResourceAmount.RT_Power )
+
+	if ( iPower >= 1000 ) then
+		Ability.DoAbilityPos( self.squad_ai, DaemonsHellSpawn.doomblast_id, Ability.Filters.CloseSquadEnemy, 4 )
+		Ability.DoAbilityPos( self.squad_ai, DaemonsHellSpawn.doomblast_id, Ability.Filters.CloseMonsterEnemy, 4 )
+	end
+
+	-- Use Warp Portal offensively
+	Ability.DoAbilityPos( self.squad_ai, DaemonsHellSpawn.portal_id, Ability.Filters.CloseSquadEnemy, 5 )
+	Ability.DoAbilityPos( self.squad_ai, DaemonsHellSpawn.portal_id, Ability.Filters.CloseMonsterEnemy, 6 )
+
+	-- Use Warp Fire
+	Ability.DoAbilityPos( self.squad_ai, DaemonsHellSpawn.warpfire_id, Ability.Filters.CloseEnemy, 5 )
+
+	-- Try to spawn Furies
+	if (self.timedDirectSpawnAbility ~= nil) then
+		self.timedDirectSpawnAbility:Call()
+	else
+		DaemonsHellSpawnTactic.DoDirectSpawnAbility(self)
+	end	
+end
+
+function DaemonsHellSpawnTactic:DoDirectSpawnAbility()
+
+	-- Spawn Furies in combat
+	if (self.squad_ai:CanDirectSpawn()) then 
+		self.squad_ai:DoDirectSpawn()
+	end
+end
+
+function DaemonsHellSpawnTactic:Upgrade()
+
+--	self:AutoBuildResearch(0)	-- [research_01] daemons_transform_research
+--	self:AutoBuildResearch(1)	-- [research_02] daemons_research_planetary_exterminator
+
+	if not (cpu_manager.cpu_player:IsResearchComplete("daemons_transform_research")) then
+		self:AutoBuildResearch(0) -- Transform
+	elseif not (cpu_manager.cpu_player:IsResearchComplete("daemons_research_planetary_exterminator")) then
+		self:AutoBuildResearch(1) -- Planetary Exterminator
+	end
+end
+
+function DaemonsHellSpawnTactic:Update()
+
+	-- State machine
+	if (not InfantryTactic.Update( self )) then
+		return
+	end
+
+	-- Check if we are in serious trouble
+	self:EmergencyRetreat()
+end

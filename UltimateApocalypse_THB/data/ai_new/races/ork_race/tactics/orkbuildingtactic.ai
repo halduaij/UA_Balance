@@ -1,0 +1,28 @@
+----------------------------------------
+-- File: 'Orkbuildingtactic.ai'
+-- Edited by Thudmeizer	@ 16.03.2016
+
+class 'OrkBuildingTactic' (BaseTactic)
+
+OrkBuilding = {}
+
+function OrkBuildingTactic:__init( base_ai ) super( base_ai )
+
+	self:SetName("Ork Building Tactic")
+end
+
+function OrkBuildingTactic:InitAbilities()
+    if (OrkBuilding.repair_id == nil) then
+        OrkBuilding.repair_id = 3
+        print("Ork Repair ID set to: " .. tostring(OrkBuilding.repair_id))
+    end
+end
+
+function OrkBuildingTactic:DoAbilities()
+    if (self.base_ai:GetHealthPercentage() < 0.5) then
+        if (self.base_ai:CanDoAbility(OrkBuilding.repair_id)) then
+            self.base_ai:DoSpecialAbility(OrkBuilding.repair_id)
+            print("Attempting repair on Ork building at " .. tostring(self.base_ai:GetHealthPercentage() * 100) .. "% health")
+        end
+    end
+end

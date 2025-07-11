@@ -1,0 +1,365 @@
+-- Consolidated space marine unit class imports
+-- CannibalToast 2025
+import('Races/space_marine_race/Tactics/SpaceMarineInfantryTactic.ai')
+
+----------------------------------------
+-- DeathwatchTactic Class
+----------------------------------------
+class 'DeathwatchTactic' (SpaceMarineInfantryTactic)
+
+function DeathwatchTactic:__init()
+    SpaceMarineInfantryTactic.__init(self)
+end
+
+function DeathwatchTactic:DoAbilities()
+    -- Get ability ID from centralized cache
+    local inferno_id = self:GetAbilityID("DEATHWATCH_INFERNO")
+    
+    -- Skip if no valid ID was found
+    if inferno_id > 0 then
+        -- Try multiple target types in sequence
+        local result = Ability.DoAbilityTarget(self.squad_ai, inferno_id, Ability.Filters.CloseMonsterEnemy, 3)
+        
+        -- Try remaining targets only if the first attempt failed
+        if not result then
+            result = Ability.DoAbilityTarget(self.squad_ai, inferno_id, Ability.Filters.CloseVehicleEnemy, 1)
+        end
+        
+        if not result then
+            result = Ability.DoAbilityTarget(self.squad_ai, inferno_id, Ability.Filters.CloseCommanderEnemy, 1)
+        end
+        
+        if not result then
+            result = Ability.DoAbilityTargetEntity(self.squad_ai, inferno_id, Ability.EntityFilters.CloseBaseEntityEnemy, 1)
+        end
+    end
+    
+    -- Use sabotage if ID is valid
+    if sabotage_id > 0 then
+        Ability.DoAbilityTarget(self.squad_ai, sabotage_id, Ability.Filters.CloseVehicleEnemy, 1)
+        Ability.DoAbilityTargetEntity(self.squad_ai, sabotage_id, Ability.EntityFilters.CloseBaseEntityEnemy, 1)
+    end
+
+    -- Call parent function for run ability
+    if self.squad_ai then
+        self:CheckForRun(self.squad_ai)
+    end
+end
+
+function DeathwatchTactic:IsDefender()
+    return self:IsCommanderDefender()
+end
+
+function DeathwatchTactic:IsAttacker()
+    return self:IsCommanderAttacker()
+end
+
+----------------------------------------
+-- DevastatorTactic Class
+----------------------------------------
+class 'DevastatorTactic' (SpaceMarineInfantryTactic)
+
+----------------------------------------
+-- SternguardTactic Class
+----------------------------------------
+class 'SternguardTactic' (SpaceMarineInfantryTactic)
+
+----------------------------------------
+-- TacticalMarineTactic Class
+----------------------------------------
+class 'TacticalMarineTactic' (SpaceMarineInfantryTactic)
+
+----------------------------------------
+-- ApothecaryTactic Class
+----------------------------------------
+class 'ApothecaryTactic' (SpaceMarineInfantryTactic)
+
+function ApothecaryTactic:__init(squad_ai)
+    SpaceMarineInfantryTactic.__init(self, squad_ai)
+    self:SetName("Apothecary Tactic")
+ end
+
+function ApothecaryTactic:IsAttacker()
+    return self:IsCommanderAttacker()
+end
+
+function ApothecaryTactic:IsDefender()
+    return self:IsCommanderDefender()
+end
+
+function ApothecaryTactic:Update()
+    if self:IsComplete() then
+        return
+    end
+
+    -- State machine with error handling
+    local success, error = pcall(function()
+        if not InfantryTactic.Update(self) then
+            return
+        end
+    end)
+
+    if not success then
+        return
+    end
+
+    -- Attach to squad with optimized parameters
+    self:TryAttachSquad(false, false, 1000, 200, nil)
+end
+
+----------------------------------------
+-- BannerBearerTactic Class
+----------------------------------------
+class 'BannerBearerTactic' (SpaceMarineInfantryTactic)
+
+function BannerBearerTactic:__init(squad_ai)
+    SpaceMarineInfantryTactic.__init(self, squad_ai)
+    self:SetName("Banner Bearer Tactic")
+end
+
+function BannerBearerTactic:IsAttacker()
+    return self:IsCommanderAttacker()
+end
+
+function BannerBearerTactic:IsDefender()
+    return self:IsCommanderDefender()
+end
+
+function BannerBearerTactic:Update()
+    if self:IsComplete() then
+        return
+    end
+
+    -- State machine with error handling
+    local success, error = pcall(function()
+        if not InfantryTactic.Update(self) then
+            return
+        end
+    end)
+
+    if not success then
+        return
+    end
+
+    -- Attach to squad with optimized parameters
+    self:TryAttachSquad(false, false, 1000, 200, nil)
+end
+
+----------------------------------------
+-- TechmarineTactic Class
+----------------------------------------
+class 'TechmarineTactic' (SpaceMarineInfantryTactic)
+
+function TechmarineTactic:__init(squad_ai)
+    SpaceMarineInfantryTactic.__init(self, squad_ai)
+    self:SetName("Techmarine Tactic")
+    
+    -- Initialize engineering tracking variables
+    self.damagedBuilding = nil
+    self.unfinishedBuilding = nil
+end
+
+function TechmarineTactic:DoAbilities()
+    -- Use parent class DoGrenades method for all grenades (centralized approach)
+    -- This handles: flashbang, frag, inferno, krak, melta (per allowed_grenades in parent class)
+    if self.allowed_grenades and table.getn(self.allowed_grenades) > 0 then
+        self:DoGrenades(self.allowed_grenades)
+    end
+    
+    -- Get ability IDs from centralized cache for special abilities
+    local demo_charge_id = self:GetAbilityID("DEMO_CHARGE")
+    local demo_detonate_id = self:GetAbilityID("DEMO_DETONATE")
+    local turret_id = self:GetAbilityID("TURRET")
+    
+    -- Try to place demo charge if ID is valid
+    if demo_charge_id then
+        Ability.DoAbilityPos(self.squad_ai, demo_charge_id, Ability.Filters.CloseEnemy, 24)
+        Ability.DoAbilityPos(self.squad_ai, demo_charge_id, Ability.EntityFilters.CloseBaseEntityEnemy, 3)
+    end
+
+    -- Try to detonate demo charge if ID is valid
+    if demo_detonate_id and self.squad_ai:CanDoAbility(demo_detonate_id) then
+        self.squad_ai:DoSpecialAbility(demo_detonate_id)
+    end
+
+    -- Try to place turret if ID is valid
+    if turret_id then
+        Ability.DoAbilityPos(self.squad_ai, turret_id, Ability.Filters.CloseEnemy, 25)
+        Ability.DoAbilityPos(self.squad_ai, turret_id, Ability.EntityFilters.CloseBaseEntityEnemy, 5)
+    end
+    
+    -- Call both standard utility functions for morale and movement
+    self:CheckForBroken()
+    self:CheckForRun()
+end
+
+-- Engineering functions
+function TechmarineTactic:GetDmgdOrUnfnsdBuildingWithin(range)
+    -- Get player
+    local player = cpu_manager.player_stats:GetPlayerID()    
+    
+    -- Find damaged building
+    for build_id, building in pairs(build_manager:GetBuildingsByPlayer(player)) do
+        -- Check if damaged
+        if (building:IsValid() and building:CanBeRepaired()) then
+            local health_percent = building:GetHealth() / building:GetMaxHealth() * 100
+            if (health_percent < 60) then
+                if (self.squad_ai:GetPosition():GetDistance(building:GetPosition()) < range) then
+                    return building
+                end
+            end
+        end
+    end
+    
+    -- Find unfinished building
+    for build_id, building in pairs(build_manager:GetUnfinishedBuildingsByPlayer(player)) do
+        if (building ~= nil) then
+            if (self.squad_ai:GetPosition():GetDistance(building:GetPosition()) < range) then
+                return building
+            end
+        end
+    end
+    
+    -- No suitable building found
+    return nil
+end
+
+function TechmarineTactic:DoEngineerDuties()
+    -- Check if we're already busy with a building
+    if (self.squad_ai:IsEngineer() and not self.squad_ai:IsInCombat()) then
+        -- Try to find a nearby damaged or unfinished building
+        local building = self:GetDmgdOrUnfnsdBuildingWithin(50)
+        
+        if (building ~= nil) then
+            -- If building is damaged, repair it
+            if (building:CanBeRepaired()) then
+                self.squad_ai:DoRepairBase(building:GetID())
+                return true
+            -- If building is unfinished, help build it
+            elseif (building:IsUnderConstruction()) then
+                self.squad_ai:DoBuildingAssist(building:GetID())
+                return true
+            end
+        end
+    end
+    
+    -- No building to work on
+    return false
+end
+
+function TechmarineTactic:Update()
+    if self:IsComplete() then
+        return
+    end
+
+    -- State machine with error handling
+    local success, error = pcall(function()
+        if not InfantryTactic.Update(self) then
+            return
+        end
+    end)
+
+    if not success then
+        return
+    end
+    
+    -- Do engineer duties if not in combat
+    if (self.squad_ai:IsEngineer() and not self.squad_ai:IsInCombat()) then
+        self:DoEngineerDuties()
+    end
+
+    -- Check if we are in serious trouble
+    self:EmergencyRetreat()
+end
+
+function TechmarineTactic:IsDefender()
+    return false
+end
+
+function TechmarineTactic:IsAttacker()
+    return false
+end
+
+----------------------------------------
+-- VanguardTactic Class
+----------------------------------------
+class 'VanguardTactic' (SpaceMarineInfantryTactic)
+
+----------------------------------------
+-- TerminatorTactic Class
+----------------------------------------
+class 'TerminatorTactic' (SpaceMarineInfantryTactic)
+
+----------------------------------------
+-- AssaultTerminatorTactic Class
+----------------------------------------
+class 'AssaultTerminatorTactic' (SpaceMarineInfantryTactic)
+
+----------------------------------------
+-- ScoutTactic Class
+----------------------------------------
+class 'ScoutTactic' (SpaceMarineInfantryTactic)
+
+-- ScoutTactic now uses dynamic ability lookup from parent class
+function ScoutTactic:__init(squad_ai)
+    SpaceMarineInfantryTactic.__init(self, squad_ai)
+end
+
+function ScoutTactic:DoAbilities()
+    -- Use grenades on enemies
+    self:DoGrenades(self.allowed_grenades)
+
+    -- Check for rally via centralized function
+    self:CheckForBroken()
+
+    -- Get ability ID dynamically
+    local infiltrate_id = self:GetAbilityID("INFILTRATE")
+    
+    -- Use infiltrate when not in combat if ID is valid
+    if infiltrate_id > 0 then
+        if not self.squad_ai:IsInCombat() then
+            if self.squad_ai:CanDoAbility(infiltrate_id) then
+                self.squad_ai:DoSpecialAbility(infiltrate_id)
+            end
+        end
+    end
+
+    -- Call parent function for run ability
+    if self.squad_ai then
+        self:CheckForRun(self.squad_ai)
+    end
+end
+
+----------------------------------------
+-- SkullProbeTactic Class
+----------------------------------------
+class 'SkullProbeTactic' (SpaceMarineInfantryTactic)
+
+function SkullProbeTactic:__init(squad_ai)
+    SpaceMarineInfantryTactic.__init(self, squad_ai)
+end
+
+function SkullProbeTactic:DoAbilities()
+    -- Get ability ID dynamically
+    local scan_id = self:GetAbilityID("SCAN")
+    
+    -- Use scan when not in combat and ID is valid
+    if scan_id > 0 then
+        if not self.squad_ai:IsInCombat() then
+            if self.squad_ai:CanDoAbility(scan_id) then
+                self.squad_ai:DoSpecialAbility(scan_id)
+            end
+        end
+    end
+    
+    -- Call parent function for run ability
+    SpaceMarineInfantryTactic.DoAbilities(self)
+end
+
+function SkullProbeTactic:IsDefender()
+    return true
+end
+
+function SkullProbeTactic:IsAttacker()
+    return false
+end

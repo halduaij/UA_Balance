@@ -1,0 +1,697 @@
+----------------------------------------
+-- File: 'enhanced_cpu_manager.ai'
+-- Enhanced CPU Manager for Warhammer 40k: Dawn of War Soulstorm
+-- Integrates all AI improvements and provides better coordination
+-- Compatible with Lua 5.1
+-- Created by AI Assistant @ 2024
+
+import('Core/ai_improvements.ai')
+import('Core/enhanced_config.ai')
+import('Core/strategies/enhanced_strategy.ai')
+import('Core/tactics/enhanced_tactic.ai')
+
+-- Enhanced CPU Manager class that extends the base CpuManager
+class 'EnhancedCpuManager'
+
+function EnhancedCpuManager:__init(cpu_player_id)
+    -- Call parent constructor
+    CpuManager.__init(self, cpu_player_id)
+    
+    -- Enhanced configuration system
+    self.enhanced_config = EnhancedConfig
+    self.current_config = self.enhanced_config:GetCurrentConfig()
+    
+    -- Performance monitoring
+    self.performance_monitor = AI_Improvements.PerformanceMonitor
+    
+    -- Enhanced strategy management
+    self.enhanced_strategies = {}
+    self.strategy_coordinator = self:CreateStrategyCoordinator()
+    
+    -- Enhanced tactic management
+    self.enhanced_tactics = {}
+    self.tactic_coordinator = self:CreateTacticCoordinator()
+    
+    -- AI learning and adaptation
+    self.learning_system = self:CreateLearningSystem()
+    
+    -- Threat analysis
+    self.threat_analyzer = self:CreateThreatAnalyzer()
+    
+    -- Resource optimization
+    self.resource_optimizer = self:CreateResourceOptimizer()
+    
+    -- Formation management
+    self.formation_manager = self:CreateFormationManager()
+    
+    -- Initialize enhanced systems
+    self:InitializeEnhancedSystems()
+end
+
+-- Create strategy coordinator for better strategy management
+function EnhancedCpuManager:CreateStrategyCoordinator()
+    local coordinator = {
+        active_strategies = {},
+        strategy_priorities = {},
+        strategy_transitions = {},
+        coordination_timer = 0
+    }
+    
+    function coordinator:AddStrategy(strategy)
+        table.insert(self.active_strategies, strategy)
+        self:UpdatePriorities()
+    end
+    
+    function coordinator:RemoveStrategy(strategy)
+        for i, active_strategy in self.active_strategies do
+            if active_strategy == strategy then
+                table.remove(self.active_strategies, i)
+                break
+            end
+        end
+        self:UpdatePriorities()
+    end
+    
+    function coordinator:UpdatePriorities()
+        -- Sort strategies by priority
+        table.sort(self.active_strategies, function(a, b)
+            return a:GetPriority() > b:GetPriority()
+        end)
+    end
+    
+    function coordinator:CoordinateStrategies(delta_time)
+        self.coordination_timer = self.coordination_timer + delta_time
+        
+        -- Update all strategies
+        for strategy in self.active_strategies do
+            strategy:Update()
+        end
+        
+        -- Resolve conflicts between strategies
+        self:ResolveStrategyConflicts()
+        
+        -- Coordinate resource allocation
+        self:CoordinateResourceAllocation()
+    end
+    
+    function coordinator:ResolveStrategyConflicts()
+        -- Implement conflict resolution logic
+        -- For now, just use priority-based resolution
+    end
+    
+    function coordinator:CoordinateResourceAllocation()
+        -- Implement resource coordination between strategies
+        -- For now, just use simple priority-based allocation
+    end
+    
+    return coordinator
+end
+
+-- Create tactic coordinator for better unit coordination
+function EnhancedCpuManager:CreateTacticCoordinator()
+    local coordinator = {
+        unit_groups = {},
+        formation_assignments = {},
+        coordination_timer = 0
+    }
+    
+    function coordinator:AddUnit(unit, tactic)
+        if not self.unit_groups[unit] then
+            self.unit_groups[unit] = {
+                tactic = tactic,
+                group_id = nil,
+                formation_position = nil
+            }
+        end
+    end
+    
+    function coordinator:RemoveUnit(unit)
+        self.unit_groups[unit] = nil
+    end
+    
+    function coordinator:UpdateTactics(delta_time)
+        self.coordination_timer = self.coordination_timer + delta_time
+        
+        -- Update all tactics
+        for unit, group in self.unit_groups do
+            if group.tactic then
+                group.tactic:Update()
+            end
+        end
+        
+        -- Coordinate unit movements
+        self:CoordinateUnitMovements()
+        
+        -- Coordinate combat actions
+        self:CoordinateCombatActions()
+    end
+    
+    function coordinator:CoordinateUnitMovements()
+        -- Group units by role and coordinate movements
+        local role_groups = {}
+        
+        for unit, group in self.unit_groups do
+            local role = group.tactic:GetUnitRole()
+            if not role_groups[role] then
+                role_groups[role] = {}
+            end
+            table.insert(role_groups[role], unit)
+        end
+        
+        -- Apply formation movements for each role group
+        for role, units in role_groups do
+            if table.getn(units) > 1 then
+                self:ApplyFormationToGroup(role, units)
+            end
+        end
+    end
+    
+    function coordinator:CoordinateCombatActions()
+        -- Coordinate attacks and defensive actions
+        local enemy_squads = cpu_manager.stats:GetEnemySquads()
+        
+        for unit, group in self.unit_groups do
+            if group.tactic then
+                -- Let individual tactics handle their own combat
+                -- but provide coordination hints
+                local context = {
+                    enemy_squads = enemy_squads,
+                    friendly_units = self.unit_groups,
+                    coordination_level = self.current_config.micro_management_level
+                }
+                group.tactic:UpdateCombatContext(context)
+            end
+        end
+    end
+    
+    function coordinator:ApplyFormationToGroup(role, units)
+        -- Apply appropriate formation based on role
+        local formation_type = "line"  -- Default
+        
+        if role == "support" then
+            formation_type = "circle"
+        elseif role == "harasser" then
+            formation_type = "wedge"
+        end
+        
+        -- Calculate center position
+        local center_x, center_y, center_z = 0, 0, 0
+        local count = table.getn(units)
+        
+        for i, unit in units do
+            local pos = unit:GetPosition()
+            center_x = center_x + pos.x
+            center_y = center_y + pos.y
+            center_z = center_z + pos.z
+        end
+        
+        if count > 0 then
+            center_x = center_x / count
+            center_y = center_y / count
+            center_z = center_z / count
+        end
+        
+        local center_position = { x = center_x, y = center_y, z = center_z }
+        local formation_positions = AI_Improvements.CalculateFormation(units, center_position, formation_type)
+        
+        -- Apply positions to units
+        for i, unit in units do
+            if formation_positions[unit] then
+                local target_pos = formation_positions[unit]
+                unit:MoveTo(target_pos.x, target_pos.y, target_pos.z)
+            end
+        end
+    end
+    
+    return coordinator
+end
+
+-- Create learning system for AI adaptation
+function EnhancedCpuManager:CreateLearningSystem()
+    local learning_system = {
+        performance_history = {},
+        adaptation_rate = 0.1,
+        learning_enabled = true
+    }
+    
+    function learning_system:RecordPerformance(metric, value)
+        if not self.performance_history[metric] then
+            self.performance_history[metric] = {}
+        end
+        
+        table.insert(self.performance_history[metric], {
+            value = value,
+            time = cpu_manager.cpu_player:GetGameTime()
+        })
+        
+        -- Keep only recent history
+        if table.getn(self.performance_history[metric]) > 100 then
+            table.remove(self.performance_history[metric], 1)
+        end
+    end
+    
+    function learning_system:GetAveragePerformance(metric, time_window)
+        if not self.performance_history[metric] then
+            return 0
+        end
+        
+        local current_time = cpu_manager.cpu_player:GetGameTime()
+        local sum = 0
+        local count = 0
+        
+        for _, record in self.performance_history[metric] do
+            if current_time - record.time <= time_window then
+                sum = sum + record.value
+                count = count + 1
+            end
+        end
+        
+        return count > 0 and sum / count or 0
+    end
+    
+    function learning_system:AdaptBehavior()
+        if not self.learning_enabled then
+            return
+        end
+        
+        -- Analyze performance and adapt
+        local resource_efficiency = self:GetAveragePerformance("resource_efficiency", 60)
+        local combat_effectiveness = self:GetAveragePerformance("combat_effectiveness", 60)
+        local strategic_success = self:GetAveragePerformance("strategic_success", 120)
+        
+        -- Adjust configuration based on performance
+        if resource_efficiency < 0.5 then
+            self:AdjustResourceFocus(0.1)
+        elseif resource_efficiency > 0.8 then
+            self:AdjustResourceFocus(-0.05)
+        end
+        
+        if combat_effectiveness < 0.4 then
+            self:AdjustCombatAggression(-0.1)
+        elseif combat_effectiveness > 0.7 then
+            self:AdjustCombatAggression(0.05)
+        end
+    end
+    
+    function learning_system:AdjustResourceFocus(adjustment)
+        -- Adjust resource management parameters
+        local config = cpu_manager.current_config
+        config.resource_focus = math.max(0.1, math.min(1.0, config.resource_focus + adjustment))
+    end
+    
+    function learning_system:AdjustCombatAggression(adjustment)
+        -- Adjust combat aggression parameters
+        local config = cpu_manager.current_config
+        config.aggression_level = math.max(0.1, math.min(1.0, config.aggression_level + adjustment))
+    end
+    
+    return learning_system
+end
+
+-- Create threat analyzer for better threat assessment
+function EnhancedCpuManager:CreateThreatAnalyzer()
+    local threat_analyzer = {
+        threat_history = {},
+        threat_patterns = {},
+        analysis_timer = 0
+    }
+    
+    function threat_analyzer:AnalyzeThreats()
+        local enemy_squads = cpu_manager.stats:GetEnemySquads()
+        local friendly_position = cpu_manager.start_pos
+        
+        local threats, total_threat = AI_Improvements.AssessThreat(enemy_squads, friendly_position)
+        
+        -- Store threat analysis
+        table.insert(self.threat_history, {
+            threats = threats,
+            total_threat = total_threat,
+            time = cpu_manager.cpu_player:GetGameTime()
+        })
+        
+        -- Keep only recent history
+        if table.getn(self.threat_history) > 50 then
+            table.remove(self.threat_history, 1)
+        end
+        
+        -- Analyze patterns
+        self:AnalyzeThreatPatterns()
+        
+        return threats, total_threat
+    end
+    
+    function threat_analyzer:AnalyzeThreatPatterns()
+        if table.getn(self.threat_history) < 10 then
+            return
+        end
+        
+        -- Analyze threat trends
+        local recent_threats = {}
+        local current_time = cpu_manager.cpu_player:GetGameTime()
+        
+        for _, record in self.threat_history do
+            if current_time - record.time <= 60 then
+                table.insert(recent_threats, record.total_threat)
+            end
+        end
+        
+        if table.getn(recent_threats) > 5 then
+            -- Calculate threat trend
+            local trend = self:CalculateTrend(recent_threats)
+            self.threat_patterns.trend = trend
+            
+            -- Detect threat spikes
+            local spike_threshold = self:CalculateAverage(recent_threats) * 1.5
+            local has_spike = false
+            
+            for _, threat in recent_threats do
+                if threat > spike_threshold then
+                    has_spike = true
+                    break
+                end
+            end
+            
+            self.threat_patterns.has_spike = has_spike
+        end
+    end
+    
+    function threat_analyzer:CalculateTrend(values)
+        if table.getn(values) < 2 then
+            return 0
+        end
+        
+        local sum_x = 0
+        local sum_y = 0
+        local sum_xy = 0
+        local sum_x2 = 0
+        local n = table.getn(values)
+        
+        for i, value in values do
+            sum_x = sum_x + i
+            sum_y = sum_y + value
+            sum_xy = sum_xy + i * value
+            sum_x2 = sum_x2 + i * i
+        end
+        
+        local slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x * sum_x)
+        return slope
+    end
+    
+    function threat_analyzer:CalculateAverage(values)
+        local sum = 0
+        for _, value in values do
+            sum = sum + value
+        end
+        return sum / table.getn(values)
+    end
+    
+    return threat_analyzer
+end
+
+-- Create resource optimizer for better resource management
+function EnhancedCpuManager:CreateResourceOptimizer()
+    local resource_optimizer = {
+        resource_history = {},
+        optimization_timer = 0
+    }
+    
+    function resource_optimizer:OptimizeResources()
+        local player_stats = cpu_manager.stats:GetPlayerStatsFromID(cpu_manager.player_id)
+        local efficiency = AI_Improvements.CalculateResourceEfficiency(player_stats)
+        
+        -- Store resource data
+        table.insert(self.resource_history, {
+            efficiency = efficiency,
+            time = cpu_manager.cpu_player:GetGameTime()
+        })
+        
+        -- Keep only recent history
+        if table.getn(self.resource_history) > 100 then
+            table.remove(self.resource_history, 1)
+        end
+        
+        -- Analyze resource patterns
+        self:AnalyzeResourcePatterns()
+        
+        -- Apply optimizations
+        self:ApplyResourceOptimizations(efficiency)
+    end
+    
+    function resource_optimizer:AnalyzeResourcePatterns()
+        if table.getn(self.resource_history) < 10 then
+            return
+        end
+        
+        -- Analyze resource efficiency trends
+        local recent_efficiencies = {}
+        local current_time = cpu_manager.cpu_player:GetGameTime()
+        
+        for _, record in self.resource_history do
+            if current_time - record.time <= 120 then
+                table.insert(recent_efficiencies, record.efficiency.overall_efficiency)
+            end
+        end
+        
+        if table.getn(recent_efficiencies) > 5 then
+            local avg_efficiency = self:CalculateAverage(recent_efficiencies)
+            local trend = self:CalculateTrend(recent_efficiencies)
+            
+            -- Store analysis results
+            self.resource_patterns = {
+                average_efficiency = avg_efficiency,
+                efficiency_trend = trend,
+                needs_optimization = avg_efficiency < 0.6
+            }
+        end
+    end
+    
+    function resource_optimizer:ApplyResourceOptimizations(efficiency)
+        if efficiency.overall_efficiency < 0.5 then
+            -- Apply aggressive resource optimization
+            self:OptimizeBuildOrder()
+            self:OptimizeUnitProduction()
+        elseif efficiency.overall_efficiency < 0.7 then
+            -- Apply moderate resource optimization
+            self:OptimizeBuildOrder()
+        end
+    end
+    
+    function resource_optimizer:OptimizeBuildOrder()
+        -- Implement build order optimization
+        -- This would analyze current build order and suggest improvements
+    end
+    
+    function resource_optimizer:OptimizeUnitProduction()
+        -- Implement unit production optimization
+        -- This would analyze unit composition and suggest changes
+    end
+    
+    function resource_optimizer:CalculateAverage(values)
+        local sum = 0
+        for _, value in values do
+            sum = sum + value
+        end
+        return sum / table.getn(values)
+    end
+    
+    function resource_optimizer:CalculateTrend(values)
+        if table.getn(values) < 2 then
+            return 0
+        end
+        
+        local sum_x = 0
+        local sum_y = 0
+        local sum_xy = 0
+        local sum_x2 = 0
+        local n = table.getn(values)
+        
+        for i, value in values do
+            sum_x = sum_x + i
+            sum_y = sum_y + value
+            sum_xy = sum_xy + i * value
+            sum_x2 = sum_x2 + i * i
+        end
+        
+        local slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x * sum_x)
+        return slope
+    end
+    
+    return resource_optimizer
+end
+
+-- Create formation manager for better unit coordination
+function EnhancedCpuManager:CreateFormationManager()
+    local formation_manager = {
+        active_formations = {},
+        formation_templates = {},
+        coordination_timer = 0
+    }
+    
+    function formation_manager:CreateFormation(units, formation_type)
+        local formation = {
+            units = units,
+            formation_type = formation_type,
+            center_position = self:CalculateCenterPosition(units),
+            positions = {},
+            active = true
+        }
+        
+        formation.positions = AI_Improvements.CalculateFormation(units, formation.center_position, formation_type)
+        table.insert(self.active_formations, formation)
+        
+        return formation
+    end
+    
+    function formation_manager:UpdateFormations(delta_time)
+        self.coordination_timer = self.coordination_timer + delta_time
+        
+        for formation in self.active_formations do
+            if formation.active then
+                self:UpdateFormation(formation)
+            end
+        end
+        
+        -- Remove inactive formations
+        for i = table.getn(self.active_formations), 1, -1 do
+            if not self.active_formations[i].active then
+                table.remove(self.active_formations, i)
+            end
+        end
+    end
+    
+    function formation_manager:UpdateFormation(formation)
+        -- Update formation center position
+        formation.center_position = self:CalculateCenterPosition(formation.units)
+        
+        -- Recalculate positions if needed
+        formation.positions = AI_Improvements.CalculateFormation(
+            formation.units, 
+            formation.center_position, 
+            formation.formation_type
+        )
+        
+        -- Apply positions to units
+        for unit in formation.units do
+            if formation.positions[unit] then
+                local target_pos = formation.positions[unit]
+                unit:MoveTo(target_pos.x, target_pos.y, target_pos.z)
+            end
+        end
+    end
+    
+    function formation_manager:CalculateCenterPosition(units)
+        local center_x, center_y, center_z = 0, 0, 0
+        local count = 0
+        
+        for unit in units do
+            local pos = unit:GetPosition()
+            center_x = center_x + pos.x
+            center_y = center_y + pos.y
+            center_z = center_z + pos.z
+            count = count + 1
+        end
+        
+        if count > 0 then
+            center_x = center_x / count
+            center_y = center_y / count
+            center_z = center_z / count
+        end
+        
+        return { x = center_x, y = center_y, z = center_z }
+    end
+    
+    return formation_manager
+end
+
+-- Initialize enhanced systems
+function EnhancedCpuManager:InitializeEnhancedSystems()
+    -- Set initial configuration based on race
+    local player_stats = self.stats:GetPlayerStatsFromID(self.player_id)
+    local race_name = player_stats:GetPlayerRaceName()
+    
+    self.enhanced_config:SetRace(race_name)
+    self.current_config = self.enhanced_config:GetCurrentConfig()
+    
+    -- Initialize performance monitoring
+    self.performance_monitor:StartTimer("initialization")
+    
+    -- Initialize learning system
+    self.learning_system:RecordPerformance("resource_efficiency", 0.5)
+    self.learning_system:RecordPerformance("combat_effectiveness", 0.5)
+    self.learning_system:RecordPerformance("strategic_success", 0.5)
+    
+    self.performance_monitor:EndTimer("initialization")
+end
+
+-- Enhanced update method
+function EnhancedCpuManager:Update()
+    self.performance_monitor:StartTimer("cpu_manager_update")
+    
+    -- Call parent update
+    CpuManager.Update(self)
+    
+    -- Update enhanced systems
+    local delta_time = 0.05  -- Assuming 0.05 second intervals
+    
+    -- Update configuration if needed
+    self.current_config = self.enhanced_config:GetPerformanceAdjustedConfig()
+    
+    -- Update strategy coordination
+    self.strategy_coordinator:CoordinateStrategies(delta_time)
+    
+    -- Update tactic coordination
+    self.tactic_coordinator:UpdateTactics(delta_time)
+    
+    -- Update threat analysis
+    self.threat_analyzer:AnalyzeThreats()
+    
+    -- Update resource optimization
+    self.resource_optimizer:OptimizeResources()
+    
+    -- Update formation management
+    self.formation_manager:UpdateFormations(delta_time)
+    
+    -- Update learning system
+    self.learning_system:AdaptBehavior()
+    
+    -- Cleanup performance monitoring
+    self.performance_monitor:Cleanup()
+    
+    self.performance_monitor:EndTimer("cpu_manager_update")
+end
+
+-- Enhanced strategy management
+function EnhancedCpuManager:AddEnhancedStrategy(strategy)
+    self.strategy_coordinator:AddStrategy(strategy)
+end
+
+function EnhancedCpuManager:RemoveEnhancedStrategy(strategy)
+    self.strategy_coordinator:RemoveStrategy(strategy)
+end
+
+-- Enhanced tactic management
+function EnhancedCpuManager:AddEnhancedTactic(unit, tactic)
+    self.tactic_coordinator:AddUnit(unit, tactic)
+end
+
+function EnhancedCpuManager:RemoveEnhancedTactic(unit)
+    self.tactic_coordinator:RemoveUnit(unit)
+end
+
+-- Get current configuration
+function EnhancedCpuManager:GetCurrentConfig()
+    return self.current_config
+end
+
+-- Get performance statistics
+function EnhancedCpuManager:GetPerformanceStats()
+    return {
+        strategy_update_time = self.performance_monitor:GetAverageTime("strategy_update"),
+        tactic_update_time = self.performance_monitor:GetAverageTime("tactic_update"),
+        threat_assessment_time = self.performance_monitor:GetAverageTime("threat_assessment"),
+        resource_optimization_time = self.performance_monitor:GetAverageTime("resource_efficiency")
+    }
+end
+
+-- Export the enhanced CPU manager
+return EnhancedCpuManager 

@@ -1,0 +1,28 @@
+----------------------------------------
+-- File: 'dhbuildingtactic.ai'
+-- Edited by Thudmeizer	@ 17.04.2016
+
+class 'DHBuildingTactic' (BaseTactic)
+
+DHBuilding = {}
+
+function DHBuildingTactic:__init( base_ai ) super( base_ai )
+
+	self:SetName("DH Building Tactic")
+end
+
+function DHBuildingTactic:InitAbilities()
+    if (DHBuilding.repair_id == nil) then
+        DHBuilding.repair_id = 3
+        print("DH Repair ID set to: " .. tostring(DHBuilding.repair_id))
+    end
+end
+
+function DHBuildingTactic:DoAbilities()
+    if (self.base_ai:GetHealthPercentage() < 0.5) then
+        if (self.base_ai:CanDoAbility(DHBuilding.repair_id)) then
+            self.base_ai:DoSpecialAbility(DHBuilding.repair_id)
+            print("Attempting repair on DH building at " .. tostring(self.base_ai:GetHealthPercentage() * 100) .. "% health")
+        end
+    end
+end

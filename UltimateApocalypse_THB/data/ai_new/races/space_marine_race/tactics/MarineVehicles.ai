@@ -1,0 +1,828 @@
+----------------------------------------
+-- File: 'MarineVehicleTactics.ai'
+-- Contains tactics for vehicle units
+----------------------------------------
+-- Load the base class file
+import('Races/space_marine_race/Tactics/SpaceMarineVehicleTactic.ai')
+
+MarineVehicles = {}
+
+-- Attack Bike Class
+-- Attack Bike Class
+class 'AttackbikeTactic' (SpaceMarineVehicleTactic)
+
+function AttackbikeTactic:__init(squad_ai)
+    super(squad_ai)
+    self:SetName("Attackbike Tactic")
+end
+
+function AttackbikeTactic:AlwaysAttack()
+    return true
+end
+
+function AttackbikeTactic:DoAbilities()
+    -- First initialize ability IDs if not already done
+    self:InitAbilityIDs()
+    
+    -- Do smoke launchers using direct key
+    self:DoSmokeLaunchers("SMOKE_STANDARD")
+
+    -- Do grenades using the optimized DoBikeGrenades function with string constants
+    local allowed_grenades = {
+        self.BIKE_GRENADES.FLASHBANG,
+        self.BIKE_GRENADES.FRAG, 
+        self.BIKE_GRENADES.INFERNO,
+        self.BIKE_GRENADES.KRAK, 
+        self.BIKE_GRENADES.MELTA,
+        self.BIKE_GRENADES.BURNOUT
+    }
+    self:DoBikeGrenades(allowed_grenades)
+end
+
+function AttackbikeTactic:Upgrade()
+    -- If there are no resources available, don't upgrade!
+    if (not Tactic.Options.can_reinforce) then
+        return
+    end
+    local class_type = cpu_manager:FindClosestEnemyPlayer():GetMajorityClassType()
+    self.squad_ai:DoBestUpgrade(class_type)
+end
+
+function AttackbikeTactic:CanOnlyDecap()
+    -- Prevent attack bikes from capturing points, only allow decapping
+    return true
+end
+
+-- Override the UrgentCapturing function to ensure attack bikes never try to cap
+function AttackbikeTactic:UrgentCapturing()
+    -- Attack bikes should never attempt to capture, only decap
+    -- This overrides the behavior in Tactic:UrgentCapturing()
+    if self.squad_ai:IsCapturing() then
+        -- If already capturing, check if we should continue
+        local oStrategicPoint = resource_manager:GetResourceEntityAt(self.squad_ai:GetPosition())
+        if oStrategicPoint ~= nil and cpu_manager:IsFriendly(oStrategicPoint:Owner()) then
+            -- Stop capturing if it's a friendly point
+            cpu_manager:DoMove(self.squad_ai, self.squad_ai:GetPosition(), true, "Stop capturing - can only decap")
+            return false
+        end
+    end
+    return false
+end
+
+-- Override BeginHoldState to prevent attack bikes from capturing
+function AttackbikeTactic:BeginHoldState()
+    -- Skip capturing checks in the parent class
+    if self:IsComplete() then
+        return
+    end
+    
+    -- Call parent function but skip the capturing logic
+    VehicleTactic.BeginHoldState(self)
+end
+
+-- Whirlwind Class
+class 'WhirlwindTactic' (SpaceMarineVehicleTactic)
+
+function WhirlwindTactic:__init(squad_ai)
+    super(squad_ai)
+    self:SetName("Whirlwind Tactic")
+end
+
+function WhirlwindTactic:IsAttacker()
+    return false
+end
+
+function WhirlwindTactic:IsDefender()
+    return true
+end
+
+function WhirlwindTactic:DoAbilities()
+    -- First initialize ability IDs if not already done
+    self:InitAbilityIDs()
+    
+    if self.squad_ai:IsAttacking() then
+        -- Do Whirlwind missiles using the missile system constant
+        self:DoMissileAbility(self.AbilityTypes.MISSILE.WHIRLWIND)
+        
+        -- Handle incendiary missiles with standardized access
+        local ability_id = self:GetAbilityID(self.AbilityTypes.MISSILE.INCENDIARY)
+        if not ability_id then
+            return
+        end
+        
+        -- Get missile config for health threshold
+        local config = self:GetMissileConfig(self.AbilityTypes.MISSILE.INCENDIARY)
+        local health_threshold = config and config.healthCheck or 0.5
+        
+        if self.squad_ai:IsUsingAbility(ability_id) then
+            -- Turn off ability if not attacking or health too low
+            if not self.squad_ai:IsAttacking() or self.squad_ai:GetHealthPercentage() < health_threshold then
+                self.squad_ai:DoSpecialAbility(ability_id)
+            end
+        elseif self.squad_ai:IsAttacking() and self.squad_ai:GetHealthPercentage() > health_threshold then
+            -- Turn on ability if attacking and health sufficient
+            self.squad_ai:DoSpecialAbility(ability_id)
+        end
+    end
+end
+
+-- Razorback Class
+class 'RazorbackTactic' (SpaceMarineVehicleTactic)
+
+function RazorbackTactic:__init(squad_ai)
+    super(squad_ai)
+    self:SetName("Razorback Tactic")
+    -- Vehicle is a light transport
+    self.m_iTransportVehicle = 1
+    self.m_iTransportSlots = 1
+end
+
+function RazorbackTactic:DoAbilities()
+    -- First initialize ability IDs if not already done
+    self:InitAbilityIDs()
+    
+    -- Do smoke launchers with standardized key
+    self:DoSmokeLaunchers("SMOKE_STANDARD")
+
+    -- Do transport abilities with standardized keys
+    self:DoTransportAbility(self.AbilityTypes.TRANSPORT.HEAL)
+    self:DoTransportAbility(self.AbilityTypes.TRANSPORT.REINFORCE)
+
+    -- Do mines with standardized approach
+    self:DoAbilityTarget(self.AbilityTypes.SUPPORT.LAY_MINES, "SUPPORT", self.AbilityTypes.SUPPORT.LAY_MINES)
+end
+
+function RazorbackTactic:Upgrade()
+    -- If there are no resources available, don't upgrade!
+    if (not Tactic.Options.can_reinforce) then
+        return
+    end
+    local class_type = cpu_manager:FindClosestEnemyPlayer():GetMajorityClassType()
+    self.squad_ai:DoBestUpgrade(class_type)
+end
+
+-- Land Speeder Class
+class 'LandspeederTactic' (SpaceMarineVehicleTactic)
+
+function LandspeederTactic:__init(squad_ai)
+    super(squad_ai)
+    self:SetName("Landspeeder Tactic")
+end
+
+function LandspeederTactic:DoAbilities()
+    -- First initialize ability IDs if not already done
+    self:InitAbilityIDs()
+    
+    -- Do sabotage on vehicles with standardized approach
+    self:DoAbilityTarget(self.AbilityTypes.SUPPORT.VEHICLE_SABOTAGE, "SUPPORT", self.AbilityTypes.SUPPORT.VEHICLE_SABOTAGE)
+end
+
+function LandspeederTactic:Upgrade()  
+    -- If there are no resources available, don't upgrade!
+    if (not Tactic.Options.can_reinforce) then
+        return
+    end
+    local class_type = cpu_manager:FindClosestEnemyPlayer():GetMajorityClassType()
+    self.squad_ai:DoBestUpgrade(class_type)
+end
+
+-- Land Raider Class
+class 'LandRaiderTactic' (SpaceMarineVehicleTactic)
+
+function LandRaiderTactic:__init(squad_ai)
+    super(squad_ai)
+    self:SetName("Land Raider Tactic")
+    -- Vehicle is a heavy transport
+    self.m_iTransportVehicle = 2
+    self.m_iTransportSlots = 3
+end
+
+function LandRaiderTactic:DoAbilities()
+    -- First initialize ability IDs if not already done
+    self:InitAbilityIDs()
+    
+    -- Machine Spirit check
+    local spirit = self.AbilityTypes.MACHINE_SPIRIT
+    if self.squad_ai:WasRecentlyHurt() and
+       not self.squad_ai:IsInStateMove() and
+       not self.squad_ai:IsInStateAttackMove() then
+        self:DoAbilitySimple(spirit)
+    end
+
+    -- Smoke Launchers
+    self:DoSmokeLaunchers(self.AbilityTypes.SMOKE.LAND_RAIDER)
+
+    -- Transport Abilities
+    local transport = self.AbilityTypes.TRANSPORT
+    self:DoTransportAbility(transport.HEAL)
+    self:DoTransportAbility(transport.ABILITY_RECHARGE)
+    self:DoTransportAbility(transport.REINFORCE)
+
+    -- Helios Missiles (standardized to use MISSILE namespace instead of MISSILES)
+    if self.squad_ai:IsAttacking() then
+        self:DoMissileAbility(self.AbilityTypes.MISSILE.HELIOS)
+    end
+
+    -- Prometheus Sensor and Jammer abilities
+    local iPower = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Power)
+    if iPower >= 500 then
+        local abilitySelector = math.random(1, 100)
+
+        if abilitySelector <= 10 then
+            -- Sensor Map (10% chance if enough power)
+            self:DoAbilitySimple(self.AbilityTypes.SUPPORT.SENSOR_MAP)
+        elseif abilitySelector <= 50 and self.squad_ai:IsInCombat() then
+            -- Jammer Map (40% chance if in combat and enough power)
+            self:DoAbilitySimple(self.AbilityTypes.SUPPORT.JAMMER_MAP)
+        end
+    end
+
+    -- Call basic vehicle abilities
+    SpaceMarineVehicleTactic.DoAbilities(self)
+end
+
+-- Land Raider Terminus Class
+class 'LandRaiderTerminusTactic' (SpaceMarineVehicleTactic)
+
+
+function LandRaiderTerminusTactic:__init(squad_ai)
+    super(squad_ai)
+    self:SetName("Land Raider Terminus Tactic")
+    -- Vehicle is a heavy transport
+    self.m_iTransportVehicle = 2
+    self.m_iTransportSlots = 5
+end
+
+function LandRaiderTerminusTactic:DoAbilities()
+    -- First initialize ability IDs if not already done
+    self:InitAbilityIDs()
+    
+    -- Machine Spirit check
+    local spirit = self.AbilityTypes.MACHINE_SPIRIT
+    if self.squad_ai:WasRecentlyHurt() and
+       not self.squad_ai:IsInStateMove() and
+       not self.squad_ai:IsInStateAttackMove() then
+        self:DoAbilitySimple(spirit)
+    end
+
+    -- Smoke Launchers
+    self:DoSmokeLaunchers(self.AbilityTypes.SMOKE.LAND_RAIDER)
+
+    -- Transport Abilities using our helper functions
+    local transport = self.AbilityTypes.TRANSPORT
+    self:DoTransportAbility(transport.HEAL)
+    self:DoTransportAbility(transport.ABILITY_RECHARGE)
+    self:DoTransportAbility(transport.REINFORCE)
+
+    -- Do basic abilities
+    SpaceMarineVehicleTactic.DoAbilities(self)
+end
+
+-- Dreadnought Class
+class 'DreadnoughtTactic' (SpaceMarineVehicleTactic)
+function DreadnoughtTactic:__init(squad_ai)
+    super(squad_ai)
+    self:SetName("Dreadnought Tactic")
+end
+function DreadnoughtTactic:DoAbilities()
+    -- First initialize ability IDs if not already done
+    self:InitAbilityIDs()
+    
+    -- Smoke Launchers
+    self:DoSmokeLaunchers(self.AbilityTypes.SMOKE.STANDARD)
+
+    -- HK Missiles (for Ironclad variant) - standardized to use MISSILE namespace instead of MISSILES
+    if self.squad_ai:IsAttacking() then
+        self:DoAbilityTarget(self.AbilityTypes.MISSILE.HK)
+        if self.squad_ai:CanDoAbility(self.AbilityTypes.MISSILE.HK.id2) then
+            Ability.DoAbilityTarget(self.squad_ai, self.AbilityTypes.MISSILE.HK.id2, self.AbilityTypes.MISSILE.HK.filter, self.AbilityTypes.MISSILE.HK.count)
+        end
+    end
+
+    -- Call basic vehicle abilities
+    SpaceMarineVehicleTactic.DoAbilities(self)
+end
+
+function DreadnoughtTactic:Upgrade()
+    -- If there are no resources available, don't upgrade!
+    if (not Tactic.Options.can_reinforce) then
+        return
+    end
+    local class_type = cpu_manager:FindClosestEnemyPlayer():GetMajorityClassType()
+    self.squad_ai:DoBestUpgrade(class_type)
+end
+
+-- Damocles Class
+class 'DamoclesTactic' (SpaceMarineVehicleTactic)
+
+function DamoclesTactic:__init(squad_ai)
+    super(squad_ai)
+    self:SetName("Damocles Tactic")
+end
+
+function DamoclesTactic:IsAttacker()
+    return false
+end
+
+function DamoclesTactic:IsDefender()
+    return true
+end
+
+function DamoclesTactic:DoAbilities()
+    -- First initialize ability IDs if not already done
+    self:InitAbilityIDs()
+    
+    -- Smoke Launchers
+    self:DoSmokeLaunchers(self.AbilityTypes.SMOKE.STANDARD)
+
+    -- Sensor Map
+    self:DoAbilitySimple(self.AbilityTypes.SUPPORT.SENSOR_MAP_DAMOCLES)
+
+    -- Jammer Map
+    self:DoAbilitySimple(self.AbilityTypes.SUPPORT.JAMMER_MAP_DAMOCLES)
+
+    -- Call basic vehicle abilities
+    SpaceMarineVehicleTactic.DoAbilities(self)
+end
+
+-- Warlord Class
+class 'WarlordTactic' (SpaceMarineVehicleTactic)
+Warlord = {}
+
+function WarlordTactic:__init(squad_ai)
+    super(squad_ai)
+    self:SetName("Warlord Tactic")
+    -- Vehicle is a super heavy transport
+    self.m_iTransportVehicle = 1
+    self.m_iTransportSlots = 8
+    Warlord.detectDelay = -1
+end
+
+function WarlordTactic:DoAbilities()
+    -- First initialize ability IDs if not already done
+    self:InitAbilityIDs()
+    
+    -- Detection Field
+    local detection = self.AbilityTypes.WARLORD.DETECTION
+    if self.squad_ai:CanDoAbility(detection.id) then
+        self:HandleDetectionField(detection)
+    end
+
+    -- Titan Stomp/Turret Mode
+    local turret = self.AbilityTypes.TITAN.TURRET
+    if self.squad_ai:IsInCombat() and self.squad_ai:IsInStateMove() then
+        if self.squad_ai:CanDoAbility(turret.id) then
+            Ability.DoAbilityArea(self.squad_ai, turret.id, Ability.Filters.CloseSquadEnemy, 10, 4)
+            Ability.DoAbilityArea(self.squad_ai, turret.id, Ability.Filters.CloseMonsterEnemy, 10, 4)
+        end
+    end
+
+    -- Air Strikes
+    self:HandleAirStrikes()
+end
+
+-- Helper function for Detection Field logic
+function WarlordTactic:HandleDetectionField(detection)
+    local iRange = self.squad_ai:GetAbilityRange(detection.id)
+    local target = Ability.Filters.CloseInfiltratedEnemy(self.squad_ai:GetPosition(), iRange, 1)
+
+    if not target then
+        target = Ability.Filters.CloseEnemy(self.squad_ai:GetPosition(), iRange, 1)
+    end
+
+    if target then
+        if self.detectDelay == -1 then
+            self.detectDelay = math.max(0, 30)
+            self.detectTime = g_iGMT + self.detectDelay
+        end
+
+        if g_iGMT < self.detectTime then
+            return
+        end
+
+        if target:IsAttacking() then
+            local pos = Vector3f(target:GetPosition())
+            pos.x = pos.x + math.random(-15, 15)
+            pos.z = pos.z + math.random(-15, 15)
+            self.squad_ai:DoSpecialAbilityPos(detection.id, pos)
+            self.detectDelay = -1
+        end
+    end
+end
+
+-- Helper function for Air Strike abilities
+function WarlordTactic:HandleAirStrikes()
+    local strikes = {
+        {id = self.AbilityTypes.WARLORD.VALKSTRIKE.id, range = 8},
+        {id = self.AbilityTypes.WARLORD.VALKSTRIKE2.id, range = 12},
+        {id = self.AbilityTypes.WARLORD.VULTSTRIKE.id, range = 8},
+        {id = self.AbilityTypes.WARLORD.VULTSTRIKE2.id, range = 12}
+    }
+
+    for _, strike in ipairs(strikes) do
+        if self.squad_ai:CanDoAbility(strike.id) then
+            local iRange = self.squad_ai:GetAbilityRange(strike.id)
+            local oSquad = Ability.Filters.CloseEnemy(self.squad_ai:GetPosition(), iRange, strike.range)
+            if oSquad and oSquad:IsAttacking() then
+                self.squad_ai:DoSpecialAbilitySquad(strike.id, oSquad:GetSquad())
+            end
+        end
+    end
+end
+
+class 'VindicatorTactic' (SpaceMarineVehicleTactic)
+
+function VindicatorTactic:__init(squad_ai)
+    super(squad_ai)
+    self:SetName("Vindicator Tactic")
+end
+
+function VindicatorTactic:DoAbilities()
+    -- Smoke Launchers
+    self:DoSmokeLaunchers(self.AbilityTypes.SMOKE.STANDARD)
+
+    -- Call basic vehicle abilities
+    SpaceMarineVehicleTactic.DoAbilities(self)
+end
+
+-- Titan Class
+class 'TitanTactic' (SpaceMarineVehicleTactic)
+
+function TitanTactic:__init(squad_ai)
+    super(squad_ai)
+    self:SetName("Titan Tactic")
+end
+
+function TitanTactic:DoAbilities()
+    -- Stomp ability when attacking
+    if self.squad_ai:IsAttacking() then
+        self:DoAbilityTarget(self.AbilityTypes.TITAN.STOMP)
+    end
+
+    -- Apocalypse Missiles
+    if self.squad_ai:CanDoAbility(self.AbilityTypes.MISSILES.APOCALYPSE.id) then
+        -- Multiple target types for maximum effectiveness
+        Ability.DoAbilityPos(self.squad_ai,
+            self.AbilityTypes.MISSILES.APOCALYPSE.id,
+            Ability.Filters.CloseEnemy, 24)
+
+        Ability.DoAbilityPos(self.squad_ai,
+            self.AbilityTypes.MISSILES.APOCALYPSE.id,
+            Ability.Filters.CloseVehicleEnemy, 3)
+
+        Ability.DoAbilityPos(self.squad_ai,
+            self.AbilityTypes.MISSILES.APOCALYPSE.id,
+            Ability.EntityFilters.CloseBaseEntityEnemy, 4)
+    end
+
+    -- Titan Stomp Mode (Turret Mode)
+    if self.squad_ai:IsInCombat() and self.squad_ai:IsInStateMove() then
+        if self.squad_ai:CanDoAbility(self.AbilityTypes.TITAN.TURRET.id) then
+            -- Area effect against both infantry and monsters
+            Ability.DoAbilityArea(self.squad_ai,
+                self.AbilityTypes.TITAN.TURRET.id,
+                Ability.Filters.CloseSquadEnemy, 10, 4)
+
+            Ability.DoAbilityArea(self.squad_ai,
+                self.AbilityTypes.TITAN.TURRET.id,
+                Ability.Filters.CloseMonsterEnemy, 10, 4)
+        end
+    end
+
+    -- Call basic vehicle abilities
+    SpaceMarineVehicleTactic.DoAbilities(self)
+end
+
+function TitanTactic:Upgrade()
+    -- If there are no resources available, don't upgrade!
+    if (not Tactic.Options.can_reinforce) then
+        return
+    end
+    local class_type = cpu_manager:FindClosestEnemyPlayer():GetMajorityClassType()
+    self.squad_ai:DoBestUpgrade(class_type)
+end
+
+-- Thunderhawk Class
+class 'ThunderhawkTactic' (SpaceMarineVehicleTactic)
+
+function ThunderhawkTactic:__init(squad_ai)
+    super(squad_ai)
+    self:SetName("Thunderhawk Tactic")
+    -- Vehicle is a heavy transport
+    self.m_iTransportVehicle = 1
+    self.m_iTransportSlots = 4
+end
+
+function ThunderhawkTactic:IsAttacker()
+    return true
+end
+
+function ThunderhawkTactic:IsDefender()
+    return false
+end
+
+function ThunderhawkTactic:Update()
+
+    if self:IsComplete() then
+        return
+    end
+
+    -- State machine
+    if not VehicleTactic.Update(self) then
+        return
+    end
+
+    -- Check if we are in serious trouble
+    self:EmergencyRetreat()
+end
+
+function ThunderhawkTactic:DoAbilities()
+
+    -- Transport Abilities
+    self:DoTransportAbility(self.AbilityTypes.TRANSPORT.HEAL)
+    self:DoTransportAbility(self.AbilityTypes.TRANSPORT.REINFORCE)
+    self:DoTransportAbility(self.AbilityTypes.TRANSPORT.ABILITY_RECHARGE)
+
+    -- Get air support ability ID using parent method
+    local air_support_id = self:GetAbilityID("AIR_SUPPORT")
+    
+    -- Only proceed if we have a valid ability ID
+    if air_support_id and self.squad_ai:CanDoAbility(air_support_id) then
+        Ability.DoAbilityPos(self.squad_ai, air_support_id, Ability.Filters.CloseEnemy, 24)
+        Ability.DoAbilityPos(self.squad_ai, air_support_id, Ability.Filters.CloseVehicleEnemy, 3)
+    end
+
+    -- Call basic vehicle abilities
+    SpaceMarineVehicleTactic.DoAbilities(self)
+end
+
+function ThunderhawkTactic:Upgrade()
+
+    -- If there are no resources available, don't upgrade!
+    if not Tactic.Options.can_reinforce then
+        return
+    end
+
+    -- Check if we can upgrade
+    local class_type = cpu_manager:FindClosestEnemyPlayer():GetMajorityClassType()
+    self.squad_ai:DoBestUpgrade(class_type)
+end
+
+function ThunderhawkTactic:SetTarget(target, variant_type)
+
+    self.variant_type = variant_type
+
+    if self.variant_type == Tactic.Variant.Vector then
+        self.target = Vector3f(target)
+    elseif self.variant_type == Tactic.Variant.SquadAI then
+        self.target = target
+    elseif self.variant_type == Tactic.Variant.BaseAI then
+        self.target = target
+    end
+
+    self.m_iMoveDelay = 0
+    self.last_jump = 0
+end
+
+function ThunderhawkTactic:JumpAttackRanged()
+
+    -- Call standard method
+    if Tactic.JumpAttackRanged(self) then
+        return true
+    end
+
+    -- Get position and jump range
+    local vThunderhawkPosition = self.squad_ai:GetPosition()
+    local iJumpRange = sqr(self.squad_ai:GetJumpDistance())
+
+    -- Search for enemies
+    local oEnemy = self:GetClosestEnemy(vThunderhawkPosition, 100)
+    if oEnemy == nil then
+        return false
+    end
+
+    -- Get distance to enemy
+    local vEnemyPosition = oEnemy:GetPosition()
+    local iDistance = distance_sqr(vThunderhawkPosition, vEnemyPosition)
+
+    -- If we are too far away, jump closer
+    if iDistance > iJumpRange then
+
+        -- Create a jump position
+        local vJumpPosition = self:GetJumpPosition(vThunderhawkPosition, vEnemyPosition, iJumpRange)
+
+        -- Try to jump
+        if self.squad_ai:CanJumpToPosition(vJumpPosition) then
+            self.squad_ai:DoJump(vJumpPosition)
+            self.last_jump = g_iGMT
+            return true
+        end
+    end
+    return false
+end
+
+function ThunderhawkTactic:UnloadTroops()
+
+    -- Check if we should unload
+    if self.squad_ai:CanUnload() then
+
+        -- Check if target is close enough
+        local vSquadPos = self.squad_ai:GetPosition()
+        local iDistance = distance_sqr(self:GetTarget(), vSquadPos)
+
+        -- Unload troops if close enough
+        if iDistance < sqr(35) then
+            self.squad_ai:DoUnload()
+            return true
+        end
+    end
+    return false
+end
+
+function ThunderhawkTactic:MoveToDisengage()
+
+    -- Check if we should disengage
+    if self.squad_ai:WasRecentlyHurt() and
+       not self.squad_ai:IsInStateMove() then
+
+        -- Get retreat position
+        local vDir = cpu_manager.start_pos - self.squad_ai:GetPosition()
+        local vRetreatPos = self.squad_ai:GetPosition() + vDir
+
+        -- Retreat
+        self.squad_ai:DoMove(vRetreatPos)
+        return true
+    end
+    return false
+end
+
+-- Tempest Class
+class 'TempestTactic' (SpaceMarineVehicleTactic)
+
+function TempestTactic:__init(squad_ai)
+    super(squad_ai)
+    self:SetName("Tempest Tactic")
+end
+
+function TempestTactic:Upgrade()
+    -- Check if we have free resources
+    if (not Tactic.Options.can_reinforce) then
+        return
+    end
+    -- If I am broken, don't upgrade!
+    if (self:IsAffectedByMorale() and self.squad_ai:IsBroken()) then
+        return
+    end
+    if (not self.squad_ai:IsReinforcing()) then
+        -- Upgrade if possible
+        if (self.squad_ai:HasUpgradableTrooper() and self.squad_ai:GetNumTroopers() > 0) then
+            local class_type = cpu_manager:GetFirstEnemyPlayer():GetMajorityClassType()
+            self.squad_ai:DoBestUpgrade(class_type)
+        end
+    end
+end
+
+-- Stalker Class
+class 'StalkerTactic' (SpaceMarineVehicleTactic)
+
+function StalkerTactic:__init(squad_ai)
+    super(squad_ai)
+    self:SetName("Stalker Tactic")
+end
+
+function StalkerTactic:DoAbilities()
+    -- Smoke Launchers
+    self:DoSmokeLaunchers(self.AbilityTypes.SMOKE.STANDARD)
+
+    -- Mine Laying with resource checks
+    local mines = self.AbilityTypes.SUPPORT.LAY_MINES
+    if self.squad_ai:CanDoAbility(mines.id) then
+        local iRequisition = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Requisition)
+        local iPower = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Power)
+
+        -- Lay mines if either:
+        -- 1. Lots of resources and moving
+        -- 2. Some resources and in combat
+        if (iRequisition >= 4000 and iPower >= 4000 and self:IsMoving()) or
+           (iRequisition >= 1000 and iPower >= 1000 and self.squad_ai:IsInCombat()) then
+            self:DoAbilitySimple(mines)
+        end
+    end
+
+    -- Call basic vehicle abilities
+    SpaceMarineVehicleTactic.DoAbilities(self)
+end
+
+function StalkerTactic:Upgrade()
+    -- If there are no resources available, don't upgrade!
+    if (not Tactic.Options.can_reinforce) then
+        return
+    end
+    local class_type = cpu_manager:FindClosestEnemyPlayer():GetMajorityClassType()
+    self.squad_ai:DoBestUpgrade(class_type)
+end
+
+-- Rhino Class
+class 'RhinoTactic' (SpaceMarineVehicleTactic)
+
+function RhinoTactic:__init(squad_ai)
+    super(squad_ai)
+    self:SetName("Rhino Tactic")
+    Tactic.AssignStateFunction(self, Tactic.States.Idle, RhinoTactic.BeginIdleState)
+    Tactic.AssignStateFunction(self, Tactic.States.Hold, RhinoTactic.BeginHoldState)
+    Tactic.AssignStateFunction(self, Tactic.States.Retreat, RhinoTactic.BeginRetreatState)
+    Tactic.AssignStateFunction(self, Tactic.States.Attack, RhinoTactic.BeginAttackState)
+    -- Vehicle is a light transport
+    self.m_iTransportVehicle = 1
+    self.m_iTransportSlots = 2
+end
+
+function RhinoTactic:IsAttacker()
+    return (self.m_iUnloadTries > 0 or self.squad_ai:CanDoAbility(Rhino.smoke_id))
+end
+
+function RhinoTactic:IsDefender()
+    return (self.m_iUnloadTries > 0 or self.squad_ai:CanDoAbility(Rhino.smoke_id))
+end
+
+function RhinoTactic:BeginIdleState()
+    self:TransportMove()
+    Tactic.SetSubState(self, self.IdleState, "Holding")
+end
+
+function RhinoTactic:BeginHoldState()
+    self:TransportMove()
+    Tactic.SetSubState(self, self.HoldState, "Holding")
+end
+
+function RhinoTactic:BeginRetreatState()
+    self:TransportMove()
+    Tactic.SetSubState(self, self.HoldState, "Holding")
+end
+
+function RhinoTactic:BeginAttackState()
+    self:TransportMove()
+    Tactic.SetSubState(self, self.AttackingState, "Attacking")
+end
+
+function RhinoTactic:TransportMove()
+    -- Check if we're busy
+    if (self:IsInSubState() or self:CheckGatherMove()) then
+        return
+    end
+    -- Check move delay
+    if (g_iGMT < self.m_iMoveDelay + 3 and self:IsMoving()) then
+        return
+    end
+    -- Try to unload troops
+    local vSquadPos = self.squad_ai:GetPosition()
+    local iDistance = distance_sqr(self:GetTarget(), vSquadPos)
+    if (self:UnloadTroops(iDistance)) then
+        self.m_iMoveDelay = g_iGMT
+        return
+    end
+    -- Check distance
+    if (self.squad_ai:WasRecentlyHurt()) then
+        cpu_manager:DoMove(self.squad_ai, cpu_manager.start_pos, false, "RetreatMove")
+        self.m_iMoveDelay = g_iGMT
+        return
+    elseif (iDistance > sqr(35)) then
+        cpu_manager:DoMove(self.squad_ai, self:GetTarget(), false, "TransportMove")
+    elseif (iDistance > sqr(20) and not cpu_manager.terrain_analyzer:HasThreat(vSquadPos, 35)) then
+        cpu_manager:DoMove(self.squad_ai, self:GetTarget(), false, "TransportMove")
+    else
+        self.squad_ai:DoStop()
+    end
+    self.m_iMoveDelay = g_iGMT
+end
+
+function RhinoTactic:DoAbilities()
+    -- Smoke Launchers
+    self:DoSmokeLaunchers(self.AbilityTypes.SMOKE.STANDARD)
+
+    -- Transport Abilities
+    local transport = self.AbilityTypes.TRANSPORT
+
+    -- Heal ability
+    self:DoTransportAbility(transport.HEAL)
+
+    -- Ability Recharge
+    self:DoTransportAbility(transport.ABILITY_RECHARGE)
+
+    -- Reinforce
+    self:DoTransportAbility(transport.REINFORCE)
+
+    -- Note: Mine laying is commented out in original code
+    -- local mines = self.AbilityTypes.SUPPORT.LAY_MINES
+    -- if self.squad_ai:CanDoAbility(mines.id) then
+    --     local iRequisition = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Requisition)
+    --     local iPower = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Power)
+    --     if (iRequisition >= 4000 and iPower >= 4000 and self:IsMoving()) or
+    --        (iRequisition >= 1000 and iPower >= 1000 and self.squad_ai:IsInCombat()) then
+    --         self:DoAbilitySimple(mines)
+    --     end
+    -- end
+
+    -- Call basic vehicle abilities
+    SpaceMarineVehicleTactic.DoAbilities(self)
+end

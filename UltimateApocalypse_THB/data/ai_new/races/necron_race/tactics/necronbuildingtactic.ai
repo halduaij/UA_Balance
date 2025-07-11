@@ -1,0 +1,28 @@
+----------------------------------------
+-- File: 'necronbuildingtactic.ai'
+-- Edited by Thudmeizer	@ 08.03.2016
+
+class 'NecronBuildingTactic' (BaseTactic)
+
+NecronBuilding = {}
+
+function NecronBuildingTactic:__init( base_ai ) super( base_ai )
+
+	self:SetName("Necron Building Tactic")
+end
+
+function NecronBuildingTactic:InitAbilities()
+    if (NecronBuilding.repair_id == nil) then
+        NecronBuilding.repair_id = 3
+        print("Necron Repair ID set to: " .. tostring(NecronBuilding.repair_id))
+    end
+end
+
+function NecronBuildingTactic:DoAbilities()
+    if (self.base_ai:GetHealthPercentage() < 0.5) then
+        if (self.base_ai:CanDoAbility(NecronBuilding.repair_id)) then
+            self.base_ai:DoSpecialAbility(NecronBuilding.repair_id)
+            print("Attempting repair on Necron building at " .. tostring(self.base_ai:GetHealthPercentage() * 100) .. "% health")
+        end
+    end
+end

@@ -1,0 +1,30 @@
+----------------------------------------
+-- File: 'slavetactic.ai'
+-- Edited by Thudmeizer @ 13.09.2016
+
+class 'SlaveTactic' (EngineerTactic)
+
+Slave = {}
+
+function SlaveTactic:__init( squad_ai ) super( squad_ai )
+    self:SetName("Slave Tactic")
+end
+
+function SlaveTactic:DoAbilities()
+    -- Call base class abilities (includes run, furious rage, and forced labor)
+    ChaosMarineInfantryTactic.DoAbilities(self)
+end
+
+function SlaveTactic:Update()
+    if self:IsComplete() then
+        return
+    end
+
+    -- State machine
+    if not InfantryTactic.Update( self ) then
+        return
+    end
+
+    -- Check if we are in serious trouble
+    self:EmergencyRetreat()
+end

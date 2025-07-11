@@ -1,0 +1,28 @@
+----------------------------------------
+-- File: 'guardbuildingtactic.ai'
+-- Edited by Thudmeizer	@ 28.02.2016
+
+class 'GuardBuildingTactic' (BaseTactic)
+
+GuardBuilding = {}
+
+function GuardBuildingTactic:__init( base_ai ) super( base_ai )
+
+	self:SetName("Guard Building Tactic")
+end
+
+function GuardBuildingTactic:InitAbilities()
+    if (GuardBuilding.repair_id == nil) then
+        GuardBuilding.repair_id = 3
+        print("Guard Repair ID set to: " .. tostring(GuardBuilding.repair_id))
+    end
+end
+
+function GuardBuildingTactic:DoAbilities()
+    if (self.base_ai:GetHealthPercentage() < 0.5) then
+        if (self.base_ai:CanDoAbility(GuardBuilding.repair_id)) then
+            self.base_ai:DoSpecialAbility(GuardBuilding.repair_id)
+            print("Attempting repair on Guard building at " .. tostring(self.base_ai:GetHealthPercentage() * 100) .. "% health")
+        end
+    end
+end

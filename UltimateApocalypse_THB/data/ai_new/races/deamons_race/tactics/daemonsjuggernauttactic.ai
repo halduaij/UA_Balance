@@ -1,0 +1,33 @@
+----------------------------------------
+-- File: 'daemonsjuggernauttactic.ai'
+-- Edited by Gambit 3.03.2014
+
+class 'DaemonsJuggernautTactic' (DaemonsInfantryTactic)
+
+DaemonsJuggernaut = {}
+
+function DaemonsJuggernautTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Daemons Bloodcrusher Tactic")
+end
+
+
+function DaemonsJuggernautTactic:InitAbilities()
+
+	if ( DaemonsJuggernaut.fury_id == nil ) then
+		DaemonsJuggernaut.fury_id = cpu_manager.stats:GetAbilityID( "UA_daemons_juggernaut_fury_of_khorne" )
+	end
+end
+
+function DaemonsJuggernautTactic:DoAbilities()
+
+	local iPower = resource_manager:GetResourceAmount():Get( ResourceAmount.RT_Power )
+
+	if ( self.squad_ai:IsInCombat() and iPower >= 40 ) then
+		Ability.DoAbility( self.squad_ai, DaemonsJuggernaut.fury_id, Ability.Filters.IsInCombat )
+	end
+
+	-- Call basic DoAbilities methods
+	DaemonsInfantryTactic.DoAbilities(self)
+end
+ 

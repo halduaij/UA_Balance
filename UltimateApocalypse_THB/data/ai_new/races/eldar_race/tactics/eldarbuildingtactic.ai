@@ -1,0 +1,28 @@
+----------------------------------------
+-- File: 'eldarbuildingtactic.ai'
+-- Edited by Thudmeizer	@ 19.02.2016
+
+class 'EldarBuildingTactic' (BaseTactic)
+
+EldarBuilding = {}
+
+function EldarBuildingTactic:__init( base_ai ) super( base_ai )
+
+	self:SetName("Eldar Building Tactic")
+end
+
+function EldarBuildingTactic:InitAbilities()
+    if (EldarBuilding.repair_id == nil) then
+        EldarBuilding.repair_id = 3
+        print("Eldar Repair ID set to: " .. tostring(EldarBuilding.repair_id))
+    end
+end
+
+function EldarBuildingTactic:DoAbilities()
+    if (self.base_ai:GetHealthPercentage() < 0.5) then
+        if (self.base_ai:CanDoAbility(EldarBuilding.repair_id)) then
+            self.base_ai:DoSpecialAbility(EldarBuilding.repair_id)
+            print("Attempting repair on Eldar building at " .. tostring(self.base_ai:GetHealthPercentage() * 100) .. "% health")
+        end
+    end
+end

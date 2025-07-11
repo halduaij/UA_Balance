@@ -1,0 +1,2134 @@
+----------------------------------------
+-- File: 'MarineBuildBaseStrategy.ai'
+-- Edited by Thudmeizer @ 16.11.2016
+-- Edited by Cylarne_04 2011
+
+
+-- 3/23/25 Debug: Redo the squad cap functions. Make sure that the AI doesnt get stuck if its queuing attack bikes with 1 support cap
+
+class 'MarineBuildBaseStrategy' (BuildBaseStrategy)
+import("core/logging.ai")
+import("races/space_marine_race/strategies/marinestrategyinfo.ai")
+-- Add this at the top of marinebuildbasestrategy.ai
+DEBUG = DEBUG or {}
+DEBUG.ENABLED = true
+-- Initialize class variables in the __init function
+
+-- Helper function to safely convert values to string with indentation
+if not safe_tostring then
+    function safe_tostring(value, indent)
+        indent = indent or "  "
+        if value == nil then
+            return "nil"
+        elseif type(value) == "boolean" then
+            return value and "true" or "false"
+        elseif type(value) == "table" then
+            -- Handle position vectors
+            if value.x and value.z then
+                return string.format("(%.2f, %.2f)", value.x, value.z)
+            end
+            -- Pretty-print shallow table contents
+            local s = "\n"
+            local keys = {}
+            for k in pairs(value) do table.insert(keys, k) end
+            table.sort(keys, function(a, b) return tostring(a) < tostring(b) end)
+            for _, k in ipairs(keys) do
+                s = s .. indent .. tostring(k) .. " = " .. tostring(value[k]) .. "\n"
+            end
+            return s
+        else
+            return tostring(value)
+        end
+    end
+end
+
+function MarineBuildBaseStrategy:__init(baseinfo)
+    -- Create minimal SquadLimits table to satisfy parent constructor
+
+    -- Now call super with the prepared baseinfo
+    super(baseinfo)
+    
+    -- Track building status to optimize checks
+    self.building_status_cache = {}
+    -- Initialize armoury status entry for backwards compatibility
+    self.armoury_status = self:GetBuildingStatus("space_marine_armoury")
+
+    -- Initialize tier system
+    self.tierLevel = 1
+    self.addon_under_construction = nil
+    self.tech_check_needed = false
+    
+    -- Initialize research tracking
+    self.research_building_logged = {}
+    
+    -- Add detector units (Best first, worst last)
+    self:AddDetectorUnit("space_marine_squad_skull_probe")
+    self:AddDetectorUnit("space_marine_squad_librarian")
+    
+    self.m_iArmyHighestStrength = 0 -- Maximum possible army strength
+
+
+    -- Build first HQ at start pos
+    self.m_iNumHQAtStartPos = 1
+
+    -- dark40k - set items that need bypass for CpuPrerequisites
+    CpuPrerequisites2.AddSpecialItem("space_marine_turret_addon_probe", CpuPrerequisites.BT_AddOn)
+
+    -- Initialize research pattern
+    self.m_iMarineResearchPattern = nil -- Will be set in BuildFlexible
+    self.placement_cache = {}
+    -- Pre-cache all known building placements
+    for name, category in pairs(self.building_categories) do
+        local buildingID = cpu_manager.stats:GetBuildingID(name)
+        if buildingID ~= 0 then
+            self.placement_cache[buildingID] = category
+        end
+    end
+    self.tier_requirements = {
+        [1] = {
+            req = 0,
+            pow = 0
+        },
+        [2] = {
+            -- Either barracks or armoury is required for tier 2
+            required_buildings = {
+                "space_marine_barracks",
+                "space_marine_armoury"
+            },
+            addon_name = "space_marine_hq_addon_1", -- Explicit addon name
+            prereq = nil,                           -- No prerequisite research needed
+            req = 400,
+            pow = 130
+        },
+        [3] = {
+            -- Either vehicle building or ability building is required for tier 3
+            required_buildings = {
+                "space_marine_vehicle_building",
+                "space_marine_ability_building"
+            },
+            addon_name = "space_marine_hq_addon_2", -- Explicit addon name
+            prereq = "space_marine_hq_addon_1",     -- Requires tier 2 addon
+            req = 500,
+            pow = 500
+        },
+        [4] = {
+            required_buildings = { "space_marine_orbital_relay" },
+            research_name = "UA_marine_heavy_armor_deployment",
+            prereq = "space_marine_hq_addon_2", -- Requires tier 3 addon
+            req = 1000,
+            pow = 1000
+        },
+        [5] = {
+            required_buildings = { "space_marine_landraider_building" },
+            research_name = "UA_marines_research_bombardment",
+            prereq = "UA_marine_heavy_armor_deployment", -- Requires tier 4 research
+            req = 1500,
+            pow = 1500
+        },
+        [6] = {
+            required_buildings = { "space_marine_hq_super" },
+            research_name = "UA_marine_apocalypse_research",
+            prereq = "UA_marines_research_bombardment", -- Requires tier 5 research
+            req = 2000,
+            pow = 2000,
+            needs_critical = true
+        }
+    }
+    self.unit_quantities = {}
+    self.last_unit_counts = {}
+    self.last_building_counts = {} -- For tracking building count changes for logging
+    self.last_tier_printed = 0
+end
+
+-- Get status information for a specific building with caching
+-- Note: This function primarily serves as a caching layer on top of CheckBuilding/GetBuildingCount
+function MarineBuildBaseStrategy:GetBuildingStatus(building_name)
+    -- Initialize status if it doesn't exist
+    if not self.building_status_cache[building_name] then
+        self.building_status_cache[building_name] = {
+            completed = false,
+            progressing = false,
+            queued = false,
+            last_check_time = 0
+        }
+    end
+    
+    -- Only check every 5 seconds to avoid excessive checks
+    local current_time = g_iGMT or 0
+    local status = self.building_status_cache[building_name]
+    
+    if current_time - status.last_check_time < 5 then
+        return status
+    end
+    
+    -- Update status using CheckBuilding
+    status.completed = self:CheckBuilding(building_name, "completed")
+    status.progressing = self:CheckBuilding(building_name, "progressing")
+    status.queued = self:CheckBuilding(building_name, "queued")
+    status.last_check_time = current_time
+    
+    return status
+end
+
+function MarineBuildBaseStrategy:CheckPrerequisite(prereq)
+    --debug_function_enter("CheckPrerequisite")
+    debug_print("[PREREQ] Checking prerequisite: " .. tostring(prereq))
+
+    -- First check if it's a building (completed only)
+    local completedCount = self:GetBuildingCount(prereq, "completed")
+    if completedCount > 0 then
+        debug_print("[PREREQ] Found completed building: " .. prereq)
+        return true
+    end
+
+    -- Then check if it's an addon
+    local addonID = cpu_manager.stats:GetAddOnID(prereq)
+    if addonID ~= 0 then
+        -- It's an addon, check if any HQ has it
+        for oBuilding in military_manager:GetBases() do
+            if oBuilding:IsValid() and not oBuilding:IsListeningPost() then
+                if oBuilding:HasAddOn(addonID) then
+                    debug_print("[PREREQ] Found completed addon: " .. prereq)
+                    return true
+                end
+            end
+        end
+        if DEBUG.ENABLED then
+            debug_print("[PREREQ] Addon not found: " .. prereq)
+        end
+        return false
+    end
+
+    -- Finally check if it's a completed research
+    if cpu_manager.cpu_player:IsResearchComplete(prereq) then
+        if DEBUG.ENABLED then
+            debug_print("[PREREQ] Research complete: " .. prereq)
+        end
+        return true
+    end
+
+    if DEBUG.ENABLED then
+        debug_print("[PREREQ] Prerequisite not met: " .. prereq)
+    end
+    return false
+end
+
+-- Override OnBuildingCompleted to trigger tier check when a building is completed
+-- [Removed redundant UpdateArmouryStatus function - now using GetBuildingStatus directly]
+
+function MarineBuildBaseStrategy:OnBuildingCompleted(building)
+    -- Call parent OnBuildingCompleted if it exists
+    if BuildBaseStrategy.OnBuildingCompleted then
+        BuildBaseStrategy.OnBuildingCompleted(self, building)
+    end
+    
+    -- If a valid building was completed, update its status in our cache
+    if building:IsValid() then
+        local building_name = building:GetBaseName()
+        
+        -- Only update if we already have a cache entry for this building
+        if self.building_status_cache[building_name] then
+            self.building_status_cache[building_name].completed = true
+            self.building_status_cache[building_name].progressing = false
+            
+            -- For backwards compatibility with existing code
+            if building_name == "space_marine_armoury" then
+                debug_print("[RESEARCH] Armoury completed - ready for research")
+            else
+                debug_print("[BUILDING] " .. building_name .. " completed")
+            end
+        end
+    end
+
+    local building_name = building:GetBaseName()
+
+    -- Check if this building is required for any tier
+    for tier, requirements in pairs(self.tier_requirements) do
+        if requirements.required_building == building_name then
+            -- Only proceed with tier check if caps are healthy
+            local squad_cap_left = build_manager:GetSquadCapLeft()
+            local support_cap_left = build_manager:GetSupportCapLeft()
+
+            if squad_cap_left > 3 and support_cap_left > 1 then
+                debug_print("[BUILD] Required building completed, checking tier: " .. building_name)
+                self:ChecktierLevel()
+                break
+            else
+                debug_print("[BUILD] Required building completed but caps low, delaying tier check: " .. building_name)
+            end
+        end
+    end
+end
+
+-- Override OnAddOnComplete to trigger tier check when an addon is completed
+function MarineBuildBaseStrategy:OnAddOnComplete(addon_name)
+    --debug_function_enter("OnAddOnComplete", { addon = addon_name })
+    debug_print("[ADDON] Addon completed: " .. addon_name)
+    debug_print("[ADDON] Current tier before check: " .. self.tierLevel)
+
+    -- Keep existing addon completion logic
+    if self.addon_under_construction == addon_name then
+        self.addon_under_construction = nil
+    end
+
+    -- Check if this addon is required for any tier
+    for tier, requirements in pairs(self.tier_requirements) do
+        if requirements.addon_name == addon_name then
+            debug_print("[ADDON] Tier-related addon completed: " .. addon_name .. " for tier " .. tier)
+            
+            -- Explicitly update tier level if the completed addon meets requirements for advancing
+            -- Only advance tier if the new tier is higher than current tier
+            if tier > self.tierLevel then
+                debug_print("[ADDON] Advancing tier from " .. self.tierLevel .. " to " .. tier)
+                self.tierLevel = tier
+                
+                -- Force recalculation of build programs with new tier
+                self:ComputeBuildProgram()
+                debug_print("[ADDON] Build programs updated for new tier level: " .. self.tierLevel)
+            else
+                debug_print("[ADDON] Not advancing tier - current tier " .. self.tierLevel .. " is already >= " .. tier)
+            end
+            
+            -- Force build program update after tier change
+            self:BuildFlexible()
+            break
+        end
+    end
+end
+
+-- Override OnResearchComplete to trigger build program update when a tier-affecting research is completed
+function MarineBuildBaseStrategy:OnResearchComplete(research_name)
+    -- Call parent OnResearchComplete if it exists
+    if BuildBaseStrategy.OnResearchComplete then
+        BuildBaseStrategy.OnResearchComplete(self, research_name)
+    end
+
+    debug_print("[RESEARCH] Research completed: " .. research_name)
+
+    -- Check if this research is required for any tier
+    local is_tier_affecting = false
+    for tier, requirements in pairs(self.tier_requirements) do
+        if requirements.research_name == research_name then
+            is_tier_affecting = true
+            break
+        end
+    end
+
+    if is_tier_affecting then
+        debug_print("[RESEARCH] Tier-affecting research completed, updating build programs")
+        -- The Update() function will handle tier level changes on its next tick
+        -- Just update build programs to react to the new research
+        self:ComputeBuildProgram()
+        self:BuildFlexible()
+    end
+end
+
+-- Check and attempt to progress to next tier by building required structures or starting research
+-- Note: Tier level is determined in Update() - this function now only handles building requirements
+function MarineBuildBaseStrategy:ChecktierLevel()
+    debug_print("[TIER] Starting ChecktierLevel")
+    debug_print("[TIER] Current tier: " .. self.tierLevel)
+
+    -- If we're at max tier, don't try to go higher
+    if self.tierLevel >= 6 then
+        debug_print("[TIER] Already at max tier (6)")
+        return self.tierLevel
+    end
+    local nextTier = self.tierLevel + 1
+    -- Get requirements for next tier
+    local reqs = self.tier_requirements[nextTier]
+    if not reqs then
+        debug_print("[TIER] No requirements found for tier " .. nextTier)
+        return self.tierLevel
+    end
+
+    -- Tier-agnostic handling: addon or research
+    if reqs.addon_name then
+        debug_print("[TIER] Checking addon requirement: " .. reqs.addon_name)
+        -- Check if we already have this addon
+        if not self:CheckPrerequisite(reqs.addon_name) then
+            debug_print("[TIER] Need to build addon: " .. reqs.addon_name)
+            -- Check if addon is already in progress or queued
+            if not self:AddonProgress(reqs.addon_name) then
+                local tBuildType = CpuBuildType()
+                tBuildType.btype = CpuPrerequisites.BT_AddOn
+                tBuildType.name = reqs.addon_name
+                if self:TryBuild(tBuildType) then
+                    debug_print("[TIER] Successfully queued addon: " .. reqs.addon_name)
+                else
+                    debug_print("[TIER] Failed to queue addon: " .. reqs.addon_name)
+                end
+            else
+                debug_print("[TIER] Skipping addon queue for " .. reqs.addon_name .. ": already in progress or queued")
+            end
+        else
+            debug_print("[TIER] Addon already built: " .. reqs.addon_name)
+            -- If we have the addon and no other requirements, advance tier
+            if not reqs.research_name then
+                debug_print("[TIER] Advancing to tier " .. nextTier)
+                self.tierLevel = nextTier
+                debug_print("[TIER] Tier advanced to " .. tostring(nextTier))
+                -- Removed redundant ComputeBuildProgram and BuildFlexible calls
+                -- Normal update cycle will handle tier changes now that UpdateTierLevel is fixed
+            end
+        end
+    elseif reqs.research_name then
+        debug_print("[TIER] Checking research requirement: " .. reqs.research_name)
+        -- Check required buildings for this tier
+        local buildings_ok = true
+        if reqs.required_buildings then
+            for _, bld in ipairs(reqs.required_buildings) do
+                -- Use new unified building detection function
+                if not self:CheckBuilding(bld) then
+                    debug_print("[TIER] Required building not complete: " .. bld)
+                    buildings_ok = false
+                end
+            end
+        end
+        if not buildings_ok then
+            debug_print("[TIER] Not all required buildings complete for research tier " .. nextTier)
+            return self.tierLevel
+        end
+        -- Check if research is completed
+        if not cpu_manager.cpu_player:IsResearchComplete(reqs.research_name) then
+            debug_print("[TIER] Need to research: " .. reqs.research_name)
+            -- Skip if research is already in progress or queued
+            if not self:ResearchProgress(reqs.research_name) then
+                debug_print("[TIER] Queueing research: " .. reqs.research_name)
+                self:DynamicResearch(reqs.research_name, 0, 0, 0, 0, 0, nil, 0, true)
+            else
+                debug_print("[TIER] Skipping queue for " .. reqs.research_name .. ": already in progress or queued")
+            end
+        else
+            debug_print("[TIER] Research already complete: " .. reqs.research_name)
+            debug_print("[TIER] Advancing to tier " .. nextTier)
+            self.tierLevel = nextTier
+            debug_print("[TIER] Tier advanced to " .. tostring(nextTier))
+            -- Removed redundant ComputeBuildProgram and BuildFlexible calls
+            -- Normal update cycle will handle tier changes now that UpdateTierLevel is fixed
+        end
+    else
+        debug_print("[TIER] No addon or research requirement for tier " .. nextTier)
+        return self.tierLevel
+    end
+
+    return self.tierLevel
+end
+
+function MarineBuildBaseStrategy:ResearchResourceUpgrades()
+    --debug_function_enter("ResearchResourceUpgrades")
+    local iRequisition = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Requisition)
+    local iPower = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Power)
+
+    -- Check for excess resources and tier level for superweapons
+    if iRequisition >= 8000 and iPower >= 8000 and self.tierLevel >= 5 then
+        self:DynamicBuild("space_marine_hq_super", 5, 2000, 2000, 0, 0)
+    end
+
+    -- Check resource researches based on tier level
+    local research_costs = {
+        ["UA_marine_generator_boost_research"] = {
+            [1] = { req = 0, pow = 100 },
+            [2] = { req = 0, pow = 150 },
+            [3] = { req = 0, pow = 225 },
+            [4] = { req = 0, pow = 300 },
+            [5] = { req = 0, pow = 400 }
+        },
+        ["UA_marine_power_research"] = {
+            [1] = { req = 200, pow = 20 },
+            [2] = { req = 350, pow = 40 },
+            [3] = { req = 500, pow = 60 },
+            [4] = { req = 650, pow = 80 },
+            [5] = { req = 800, pow = 100 }
+        },
+        ["UA_marine_requisition_research"] = {
+            [1] = { req = 75, pow = 250 },
+            [2] = { req = 100, pow = 350 },
+            [3] = { req = 125, pow = 450 },
+            [4] = { req = 150, pow = 550 },
+            [5] = { req = 300, pow = 1100 }
+        }
+    }
+
+    -- Check all research types
+    for research_base, costs in pairs(research_costs) do
+        -- Try to get the research for current tier
+        local research_name = research_base .. "_" .. self.tierLevel
+        local cost = costs[self.tierLevel]
+
+        if cost and not cpu_manager.cpu_player:IsResearchComplete(research_name) then
+            if iRequisition >= cost.req and iPower >= cost.pow then
+                self:DynamicResearch(research_name, self.tierLevel, cost.req, cost.pow, 0, 0)
+            end
+        end
+
+        -- Also try to get any missed lower tier researches
+        for i = 1, self.tierLevel - 1 do
+            local prev_research = research_base .. "_" .. i
+            local prev_cost = costs[i]
+
+            if prev_cost and not cpu_manager.cpu_player:IsResearchComplete(prev_research) then
+                if iRequisition >= prev_cost.req and iPower >= prev_cost.pow then
+                    self:DynamicResearch(prev_research, i, prev_cost.req, prev_cost.pow, 0, 0)
+                end
+            end
+        end
+    end
+end
+
+function MarineBuildBaseStrategy:EvalCap()
+    --debug_function_enter("EvalCap")
+
+
+    -- Get current caps
+    local squad_cap_left = build_manager:GetSquadCapLeft()
+    local support_cap_left = build_manager:GetSupportCapLeft()
+
+    -- Define research tiers
+    local research_tiers = {
+        squad = {
+            "UA_squad_cap_research",
+            "UA_squad_cap_research_1",
+            "UA_squad_cap_research_2",
+            "UA_squad_cap_research_3"
+        },
+        support = {
+            "UA_support_cap_research",
+            "UA_support_cap_research_1",
+            "UA_support_cap_research_2",
+            "UA_support_cap_research_3"
+        }
+    }
+
+    -- Attempt research if needed
+    if (support_cap_left < 2) or (squad_cap_left < 4) then
+        -- Determine which research to attempt based on caps
+        local research_type = (support_cap_left < 2) and "support" or "squad"
+        local research_list = research_tiers[research_type]
+
+        -- Try research in order
+        for i, research in ipairs(research_list) do
+            -- Check if previous tier research is complete
+            if i > 1 and not cpu_manager.cpu_player:IsResearchComplete(research_list[i - 1]) then
+                break
+            end
+
+            -- Attempt research if not in progress
+            if not self:ResearchProgress(research) then
+                local tBuildType = CpuBuildType()
+                tBuildType.btype = CpuPrerequisites.BT_Research
+                tBuildType.name = research
+                if self:TryBuild(tBuildType) then
+                    debug_print("[CAPS] " .. research .. " queued")
+                    return true
+                end
+            end
+        end
+    end
+
+    return false
+end
+
+function MarineBuildBaseStrategy:GetBuildingName(sType)
+    --debug_function_enter("GetBuildingName", { type = sType })
+    -- Return race specific object string
+    if (sType == "HQ") then
+        return "space_marine_hq"
+    elseif (sType == "Generator") then
+        return "space_marine_generator"
+    elseif (sType == "BiggerGenerator") then
+        return "space_marine_thermo_generator"
+    elseif (sType == "VehicleBuilding") then
+        return "space_marine_vehicle_building"
+    elseif (sType == "ListeningPost") then
+        return "space_marine_listening_post"
+    elseif (sType == "Turret") then
+        return "space_marine_turret_bolter"
+    elseif (sType == "Mine") then
+        return "space_marine_mine_field"
+    end
+    return nil
+end
+
+-- Modified GetAddonBuilding function that preserves completion checks but is safer
+function MarineBuildBaseStrategy:GetAddonBuilding(sType)
+    --debug_function_enter("GetAddonBuilding", { type = sType })
+    if (sType == "space_marine_turret_addon") then
+        return "space_marine_turret_bolter"
+    elseif (sType == "space_marine_turret_addon_probe") then
+        return "space_marine_turret_bolter"
+    elseif (sType == "space_marine_list_post_addon_1") then
+        return "space_marine_listening_post"
+    elseif (sType == "space_marine_list_post_addon_2") then
+        return "space_marine_listening_post"
+    elseif (sType == "space_marine_thermonuclear_addon") then
+        return "space_marine_thermonuclear_generator"
+    elseif (sType == "space_marine_turret_addon_lascannon") then
+        return "space_marine_turret_missile_sp"
+    elseif (sType == "space_marine_beacon_addon") then
+        return "space_marine_interface_relay"
+    elseif (sType == "space_marine_beacon_shield_addon") then
+        return "space_marine_interface_relay"
+    elseif (sType == "space_marine_beacon_destabilization_addon") then
+        return "space_marine_interface_relay"
+    elseif (sType == "space_marine_hq_addon_1") then
+        return "space_marine_hq"
+    elseif (sType == "space_marine_hq_addon_2") then
+        return "space_marine_hq"
+    elseif (sType == "addon_superweapon") then
+        return "space_marine_hq_super"
+    end
+    return nil
+end
+
+-- Arkhan 01.2006: Inherited method to check if an addon is a tier addon
+function MarineBuildBaseStrategy:IsTierAddon(sName, iTargetTier)
+    -- Check addon name and target tier
+    if (sName == "space_marine_hq_addon_1" and iTargetTier == 2) then
+        return true
+    elseif (sName == "space_marine_hq_addon_2" and iTargetTier == 3) then
+        return true
+    end
+    return false
+end
+
+-- Arkhan 11.2005: Returns the squad cap and support cap of the given squad
+function MarineBuildBaseStrategy:GetUnitStats(sSquadName)
+    --debug_function_enter("GetUnitStats", { squad = sSquadName })
+    local unitStatsTable = {
+        ["space_marine_squad_scout"] = { 1, 0 },
+        ["space_marine_squad_tactical_bike"] = { 2, 1 },
+        ["space_marine_squad_servitor_weapons"] = { 2, 0 },
+        ["space_marine_squad_tactical"] = { 2, 0 },
+        ["space_marine_squad_assault"] = { 2, 0 },
+        ["space_marine_squad_devastator"] = { 3, 0 },
+        ["space_marine_squad_sternguard_veteran"] = { 4, 0 },
+        ["space_marine_squad_vanguard_veteran"] = { 4, 0 },
+        ["space_marine_squad_lotd_tactical"] = { 3, 0 },
+        ["space_marine_squad_terminator"] = { 6, 0 },
+        ["space_marine_squad_terminator_assault"] = { 6, 0 },
+        ["space_marine_squad_rhino"] = { 0, 2 },
+        ["space_marine_squad_thunderfire_cannon"] = { 0, 1 },
+        ["space_marine_squad_land_speeder"] = { 0, 1 },
+        ["space_marine_squad_tempest"] = { 0, 2 },
+        ["space_marine_squad_damocles"] = { 0, 3 },
+        ["space_marine_squad_rhino_stalker"] = { 0, 3 },
+        ["space_marine_squad_razorback"] = { 0, 3 },
+        ["space_marine_squad_dreadnought"] = { 0, 3 },
+        ["space_marine_squad_dreadnought_hellfire"] = { 0, 3 },
+        ["space_marine_squad_dreadnought_ironclad"] = { 0, 4 },
+        ["space_marine_squad_dreadnought_venerable"] = { 0, 5 },
+        ["space_marine_squad_whirlwind"] = { 0, 3 },
+        ["space_marine_squad_predator"] = { 0, 5 },
+        ["space_marine_squad_predator_advance_sp"] = { 0, 5 },
+        ["space_marine_squad_predator_murderer"] = { 0, 6 },
+        ["space_marine_squad_vindicator"] = { 0, 3 }
+    }
+
+    local squadStats = unitStatsTable[sSquadName]
+    if squadStats then
+        return squadStats[1] or 0, squadStats[2] or 0
+    else
+        return 0, 0
+    end
+end
+
+-- Unified function to check building existence or completion status
+-- @param buildingParam The building name (string) or building object to check
+-- @param checkType Optional - The type of check: "completed", "progressing", "queued", "any", "total" (default: "completed")
+-- @param requireCompleted Optional - For backward compatibility with HasBuilding
+-- @return boolean - True if condition is met, false otherwise. May also return secondary count value.
+function MarineBuildBaseStrategy:CheckBuilding(buildingParam, checkType, requireCompleted)
+    checkType = checkType or "completed"  -- Default to completed
+    
+    -- Handle building object directly
+    if type(buildingParam) ~= "string" then
+        return self:GetBuildingCount(nil, checkType, buildingParam)
+    end
+    
+    -- If using the old HasBuilding signature with requireCompleted
+    if requireCompleted ~= nil then
+        local completed = self:GetBuildingCount(buildingParam, "completed")
+        local inProgress = self:GetBuildingCount(buildingParam, "progressing")
+        local queued = self:GetBuildingCount(buildingParam, "queued")
+
+        if DEBUG.ENABLED then
+            debug_print(string.format("[BUILD] CheckBuilding(%s, %s): Completed: %d, In Progress: %d, Queued: %d",
+                buildingParam, tostring(requireCompleted), completed, inProgress, queued))
+        end
+
+        if requireCompleted then
+            return completed > 0, completed
+        else
+            return (completed + inProgress + queued) > 0, completed
+        end
+    end
+    
+    -- Standard behavior - check if count > 0 for specified type
+    return self:GetBuildingCount(buildingParam, checkType) > 0
+end
+
+-- Unified building count function that handles different types of counts
+-- @param buildingName The name of the building to count
+-- @param countType The type of count to perform: "completed", "progressing", "queued", "any", "total" (default: "any")
+-- @param buildingObject Optional building object for direct checks
+-- @return number count of buildings matching the criteria, or boolean for specific checks
+function MarineBuildBaseStrategy:GetBuildingCount(buildingName, countType, buildingObject)
+    -- Handle building object case first
+    if buildingObject and not buildingName then
+        if countType == "completed" then
+            return buildingObject:IsValid() and buildingObject:IsConstructionDone()
+        elseif countType == "progressing" then
+            return buildingObject:IsValid() and not buildingObject:IsConstructionDone()
+        else
+            return buildingObject:IsValid() -- "any" check
+        end
+    end
+    
+    -- Initialize count
+    local count = 0
+    
+    -- If we need actual buildings from the world
+    if countType == "completed" or countType == "progressing" or countType == "any" or countType == "total" then
+        for oBuilding in military_manager:GetBases() do
+            if oBuilding:IsValid() and oBuilding:GetBaseName() == buildingName then
+                if countType == "completed" then
+                    if oBuilding:IsConstructionDone() then
+                        count = count + 1
+                    end
+                elseif countType == "progressing" then
+                    if not oBuilding:IsConstructionDone() then
+                        count = count + 1
+                    end
+                else
+                    -- "any" or "total" count all valid buildings
+                    count = count + 1
+                end
+            end
+        end
+    end
+    
+    -- If we need queued buildings
+    if countType == "queued" or countType == "total" then
+        if self.m_buildMgr and self.m_buildMgr.m_queBuild then
+            for _, buildRequest in pairs(self.m_buildMgr.m_queBuild) do
+                if buildRequest and buildRequest.btype == CpuPrerequisites.BT_Building
+                   and buildRequest.name == buildingName then
+                    count = count + 1
+                end
+            end
+        end
+    end
+    
+    return count
+end
+
+function MarineBuildBaseStrategy:ResearchProgress(research_name, set_state)
+    -- Initialize research cache if it doesn't exist
+    self.research_cache = self.research_cache or {}
+    
+    -- First check if research is already complete
+    if cpu_manager.cpu_player:IsResearchComplete(research_name) then
+        -- Research is complete, remove from cache
+        if self.research_cache[research_name] then
+            debug_print("[RESEARCH] " .. research_name .. ": COMPLETED, removing from cache")
+            self.research_cache[research_name] = nil
+            -- Signal that the next research can now be processed
+            self.research_pause = false
+        end
+        return true
+    end
+    
+    -- Get current time
+    local current_time = g_iGMT or 0
+    
+    -- Check if research is in progress through plan existence
+    local research_id = cpu_manager.stats:GetResearchID(research_name)
+    local plan_exists = research_id ~= 0 and self:PlanExists("Build Research Plan", research_id)
+    
+    -- Initialize cache entry for this research if needed
+    if not self.research_cache[research_name] then
+        self.research_cache[research_name] = {
+            state = "ready",
+            last_check_time = current_time,
+            attempt_count = 0
+        }
+    end
+    
+    local cache = self.research_cache[research_name]
+    
+    -- Update the last check time (only if more than 5 seconds have passed)
+    if current_time - cache.last_check_time > 5 then
+        cache.last_check_time = current_time
+    end
+    
+    -- If set_state is provided, update the state
+    if set_state ~= nil then
+        cache.state = set_state
+        return false
+    end
+    
+    -- State machine for research progress
+    if plan_exists then
+        if cache.state == "attempting" then
+            debug_print("[RESEARCH] " .. research_name .. ": Queue Successful")
+            cache.state = "queued"
+            cache.queued_time = current_time
+            -- Update active research tracking
+            self.active_research = research_name
+            self.research_pause = true
+            self.last_research_time = current_time
+        end
+        return true
+    else
+        -- If we've been in "queued" state but no plan exists, it might have failed or completed
+        if cache.state == "queued" then
+            -- Double check if research is complete (sometimes plan disappears when research completes)
+            if cpu_manager.cpu_player:IsResearchComplete(research_name) then
+                debug_print("[RESEARCH] " .. research_name .. ": COMPLETED, removing from cache")
+                self.research_cache[research_name] = nil
+                -- Allow next research to proceed
+                self.research_pause = false
+                return true
+            end
+            
+            -- Plan doesn't exist anymore but research isn't complete - reset state
+            debug_print("[RESEARCH] " .. research_name .. ": Plan lost but research not complete, resetting state")
+            cache.state = "ready"
+            
+            -- If this was our active research, release the lock
+            if self.active_research == research_name then
+                debug_print("[RESEARCH] Releasing research lock for: " .. research_name)
+                self.active_research = nil
+                self.research_pause = false
+            end
+        end
+        
+        if cache.state == "ready" then
+            -- Only attempt to queue if we haven't tried too many times
+            if not cache.attempt_count or cache.attempt_count < 3 or 
+               (current_time - (cache.last_attempt_time or 0)) > 120 then  -- Reset counter after 2 minutes
+                
+                -- Only proceed if we're not pausing research
+                if not self.research_pause then
+                    debug_print("[RESEARCH] Attempting to queue: " .. research_name)
+                    cache.state = "attempting"
+                    cache.attempt_count = (cache.attempt_count or 0) + 1
+                    cache.last_attempt_time = current_time
+                else
+                    debug_print("[RESEARCH] Research system paused, waiting for active research to complete")
+                end
+            else
+                -- Too many recent attempts, back off
+                debug_print("[RESEARCH] Too many attempts for " .. research_name .. ", backing off")
+            end
+        end
+    end
+    
+    return false
+end
+
+-- Check if an addon is already in progress or complete
+function MarineBuildBaseStrategy:AddonProgress(addon_name)
+    -- Get addon ID
+    local addonID = cpu_manager.stats:GetAddOnID(addon_name)
+    if addonID == 0 then
+        debug_print("[ADDON] Failed to get addon ID for: " .. addon_name)
+        return false
+    end
+
+    -- Check if addon is already complete on any HQ
+    for oBuilding in military_manager:GetBases() do
+        if oBuilding:IsValid() and not oBuilding:IsListeningPost() and
+            oBuilding:GetBaseName() == "space_marine_hq" then
+            if oBuilding:HasAddOn(addonID) then
+                debug_print("[ADDON] Addon " .. addon_name .. " is already complete on HQ")
+                return true
+            end
+        end
+    end
+    
+    -- Check for actively building addons first (most reliable)
+    for build_channel in build_manager:GetUnlockedBuildChannelAIs() do
+        -- Check if this build channel is actually building our addon
+        if build_channel:IsBuilding() == addonID then
+            debug_print("[ADDON] Addon " .. addon_name .. " is actively being constructed")
+            return true
+        end
+        
+        -- Check if addon is in progress but not the active construction
+        local item_index = build_channel:GetItemIndexFromID(BuildChannelAI.PQ_AddOn, addonID)
+        if item_index ~= BuildChannelAI.INVALID_INDEX then
+            -- If we got a valid index, check if it's in the build queue
+            if build_channel:IsItemInQueueAtIndex(BuildChannelAI.PQ_AddOn, item_index) then
+                debug_print("[ADDON] Addon " .. addon_name .. " is in build queue")
+                return true
+            end
+        end
+    end
+
+    -- Check if addon plan exists (this checks for queued but not started addons)
+    if self:PlanExists("Build AddOn Plan", addonID) then
+        debug_print("[ADDON] Addon " .. addon_name .. " has an existing build plan")
+        return true
+    end
+
+    -- Check build channels using can-add method (less reliable)
+    local sAddonBuilding = self:GetAddonBuilding(addon_name)
+    local iBuildingID = cpu_manager.stats:GetBuildingID(sAddonBuilding)
+
+    for iLoop in self.m_aBuildChannels do
+        -- Check for addon building
+        if self.m_aBuildChannels[iLoop][2] == iBuildingID then
+            if self.m_aBuildChannels[iLoop][1]:CanAddToQueue(BuildChannelAI.PQ_AddOn, addonID) ~= BuildChannelAI.CANBUILD_Ok then
+                debug_print("[ADDON] Addon " .. addon_name .. " cannot be added to queue - already exists")
+                return true
+            end
+        end
+    end
+
+    -- Check our tracking variable as a fallback
+    if self.addon_under_construction == addon_name then
+        debug_print("[ADDON] Addon " .. addon_name .. " is in our tracking variable")
+        return true
+    end
+
+    debug_print("[ADDON] Addon " .. addon_name .. " is not in progress")
+    return false
+end
+
+function MarineBuildBaseStrategy:GetResearchCapacity()
+    -- Research capacity is based on the number of completed research buildings
+    -- Each research building allows 1 simultaneous research
+    local armouryCount = self:GetBuildingCount("space_marine_armoury", "completed")
+    local librariumCount = self:GetBuildingCount("space_marine_ability_building", "completed")
+    
+    -- Total research building count
+    local totalResearchBuildings = armouryCount + librariumCount
+    
+    -- If no research buildings are completed, capacity is 0
+    local baseCapacity = totalResearchBuildings
+    
+    debug_print(string.format("[RESEARCH] Research capacity: %d (Armourys: %d, Librarium: %d)", 
+                             baseCapacity, armouryCount, librariumCount))
+    return baseCapacity
+end
+
+function MarineBuildBaseStrategy:GetActiveResearchCount()
+    -- Initialize active research tracking if needed
+    self.active_researches = self.active_researches or {}
+    
+    local activeCount = 0
+    local completedResearches = {}
+    
+    -- Check each tracked research
+    for researchName, researchData in pairs(self.active_researches) do
+        -- Check if research is complete
+        if cpu_manager.cpu_player:IsResearchComplete(researchName) then
+            debug_print("[RESEARCH] Research completed: " .. researchName)
+            table.insert(completedResearches, researchName)
+        else
+            -- Check if plan still exists
+            local research_id = cpu_manager.stats:GetResearchID(researchName)
+            local plan_exists = research_id ~= 0 and self:PlanExists("Build Research Plan", research_id)
+            
+            if plan_exists then
+                activeCount = activeCount + 1
+                debug_print("[RESEARCH] Active research: " .. researchName)
+            else
+                -- Plan disappeared but research not complete - clean up
+                debug_print("[RESEARCH] Research plan lost: " .. researchName)
+                table.insert(completedResearches, researchName)
+            end
+        end
+    end
+    
+    -- Clean up completed/failed researches
+    for _, researchName in pairs(completedResearches) do
+        self.active_researches[researchName] = nil
+    end
+    
+    debug_print("[RESEARCH] Active research count: " .. activeCount)
+    return activeCount
+end
+
+function MarineBuildBaseStrategy:CanStartNewResearch()
+    local capacity = self:GetResearchCapacity()
+    local activeCount = self:GetActiveResearchCount()
+    
+    local canStart = activeCount < capacity
+    debug_print("[RESEARCH] Can start new research: " .. (canStart and "YES" or "NO") .. " (" .. activeCount .. "/" .. capacity .. ")")
+    
+    return canStart
+end
+
+function MarineBuildBaseStrategy:TrackResearch(researchName)
+    -- Initialize tracking if needed
+    self.active_researches = self.active_researches or {}
+    
+    -- Track this research
+    self.active_researches[researchName] = {
+        started_time = g_iGMT or 0,
+        name = researchName
+    }
+    
+    debug_print("[RESEARCH] Now tracking research: " .. researchName)
+end
+
+-- Define placement categories
+MarineBuildBaseStrategy.building_categories = {
+    ["space_marine_hq"] = "HQ", -- Special case handled in GetPlacementType
+    ["space_marine_generator"] = "BaseBack",
+    ["space_marine_thermo_generator"] = "BaseBack",
+    ["space_marine_armoury"] = "BaseBack",
+    ["space_marine_armoury_emperor"] = "BaseBack",
+    ["space_marine_barracks"] = "Military",
+    ["space_marine_vehicle_building"] = "Military",
+    ["space_marine_landraider_building"] = "Military",
+    ["space_marine_titan_facility"] = "Military",
+    ["space_marine_ability_building"] = "BaseBack",
+    ["space_marine_interface_relay"] = "BaseBack",
+    ["space_marine_orbital_relay"] = "BaseBack",
+    ["space_marine_turret_bolter"] = "Front2",
+    ["space_marine_turret_missile_sp"] = "Front2",
+    ["space_marine_tanktrap"] = "Front2",
+    ["space_marine_wall"] = "Front2",
+    ["space_marine_hq_super"] = "Military",
+    ["space_marine_income_structure"] = "BaseBack",
+    ["space_marine_listening_post"] = "Front2"
+}
+
+
+-- Modify GetPlacementType to use caching
+function MarineBuildBaseStrategy:GetPlacementType(iBuildingID)
+    --debug_function_enter("GetPlacementType", { building_id = iBuildingID })
+
+    -- Check cache first
+    if self.placement_cache[iBuildingID] then
+        --debug_print("[PLACEMENT] Cache hit for building ID " .. iBuildingID .. ": " .. self.placement_cache[iBuildingID], "PLACEMENT")
+        return self.placement_cache[iBuildingID]
+    end
+
+    debug_print("[PLACEMENT] Cache miss for building ID " .. iBuildingID .. ", calculating placement...", "PLACEMENT")
+
+    local placement = "Basic" -- Default placement
+
+    -- HQ special case
+    if iBuildingID == cpu_manager.stats:GetBuildingID("space_marine_hq") then
+        local count = self:GetBuildingCountByName("space_marine_hq", false)
+        local friend = cpu_manager:FindClosestFriendPlayer()
+
+        -- Determine placement based on conditions
+        local placement
+        if friend == nil then
+            -- No friendly players
+            if count == 0 and not cpu_manager:HQThreat() then
+                placement = "HQ"
+            else
+                placement = "Safeplace"
+            end
+        else
+            -- Friendly players exist
+            if count > 2 or cpu_manager:HQThreat() then
+                placement = "HQ"
+            else
+                placement = "Safeplace"
+            end
+        end
+
+        debug_print("[PLACEMENT] Caching HQ placement: " .. placement, "PLACEMENT")
+        self.placement_cache[iBuildingID] = placement
+        return placement
+    end
+
+    -- Get building name and check categories
+    for name, category in pairs(self.building_categories) do
+        if iBuildingID == cpu_manager.stats:GetBuildingID(name) then
+            placement = category
+            debug_print("[PLACEMENT] Found category " .. category .. " for building " .. name, "PLACEMENT")
+            break
+        end
+    end
+
+    -- Check if it's a generator
+    if placement == "Basic" and cpu_manager:IsGenerator(iBuildingID) then
+        placement = "BaseBack"
+        debug_print("[PLACEMENT] Building is a generator, setting placement to BaseBack", "PLACEMENT")
+    end
+
+    -- Cache the result
+    debug_print("[PLACEMENT] Caching placement " .. placement .. " for building ID " .. iBuildingID, "PLACEMENT")
+    self.placement_cache[iBuildingID] = placement
+    return placement
+end
+
+-- Add a function to clear cache if needed (call this when map changes or game resets)
+function MarineBuildBaseStrategy:ClearPlacementCache()
+    --debug_function_enter("ClearPlacementCache")
+    self.placement_cache = {}
+end
+
+-- Enhanced BaseEmergency function
+function MarineBuildBaseStrategy:BaseEmergency()
+    debug_print("[HQ] Checking emergency state", "HQ")
+
+    local bEmergencyState = false
+    local iHQCount = self:GetBuildingCountByName("space_marine_hq")
+
+    -- Get emergency defense settings
+    local emergencySettings = BuildBaseStrategyInfo.space_marine_race.EmergencyDefense
+
+    -- Check all HQ buildings
+    for oBuilding in military_manager:GetBases() do
+        if oBuilding:IsValid() and not oBuilding:IsListeningPost() and
+            oBuilding:GetBaseName() == "space_marine_hq" and oBuilding:IsConstructionDone() then
+            local health = oBuilding:GetHealthPercentage()
+            debug_print("[HQ] Found HQ with health: " .. health, "HQ")
+
+            -- Check if HQ is critically damaged
+            if health < 0.6 then
+                debug_print("[HQ] HQ health critical! Activating emergency mode", "HQ")
+                bEmergencyState = true
+
+                -- Sort and build emergency defenses
+                local defensePriorities = {}
+                for _, defense in pairs(emergencySettings.Buildings) do
+                    table.insert(defensePriorities, defense)
+                end
+                table.sort(defensePriorities, function(a, b) return a[4] < b[4] end)
+
+                -- Build defensive structures
+                for _, defense in pairs(defensePriorities) do
+                    local name = defense[1]
+                    local minCount = defense[2]
+                    if self:GetBuildingCountByName(name) < minCount then
+                        local tBuildType = CpuBuildType()
+                        tBuildType.btype = CpuPrerequisites.BT_Building
+                        tBuildType.name = name
+                        if self:TryBuild(tBuildType) then
+                            debug_print("[HQ] Emergency defense queued: " .. name, "HQ")
+                        end
+                    end
+                end
+
+                -- Build backup HQ if needed
+                if iHQCount < 2 then
+                    local tBuildType = CpuBuildType()
+                    tBuildType.btype = CpuPrerequisites.BT_Building
+                    tBuildType.name = "space_marine_hq"
+                    if self:TryBuild(tBuildType) then
+                        debug_print("[HQ] Emergency HQ build queued", "HQ")
+                    end
+                end
+
+                -- Set emergency mode settings
+                self.post_builder = emergencySettings.BuilderCount
+                self.m_iTechBreak = 1 / emergencySettings.ResourceMultiplier
+                self.m_bEmergencyMode = true
+                self.m_bSpendMoney = true
+                Tactic.Options.can_reinforce = true
+
+                -- Clear build programs
+                local currentProgram = self.info.BuildPrograms[BuildBaseStrategy.iBuildProgram]
+                for i = 1, table.getn(currentProgram) do
+                    if currentProgram[i][5] == "Unit" then
+                        for j = 7, 12 do -- Clear tier quantities
+                            currentProgram[i][j] = 0
+                        end
+                    end
+                end
+                debug_print("[HQ] Cleared unit build programs for emergency mode", "HQ")
+            else
+                -- HQ health is good, check if we need to exit emergency mode
+                if self.m_bEmergencyMode then
+                    debug_print("[HQ] HQ health recovered, restoring normal operation", "HQ")
+                    self.m_bEmergencyMode = false
+                    self:InitBuildPrograms()
+                end
+            end
+        end
+    end
+
+    return bEmergencyState
+end
+
+-- Cache attachable squad counts to avoid expensive duplicate calculations
+function MarineBuildBaseStrategy:GetAttachableSquadCount()
+    -- Cache for 5 seconds to avoid repeated expensive calculations
+    local current_time = g_iGMT or 0
+    if self.attachable_squad_cache and self.attachable_squad_cache.time and 
+       (current_time - self.attachable_squad_cache.time) < 5 then
+        return self.attachable_squad_cache.count
+    end
+
+    -- Calculate attachable squad count
+    local attach_function = function(squad_ai)
+        return (squad_ai:GetTactic():GetUnitStrength() >= 250 and squad_ai:CanReceiveAttachment())
+    end
+    
+    local attachable_squads = {
+        "space_marine_squad_tactical",
+        "space_marine_squad_devastator", 
+        "space_marine_squad_sternguard_veteran",
+        "space_marine_squad_vanguard_veteran",
+        "space_marine_squad_terminator_assault",
+        "space_marine_squad_terminator"
+    }
+    
+    local total_attachable = 0
+    for _, squad_type in ipairs(attachable_squads) do
+        total_attachable = total_attachable + self:CountSquads(squad_type, attach_function)
+    end
+    
+    -- Cache the result
+    self.attachable_squad_cache = {
+        count = total_attachable,
+        time = current_time
+    }
+    
+    return total_attachable
+end
+
+-- Check if we have the required commander type for a specific wargear upgrade
+-- This function maps wargear research target_type_name patterns to actual commander presence
+-- Based on comprehensive analysis of target_type_name patterns in research files
+function MarineBuildBaseStrategy:HasRequiredCommanderForWargear(upgradeName)
+    -- Get commander presence info for all commander types and variants
+    local hasForceCommander = self:CountSquads("space_marine_squad_force_commander") > 0
+    local hasChaplain = self:CountSquads("space_marine_squad_chaplain") > 0  
+    local hasLibrarian = self:CountSquads("space_marine_squad_librarian") > 0
+    -- Note: Chapter Master is a promoted Force Commander, so we check for Force Commander presence
+    
+    -- Map upgrades to commander requirements based on target_type_name analysis
+    local commanderRequirements = {
+        -- Basic Force Commander wargear (target_type_name: "force_commander")
+        ["UA_marine_wargear01"] = hasForceCommander,
+        ["UA_marine_wargear02"] = hasForceCommander, 
+        ["UA_marine_wargear03"] = hasForceCommander,
+        ["UA_marine_wargear04"] = hasForceCommander,
+        ["UA_marine_wargear05"] = hasForceCommander,
+        
+        -- Mixed Force Commander variants (various target_type_name patterns)
+        ["UA_marine_wargear06"] = hasForceCommander, -- Multiple FC variants
+        ["UA_marine_wargear07"] = hasForceCommander, -- Multiple FC variants
+        ["UA_marine_wargear08"] = hasForceCommander, -- FC + honour_guard_chapter_master
+        ["UA_marine_wargear09"] = hasForceCommander, -- Multiple FC variants
+        ["UA_marine_wargear10"] = hasForceCommander, -- Multiple FC variants
+        ["UA_marine_wargear11"] = hasForceCommander, -- Multiple FC variants
+        ["UA_marine_wargear12"] = hasForceCommander, -- Multiple FC variants
+        ["UA_marine_wargear13"] = hasForceCommander, -- Multiple FC variants
+        ["UA_marine_wargear14"] = hasForceCommander, -- Multiple FC variants
+        ["UA_marine_wargear15"] = hasForceCommander, -- force_commander_killeus + terminator + lotd
+        ["UA_marine_wargear16"] = hasForceCommander, -- force_commander_killeus + terminator + lotd
+        ["UA_marine_wargear17"] = hasForceCommander, -- force_commander_killeus + terminator + lotd
+        ["UA_marine_wargear18"] = hasForceCommander, -- force_commander_killeus + terminator + lotd
+        ["UA_marine_wargear19"] = hasForceCommander, -- force_commander_killeus + lotd
+        
+        -- Chapter Master specific wargear (target_type_name: "honour_guard_chapter_master")
+        ["UA_marine_wargear20"] = hasForceCommander, -- honour_guard_chapter_master (Chapter Master)
+        ["UA_marine_wargear21"] = hasForceCommander, -- honour_guard_chapter_master (Chapter Master)
+        
+        -- Chaplain wargear (target_type_name: "chaplain", "chaplain_advance_sp", "space_marine_crozius_arcanum")
+        ["UA_marine_wargear22"] = hasChaplain, -- space_marine_crozius_arcanum + chaplain_advance_sp
+        ["UA_marine_wargear23"] = hasChaplain, -- chaplain + chaplain_advance_sp variants
+        ["UA_marine_wargear24"] = hasChaplain, -- chaplain + chaplain_advance_sp variants
+        
+        -- Legion of the Damned Force Commander (target_type_name: "force_commander_lotd")
+        ["UA_marine_wargear25"] = hasForceCommander, -- force_commander_lotd
+        
+        -- Specific upgrade research files (target_type_name: "force_commander_advance_sp" primarily)
+        ["UA_marine_wargear_upgrade_01_power_sword_research"] = hasForceCommander,
+        ["UA_marine_wargear_upgrade_02_daemon_hammer_research"] = hasForceCommander,
+        ["UA_marine_wargear_upgrade_03_plasma_pistol_research"] = hasForceCommander,
+        ["UA_marine_wargear_upgrade_04_multi_melta_research"] = hasForceCommander,
+        ["UA_marine_wargear_upgrade_05_halo_research"] = hasForceCommander,
+        ["UA_marine_wargear_upgrade_06_shoulders_research"] = hasForceCommander,
+        ["UA_marine_wargear_upgrade_07_girdle_research"] = hasForceCommander,
+        ["UA_marine_wargear_upgrade_08_gauntlets_research"] = hasForceCommander,
+        ["UA_marine_wargear_upgrade_09_greaves_research"] = hasForceCommander,
+        ["UA_marine_wargear_upgrade_10_teleporter_research"] = hasForceCommander,
+        ["UA_marine_wargear_upgrade_terminator_halo_research"] = hasForceCommander, -- force_commander_terminator
+        
+        -- Generic upgrade files (various FC targets)
+        ["UA_marine_wargear_upgrade_06"] = hasForceCommander,
+        ["UA_marine_wargear_upgrade_07"] = hasForceCommander,
+        ["UA_marine_wargear_upgrade_08"] = hasForceCommander,
+        ["UA_marine_wargear_upgrade_research"] = hasForceCommander,
+    }
+    
+    -- Check if this upgrade has specific commander requirements
+    local requirement = commanderRequirements[upgradeName]
+    if requirement ~= nil then
+        debug_print("[WARGEAR] Checking " .. upgradeName .. ": " .. (requirement and "ALLOWED" or "BLOCKED"))
+        return requirement
+    end
+    
+    -- Fallback patterns for research names not in the main table
+    -- Spell upgrades require Librarian
+    if string.find(upgradeName, "spell_") then
+        debug_print("[WARGEAR] Spell upgrade requires Librarian: " .. upgradeName .. ": " .. (hasLibrarian and "ALLOWED" or "BLOCKED"))
+        return hasLibrarian
+    end
+    
+    -- Chaplain-specific upgrades (by name pattern)
+    if string.find(upgradeName, "chaplain") then
+        debug_print("[WARGEAR] Chaplain upgrade: " .. upgradeName .. ": " .. (hasChaplain and "ALLOWED" or "BLOCKED"))
+        return hasChaplain
+    end
+    
+    -- Specific librarian upgrades by exact names
+    if upgradeName == "UA_marine_librarian_research_1" or upgradeName == "UA_marine_librarian_research_2" then
+        debug_print("[WARGEAR] Specific librarian upgrade: " .. upgradeName .. ": " .. (hasLibrarian and "ALLOWED" or "BLOCKED"))
+        return hasLibrarian
+    end
+    
+    -- Additional librarian research patterns
+    if string.find(upgradeName, "librarian_research") then
+        debug_print("[WARGEAR] Librarian research upgrade: " .. upgradeName .. ": " .. (hasLibrarian and "ALLOWED" or "BLOCKED"))
+        return hasLibrarian
+    end
+    
+    -- Force Commander pattern fallback
+    if string.find(upgradeName, "force_commander") or string.find(upgradeName, "commander") then
+        debug_print("[WARGEAR] Force Commander upgrade: " .. upgradeName .. ": " .. (hasForceCommander and "ALLOWED" or "BLOCKED"))
+        return hasForceCommander
+    end
+    
+    -- Default: assume no specific commander requirement (allow upgrade)
+    debug_print("[WARGEAR] No specific requirement for: " .. upgradeName .. ": ALLOWED")
+    return true
+end
+
+function MarineBuildBaseStrategy:ModifySquadDemand(iUnitID)
+    --debug_function_enter("ModifySquadDemand")
+    -- Call the base class method and store its result
+    local result = BuildBaseStrategy.ModifySquadDemand(self, iUnitID)
+
+    -- Add or modify behavior specific to MarineBuildBaseStrategy
+
+    -- No more apothecaries than attachable squads
+    if iUnitID == cpu_manager.stats:GetSquadID("space_marine_squad_apothecary") then
+        local num_attachable = self:GetAttachableSquadCount()
+        local num_apo = self:CountSquads("space_marine_squad_apothecary")
+        if num_apo >= num_attachable then
+            return 0
+        end
+    end
+
+    -- No more than 1 banner per 2 attachable squads
+    if iUnitID == cpu_manager.stats:GetSquadID("space_marine_squad_banner_bearer") then
+        local num_attachable = self:GetAttachableSquadCount()
+        local num_banner = self:CountSquads("space_marine_squad_banner_bearer")
+        if 2 * num_banner >= num_attachable then
+            return 0
+        end
+    end
+
+    -- Only build rhinos if we've full support cap
+    if iUnitID == cpu_manager.stats:GetSquadID("space_marine_squad_rhino") then
+        -- Check army strength
+        if cpu_manager:GetArmyStrength() < 4000 then
+            return 0
+        end
+    end
+
+    -- Return the result from the base class or modified result
+    return result
+end
+
+function MarineBuildBaseStrategy:InitBuildPrograms()
+    --debug_function_enter("InitBuildPrograms")
+    -- Reload the original build programs from marinestrategyinfo
+    self.info = BuildBaseStrategyInfo.space_marine_race
+    debug_print("[BUILD] Build programs reinitialized", "BUILD")
+    -- Ensure quotas are set at init
+    self:ComputeBuildProgram()
+end
+
+function MarineBuildBaseStrategy:ComputeBuildProgram()
+    -- Initialize tracking tables if they don't exist
+    self.last_building_counts = self.last_building_counts or {}
+    self._dynamic_building_limits = self._dynamic_building_limits or {}
+    -- Initialize last_tier_processed if it doesn't exist (for detecting tier changes)
+    self.last_tier_processed = self.last_tier_processed or self.tierLevel
+    
+    debug_print("\n[AI] ========== COMPUTE BUILD PROGRAM ==========")
+    debug_print(string.format("[AI] Current tier: %d", self.tierLevel))
+
+    -- 1. Initialize building limits from build program data
+    local buildProgramData = self.info.BuildPrograms[1]
+    for _, entry in ipairs(buildProgramData) do
+        if type(entry) == "table" and entry[5] == "Building" then
+            local buildingName = entry[6]
+            local tierIndex = 6 + self.tierLevel
+            local tierLimit = entry[tierIndex] or 0
+            self._dynamic_building_limits[buildingName] = tierLimit
+        end
+    end
+
+    -- 2. Initialize unit and building quantities if first run
+    local isFirstRun = false
+    if not self.building_quantities then
+        self.building_quantities = {}
+        self.unit_quantities = {}
+        isFirstRun = true
+        debug_print("[AI] First run detected - will initialize unit limits")
+    end
+
+    -- 3. Update unit and building limits only when tier changes or on first run
+    if isFirstRun or self.last_tier_processed ~= self.tierLevel then
+        debug_print(string.format("[AI] Tier changed from %d to %d - recalculating unit limits", 
+            self.last_tier_processed, self.tierLevel))
+            
+        local fArmyCapModifier = CpuManager.AISettings and
+            CpuManager.AISettings.bMassiveBattlesMode and
+            (g_fMassiveBattlesModifier or 1.0) or 1.0
+
+        for _, entry in ipairs(buildProgramData) do
+            if type(entry) == "table" and entry[1] and entry[1] <= self.tierLevel then
+                local tierTarget = entry[6 + self.tierLevel] or 0
+
+                if entry[5] == "Unit" then
+                    local adjustedQty = math.floor(tierTarget * fArmyCapModifier + 0.5)
+                    if self.unit_quantities[entry[6]] ~= adjustedQty then
+                        self.unit_quantities[entry[6]] = adjustedQty
+                        build_manager:SetSquadLimit(entry[6], adjustedQty)
+                        debug_print(string.format("[AI] Unit quota set: %s = %d", entry[6], adjustedQty))
+                    end
+                elseif entry[5] == "Building" then
+                    if self.building_quantities[entry[6]] ~= tierTarget then
+                        self.building_quantities[entry[6]] = tierTarget
+                    end
+                end
+            end
+        end
+        
+        -- Update last processed tier to current
+        self.last_tier_processed = self.tierLevel
+    else
+        debug_print("[AI] Tier unchanged - skipping unit limit recalculation")
+    end
+
+    -- 4. Process build program entries
+    local modifiedPrograms = {}
+
+    -- Process building entries
+    for _, entry in ipairs(buildProgramData) do
+        if type(entry) == "table" and entry[1] and entry[1] <= self.tierLevel and entry[5] == "Building" then
+            local tierTarget = entry[6 + self.tierLevel] or 0
+            if tierTarget > 0 then
+                self:ProcessBuildingEntry(entry, modifiedPrograms)
+            end
+        end
+    end
+
+    -- Process non-building entries
+    for _, entry in ipairs(buildProgramData) do
+        if type(entry) == "table" and entry[1] and entry[1] <= self.tierLevel and entry[5] ~= "Building" then
+            local tierTarget = entry[6 + self.tierLevel] or 0
+            if tierTarget > 0 then
+                table.insert(modifiedPrograms, {
+                    entry[1], entry[2], entry[3], entry[4],
+                    tierTarget,
+                    entry[5], entry[6]
+                })
+            end
+        end
+    end
+end
+
+-- Helper function to find a build program entry by building name
+function MarineBuildBaseStrategy:FindBuildProgramEntry(buildingName)
+    for _, entry in ipairs(self.info.BuildPrograms[1]) do
+        if type(entry) == "table" and entry[5] == "Building" and entry[6] == buildingName then
+            return entry
+        end
+    end
+    return nil
+end
+
+-- Process a single building entry
+function MarineBuildBaseStrategy:ProcessBuildingEntry(entry, modifiedPrograms)
+    local buildingName = entry[6]
+    local buildingID = cpu_manager.stats:GetBuildingID(buildingName)
+    local tierTarget = entry[6 + self.tierLevel] or 0
+    local maxAllowed = self._dynamic_building_limits[buildingName] or math.huge
+    
+    -- Check if this is a listening post and compare with captured points
+    if buildingName == "space_marine_listening_post" then
+        local numStrategicPoints = resource_manager:GetNumOwnedStrategicPoints()
+        local numRelics = 0
+        if self:HasRelic() then numRelics = 1 end
+        
+        -- Count current listening posts (completed + in progress + queued)
+        local listeningPostID = cpu_manager.stats:GetBuildingID("space_marine_listening_post")
+        local completedListeningPosts = self:GetBuildingCountByName("space_marine_listening_post")
+        local inProgressListeningPosts = self:GetBuildingCount("space_marine_listening_post", "progressing")
+        local queuedListeningPosts = self:PlanCount("Build Building Plan", listeningPostID)
+        local totalListeningPosts = completedListeningPosts + inProgressListeningPosts + queuedListeningPosts
+        
+        -- Get total capturable points
+        local totalCapturedPoints = numStrategicPoints + numRelics
+        
+        -- Only allow building listening posts if we have fewer posts than captured points
+        if totalCapturedPoints <= 0 then
+            debug_print("[AI] Blocking listening post construction - no strategic points or relics captured")
+            return
+        elseif totalListeningPosts >= totalCapturedPoints then
+            debug_print(string.format("[AI] Blocking listening post construction - already have enough (%d posts for %d points)", 
+                totalListeningPosts, totalCapturedPoints))
+            return
+        else
+            debug_print(string.format("[AI] Allowing listening post construction - have %d posts for %d captured points", 
+                totalListeningPosts, totalCapturedPoints))
+        end
+    end
+
+    -- Get building counts
+    local completed = self:GetBuildingCountByName(buildingName)
+    local inProgress = self:GetBuildingCount(buildingName, "progressing")
+    local queued = self:PlanCount("Build Building Plan", buildingID)
+    -- strategicallyQueued function removed as it no longer exists
+    local total = completed + inProgress + queued
+
+    -- Calculate how many we can build
+    local buildingLimit = (self.building_limits and self.building_limits[buildingName]) or 1
+    local canBuild = math.min(
+        tierTarget - total,    -- Up to tier target
+        maxAllowed - total,    -- But not exceeding max allowed
+        1,                     -- Only build one at a time
+        buildingLimit - queued -- Respect build limits
+    )
+
+    -- Queue building if needed
+    if canBuild > 0 then
+        local tBuildType = CpuBuildType()
+        tBuildType.btype = CpuPrerequisites.BT_Building
+        tBuildType.name = buildingName
+        if self:TryBuild(tBuildType) then
+            debug_print(string.format("[AI] Started construction of %s (Tier %d)", buildingName, self.tierLevel))
+        end
+    end
+
+    -- Add to modified programs if we need more
+    if total < tierTarget then
+        table.insert(modifiedPrograms, entry)
+    end
+end
+
+-- Update commander presence for research logic
+-- Note: Original UpdateCommanderPresence removed - using the more concise implementation at line ~2124 instead
+
+-- Override UpdateTierLevel to prevent parent class from resetting tier to 1
+function MarineBuildBaseStrategy:UpdateTierLevel()
+    -- Do not modify tier level here - our tier logic is in ChecktierLevel
+    debug_print("[TIER] UpdateTierLevel called, preserving current tier: " .. self.tierLevel)
+    -- The parent class implementation would reset self.tierLevel = 1 here,
+    -- but we want to preserve our tier level as set by ChecktierLevel and OnAddOnComplete
+end
+
+-- Determine if we can start new research based on buildings and capacity
+function MarineBuildBaseStrategy:CanStartNewResearch()
+    -- Initialize tracking vars if they don't exist
+    self.research_pause = self.research_pause or false
+    self.research_building_logged = self.research_building_logged or {}
+
+    -- Check research capacity
+    local armouries_count = self:GetBuildingCount("space_marine_armoury", "completed")
+    local armouries_progressing = self:GetBuildingCount("space_marine_armoury", "progressing")
+    local armouries_queued = self:GetBuildingCount("space_marine_armoury", "queued")
+    
+    local librarium_count = self:GetBuildingCount("space_marine_ability_building", "completed")
+    local librarium_progressing = self:GetBuildingCount("space_marine_ability_building", "progressing")
+    local librarium_queued = self:GetBuildingCount("space_marine_ability_building", "queued")
+    
+    local research_capacity = armouries_count + librarium_count
+    local active_research = self:GetActiveResearchCount()
+    
+    debug_print("[RESEARCH] Research building status:")
+    debug_print("  - Armoury: completed=" .. armouries_count .. ", progressing=" .. armouries_progressing .. ", queued=" .. armouries_queued)
+    debug_print("  - Librarium: completed=" .. librarium_count .. ", progressing=" .. librarium_progressing .. ", queued=" .. librarium_queued)
+    debug_print("[RESEARCH] Research capacity: " .. research_capacity .. " (Armourys: " .. armouries_count .. ", Librarium: " .. librarium_count .. ")")
+    debug_print("[RESEARCH] Active research count: " .. active_research)
+    debug_print("[RESEARCH] Research paused: " .. tostring(self.research_pause))
+    
+    -- Can start new research if we have capacity and aren't already researching
+    local can_start = (research_capacity > 0) and (active_research < research_capacity) and not self.research_pause
+    debug_print("[RESEARCH] Can start new research: " .. (can_start and "YES" or "NO") .. " (" .. active_research .. "/" .. research_capacity .. ")")
+    
+    return can_start
+end
+
+-- Count active research by checking plans and cached research state
+function MarineBuildBaseStrategy:GetActiveResearchCount()
+    local count = 0
+    
+    -- Check for active research plans
+    if self.m_planManager then
+        local plans = self.m_planManager:GetPlans()
+        for i = 0, plans:Count() - 1 do
+            local plan = plans:Get(i)
+            if plan:GetName() == "Build Research Plan" then
+                count = count + 1
+                debug_print("[RESEARCH COUNT] Found active research plan: " .. tostring(plan:GetID()))
+            end
+        end
+    end
+    
+    -- Check if we have an active_research in our tracking
+    if self.active_research and self.active_research ~= "" then
+        -- Double check if the research is actually still in progress
+        if not cpu_manager.cpu_player:IsResearchComplete(self.active_research) then
+            -- Verify if this research is already counted in the plans
+            local research_id = cpu_manager.stats:GetResearchID(self.active_research)
+            local already_counted = false
+            
+            if research_id ~= 0 and self.m_planManager then
+                local plans = self.m_planManager:GetPlans()
+                for i = 0, plans:Count() - 1 do
+                    local plan = plans:Get(i)
+                    if plan:GetName() == "Build Research Plan" and plan:GetID() == research_id then
+                        already_counted = true
+                        break
+                    end
+                end
+            end
+            
+            -- Only increment if not already counted
+            if not already_counted then
+                count = count + 1
+                debug_print("[RESEARCH COUNT] Tracked active research: " .. self.active_research)
+            end
+        else
+            -- Research is actually complete, clear tracking
+            debug_print("[RESEARCH COUNT] Clearing completed research from tracking: " .. self.active_research)
+            self.active_research = nil
+            self.research_pause = false
+        end
+    end
+    
+    return count
+end
+
+function MarineBuildBaseStrategy:BuildFlexible()
+    -- Update commander presence for use in build logic
+    self:UpdateCommanderPresence()
+    
+    -- Get current tier level
+    local iTier = self.tierLevel
+    
+    -- Reset research logging flag for this cycle
+    self.research_armoury_logged = false
+
+    -- Initialize chapter research pattern if not set
+    if self.m_iMarineResearchPattern == nil then
+        local chapter_researches = {
+            "UA_marine_chapter_bloodravens_research",
+            "UA_marine_chapter_lotd_research"
+        }
+
+        -- Randomly select a chapter research (50/50 chance)
+        local selected_index = math.random(1, 2)
+        local chapter_research = chapter_researches[selected_index]
+        
+        -- Store the selected pattern and queue the research
+        self.m_iMarineResearchPattern = chapter_research
+        debug_print("[CHAPTER] Selected chapter research: " .. chapter_research)
+        self:DynamicResearch(chapter_research, 0, 0, 0, 0, 0, nil, 0, true)
+    end
+
+    -- Handle resource upgrades through existing function
+    self:ResearchResourceUpgrades()
+
+    -- Update commander and building states
+    self:UpdateCommanderPresence()
+
+    -- Get up-to-date commander and building states
+    local hasArmoury = self:GetBuildingCount("space_marine_armoury", "completed") > 0
+    local hasLibrarian = self.commander_presence and self.commander_presence.librarian or false
+    local hasForceCommander = self.commander_presence and self.commander_presence.force_commander or false
+    local hasChaplain = self.commander_presence and self.commander_presence.chaplain or false
+    -- Any commander present: check if any commander_presence is true
+    local hasAnyCommander = false
+    if self.commander_presence then
+        for _, present in pairs(self.commander_presence) do
+            if present then
+                hasAnyCommander = true
+                break
+            end
+        end
+    end
+
+    -- Get the build programs and commander upgrades
+    local buildPrograms = self.info.BuildPrograms[1]
+    
+    -- Initialize research tracking for this cycle
+    self.research_building_logged = self.research_building_logged or {}
+    self.commander_level_research_complete = self.commander_level_research_complete or {}
+    
+    -- Track if any research was queued this cycle
+    local researchQueued = false
+    local commanderUpgradeQueued = false
+    
+    -- Check if we have any completed research buildings
+    local hasAnyResearchBuilding = self:GetBuildingCount("space_marine_armoury", "completed") > 0 or
+                                  self:GetBuildingCount("space_marine_ability_building", "completed") > 0
+
+    -- Can we even try to start research?
+    local canStartRegularResearch = hasAnyResearchBuilding and self:CanStartNewResearch()
+    
+    -- Special handling for commander level research - track completion by tier
+    if not self.commander_level_research_checked then
+        self.commander_level_research_checked = true
+        for tier = 1, 6 do
+            local commander_level_research = "UA_marine_commander_level" .. tier .. "_research"
+            if cpu_manager.cpu_player:IsResearchComplete(commander_level_research) then
+                self.commander_level_research_complete[tier] = true
+                debug_print("[COMMANDER] Tier " .. tier .. " commander level research is complete")
+            end
+        end
+    end
+    
+    -- Process regular research entries if we have capacity and buildings
+    if canStartRegularResearch then
+        debug_print("[RESEARCH] Research buildings available, processing research queue")
+        
+        -- Process ONLY commander level research first (they're prerequisites for other upgrades)
+        for _, entry in pairs(buildPrograms) do
+            if type(entry) == "table" and entry[1] and entry[5] == "Research" then
+                local researchName = entry[6] or ""
+                
+                -- Only process commander level research in this first pass
+                if string.find(researchName, "commander_level") and entry[7 + iTier - 1] > 0 then
+                    -- Extract tier number from research name
+                    local tier_number = tonumber(string.match(researchName, "level(%d+)") or "0")
+                    
+                    -- Skip if research is already in progress or queued or completed
+                    if not self:ResearchProgress(researchName) then
+                        debug_print("[COMMANDER] Queueing commander level research: " .. researchName)
+                        self:DynamicResearch(entry[6], entry[1], entry[2], entry[3], entry[4], 0, nil, 0, true)
+                        researchQueued = true
+                        -- Mark as queued so we track it as in progress for later checks
+                        self.research_cache = self.research_cache or {}
+                        self.research_cache[researchName] = {state = "attempting"}
+                        break -- Only queue one commander level research at a time
+                    else
+                        debug_print("[COMMANDER] Skipping queue for commander level research " .. researchName .. ": already in progress or queued")
+                    end
+                end
+            end
+        end
+        
+        -- Then process regular research (if we didn't queue commander level research)
+        if not researchQueued then
+            for _, entry in pairs(buildPrograms) do
+                if type(entry) == "table" and entry[1] and entry[5] == "Research" then
+                    local shouldSkip = false
+                    local researchName = entry[6] or ""
+                    
+                    -- Skip commander level research (handled above) and commander upgrades (handled separately)
+                    if string.find(researchName, "commander_level") or string.find(researchName, "wargear") then
+                        shouldSkip = true
+                    end
+    
+                    -- Check if we should process this research
+                    if not shouldSkip and entry[7 + iTier - 1] > 0 then
+                        -- Check spell research requirements
+                        if string.find(researchName, "spell_") and not hasLibrarian then
+                            debug_print("[RESEARCH] Skipping spell research - no Librarian present: " .. researchName)
+                            shouldSkip = true
+                        end
+    
+                        -- Check for regular research: require Armoury
+                        if not shouldSkip and not string.find(researchName, "spell_") and not hasArmoury then
+                            -- Use building status system to check armoury
+                            local building_name = "space_marine_armoury"
+                            local completed_count = self:GetBuildingCount(building_name, "completed")
+                            local progressing_count = self:GetBuildingCount(building_name, "progressing")
+                            local queued_count = self:PlanCount("Build Building Plan", cpu_manager.stats:GetBuildingID(building_name))
+                            
+                            -- Only log once per cycle for each building type
+                            if not self.research_building_logged[building_name] then
+                                debug_print("[RESEARCH] No completed " .. building_name .. " present for research. Status: " .. 
+                                            "completed=" .. tostring(completed_count) .. 
+                                            ", progressing=" .. tostring(progressing_count) .. 
+                                            ", queued=" .. tostring(queued_count))
+                                self.research_building_logged[building_name] = true
+                            end
+                            
+                            -- Only try to build if not already in progress or queued
+                            if progressing_count == 0 and queued_count == 0 then
+                                -- Try to build the building with high priority
+                                local tBuildType = CpuBuildType()
+                                tBuildType.btype = CpuPrerequisites.BT_Building
+                                tBuildType.name = building_name
+                                if self:TryBuild(tBuildType) then
+                                    debug_print("[RESEARCH] Queued " .. building_name .. " for research")
+                                end
+                            end
+                            
+                            shouldSkip = true
+                        end
+    
+                        -- If we should process this research
+                        if not shouldSkip then
+                            -- Skip if research is already in progress or queued
+                            if not self:ResearchProgress(researchName) then
+                                debug_print("[RESEARCH] Queueing regular research: " .. researchName)
+                                self:DynamicResearch(entry[6], entry[1], entry[2], entry[3], entry[4], 0, nil, 0, true)
+                                researchQueued = true
+                                break -- Only queue one research at a time
+                            else
+                                debug_print("[RESEARCH] Skipping queue for " .. researchName .. ": already in progress or queued")
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    else
+        -- Choose the right message based on the actual reason research is being skipped
+        if not hasAnyResearchBuilding then
+            debug_print("[RESEARCH] No completed research buildings - skipping regular research processing")
+        elseif self.research_pause then
+            debug_print("[RESEARCH] Research is paused, waiting for current research to complete")
+        else
+            debug_print("[RESEARCH] Research capacity insufficient or all slots occupied, skipping regular research processing")
+        end
+    end
+
+    -- Process commander upgrades separately (can run in parallel with regular research)
+    debug_print("[COMMANDER] Starting commander upgrade processing")
+    debug_print("[COMMANDER] hasAnyCommander: " .. tostring(hasAnyCommander))
+    debug_print("[COMMANDER] Current tier level: " .. tostring(iTier))
+    
+    -- Determine if we should process commander upgrades
+    local hasBarracks = self:GetBuildingCount("space_marine_barracks", "completed") > 0
+    local shouldProcessCommanders = hasBarracks or iTier >= 2
+    
+    debug_print("[COMMANDER] hasBarracks: " .. tostring(hasBarracks))
+    debug_print("[COMMANDER] shouldProcessCommanders: " .. tostring(shouldProcessCommanders))
+    
+    -- Skip immediately if no commanders exist or if we shouldn't process commanders yet
+    if not hasAnyCommander or not shouldProcessCommanders then
+        if not hasAnyCommander then
+            debug_print("[COMMANDER] No commanders present - skipping all commander upgrade processing")
+        else
+            debug_print("[COMMANDER] Skipping commander upgrade processing - waiting for barracks or tier 2")
+        end
+    else
+        -- Initialize commander level research complete tracking if needed
+        self.commander_level_research_complete = self.commander_level_research_complete or {}
+        
+        -- Correctly access the CommanderUpgrades table from the nested structure in marinestrategyinfo.ai
+        local commanderUpgrades = nil
+        if self.info and self.info.BuildPrograms and self.info.BuildPrograms.Units and 
+           self.info.BuildPrograms.Units.CommanderUpgrades then
+            commanderUpgrades = self.info.BuildPrograms.Units.CommanderUpgrades
+            debug_print("[COMMANDER] Found CommanderUpgrades table under Units")
+        elseif self.info and self.info.BuildPrograms and self.info.BuildPrograms.CommanderUpgrades then
+            commanderUpgrades = self.info.BuildPrograms.CommanderUpgrades
+            debug_print("[COMMANDER] Found CommanderUpgrades table directly under BuildPrograms")
+        end
+        
+        if not commanderUpgrades then
+            debug_print("[COMMANDER] ERROR: CommanderUpgrades table not found in strategy info!")
+        else
+            debug_print("[COMMANDER] Starting to process " .. table.getn(commanderUpgrades) .. " commander upgrades")
+            
+            -- Check and update commander level research completion status
+            for tier = 1, 6 do
+                local commander_level_research = "UA_marine_commander_level" .. tier .. "_research"
+                if cpu_manager.cpu_player:IsResearchComplete(commander_level_research) then
+                    self.commander_level_research_complete[tier] = true
+                end
+                debug_print("[COMMANDER] Level " .. tier .. " commander level research complete: " .. tostring(self.commander_level_research_complete[tier] or false))
+            end
+            
+            -- Auto-complete previous tier commander level researches if a commander exists
+            -- Only complete tiers lower than our current tier
+            if iTier > 1 then
+                debug_print("[COMMANDER] Checking for missing lower tier commander level research")
+                
+                -- Check if any lower tiers are missing research
+                local missingLowerTierResearch = false
+                for tier = 1, iTier - 1 do
+                    if not (self.commander_level_research_complete[tier] or false) then
+                        missingLowerTierResearch = true
+                        debug_print("[COMMANDER] Missing tier " .. tier .. " commander level research")
+                    end
+                end
+                
+                -- Force complete all previous tier level research
+                if missingLowerTierResearch then
+                    debug_print("[COMMANDER] Force-completing all previous tier commander level research")
+                    for tier = 1, iTier - 1 do
+                        if not (self.commander_level_research_complete[tier] or false) then
+                            local research_name = "UA_marine_commander_level" .. tier .. "_research"
+                            debug_print("[COMMANDER] Force-completing research: " .. research_name)
+                            
+                            -- Mark as complete in our tracking
+                            self.commander_level_research_complete[tier] = true
+                            
+                            -- Force research completion in the game
+                            cpu_manager.cpu_player:ForceResearchComplete(research_name)
+                            
+                            -- Add to our completed research cache
+                            if self.research_cache then
+                                self.research_cache[research_name] = { complete = true, progress = false }
+                            end
+                        end
+                    end
+                else
+                    debug_print("[COMMANDER] All previous tier commander level research is already complete")
+                end
+            end
+            
+            -- Only process one commander upgrade per cycle if possible
+            local upgradeQueued = false
+            
+            -- First check if we need any tier-level research for the current tier
+            local tierLevelNeeded = not (self.commander_level_research_complete[iTier] or false)
+            
+            -- If we need a tier level research and we're not already doing something, try to queue it
+            if tierLevelNeeded and not upgradeQueued and hasAnyResearchBuilding then
+                local tierLevelResearch = "UA_marine_commander_level" .. iTier .. "_research"
+                if not self:ResearchProgress(tierLevelResearch) then
+                    debug_print("[COMMANDER] Need tier level research for current tier " .. iTier)
+                    -- Find the research entry in buildPrograms
+                    for _, entry in pairs(buildPrograms) do
+                        if type(entry) == "table" and entry[5] == "Research" and entry[6] == tierLevelResearch then
+                            debug_print("[COMMANDER] Queueing tier level research: " .. tierLevelResearch)
+                            self:DynamicResearch(entry[6], entry[1], entry[2], entry[3], entry[4], 0, nil, 0, true)
+                            upgradeQueued = true
+                            break
+                        end
+                    end
+                else
+                    debug_print("[COMMANDER] Tier level research already in progress: " .. tierLevelResearch)
+                end
+            end
+            
+            -- If we didn't queue a tier level research, try other commander upgrades
+            if not upgradeQueued then
+                for i, upgrade in pairs(commanderUpgrades) do
+                    if type(upgrade) ~= "table" then
+                        debug_print("[COMMANDER] Entry " .. i .. " is not a table, skipping")
+                    else
+                        local shouldSkip = false
+                        local upgradeName = upgrade[6] or ""
+                        local tierIndex = 7 + iTier - 1
+                        local tierValue = upgrade[tierIndex] or 0
+                        
+                        -- Only process if this upgrade is allowed for current tier
+                        if tierValue > 0 then
+                            -- Check if it's a wargear upgrade (need proper tier research)
+                            if string.find(upgradeName, "wargear") then
+                                -- Skip wargear if we don't have the tier level research completed
+                                if not self.commander_level_research_complete[iTier] then
+                                    debug_print("[COMMANDER] Skipping wargear upgrade - missing tier " .. iTier .. " level research: " .. upgradeName)
+                                    shouldSkip = true
+                                end
+                            end
+                            
+                            -- Check spell upgrade requirements
+                            if not shouldSkip and string.find(upgradeName, "spell_") and not hasLibrarian then
+                                debug_print("[COMMANDER] Skipping spell upgrade - no Librarian present: " .. upgradeName)
+                                shouldSkip = true
+                            end
+            
+                            -- Check specific commander upgrade requirements based on actual entity types needed
+                            if not shouldSkip then
+                                shouldSkip = not self:HasRequiredCommanderForWargear(upgradeName)
+                                if shouldSkip then
+                                    debug_print("[COMMANDER] Skipping wargear upgrade - required commander not present: " .. upgradeName)
+                                end
+                            end
+            
+                            -- If we should process this upgrade
+                            if not shouldSkip then
+                                -- Skip if research is already in progress or queued
+                                if not self:ResearchProgress(upgradeName) then
+                                    debug_print("[COMMANDER] Queueing commander upgrade: " .. upgradeName)
+                                    self:DynamicResearch(upgradeName, upgrade[1], upgrade[2], upgrade[3], upgrade[4], 0, nil, 0, true)
+                                    upgradeQueued = true
+                                    break -- Only queue one upgrade per cycle
+                                else
+                                    debug_print("[COMMANDER] Skipping queue for commander upgrade - already in progress or queued: " .. upgradeName)
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+            
+            -- Summary of what happened
+            if not upgradeQueued then
+                debug_print("[COMMANDER] No commander upgrades queued this cycle")
+            end
+        end
+    end
+    
+    -- Call parent BuildFlexible
+    BuildBaseStrategy.BuildFlexible(self)
+end
+
+function MarineBuildBaseStrategy:HaveUnitQuantitiesChanged()
+    --debug_function_enter("HaveUnitQuantitiesChanged")
+    for unit, qty in pairs(self.unit_quantities) do
+        local current_count = self:CountSquads(unit)
+        local last_count = self.last_unit_counts[unit] or 0
+
+        if current_count ~= last_count then
+            -- Update the stored count
+            self.last_unit_counts[unit] = current_count
+            debug_print(string.format("[BUILD] Unit count changed - %s: %d/%d",
+                unit, current_count, qty))
+            self:EvalCap()
+            return true
+        end
+    end
+    return false
+end
+
+function MarineBuildBaseStrategy:BuildUnits()
+    debug_print("[AI] BuildUnits called")
+    -- Get the highest demanded squad from parent logic
+    local hightableitem = self:GetHighestDemandedSquad(true)
+    local iSquadCap = self:GetCurrentSquadCap()
+    local iSupportCapLeft = build_manager:GetSupportCapLeft()
+    local iSupportCap = build_manager:GetSupportCapCurrentMax() - iSupportCapLeft
+
+    -- Check for changes in unit counts
+    self:HaveUnitQuantitiesChanged()
+
+    -- Helper function to try building a unit
+    local function TryBuildUnit(unit_id, unit_type)
+        if unit_id == nil then return false end
+
+        local squad_name = cpu_manager.stats:GetSquadName(unit_id)
+        if not squad_name then return false end
+
+        -- Get current and desired quantities
+        local current_count = self:CountSquads(squad_name)
+        local desired_count = self.unit_quantities[squad_name]
+
+        -- If we have no limit defined or we're already at/over limit, don't build
+        if not desired_count then
+            debug_print(string.format("[AI][BuildUnits] No quota for %s, skipping", squad_name))
+            return false
+        end
+        if current_count >= desired_count then
+            debug_print(string.format("[AI][BuildUnits] %s at/over quota (%d/%d), skipping", squad_name, current_count,
+                desired_count))
+            return false
+        end
+        debug_print(string.format("[AI][BuildUnits] Attempting to build %s (%d/%d)", squad_name, current_count,
+            desired_count))
+        -- Only proceed with build if we're under the limit
+        local build_type = CpuBuildType()
+        build_type.btype = CpuPrerequisites.BT_Squad
+        build_type.name = squad_name
+        return self:TryBuild(build_type)
+    end
+
+    -- Try to build units in priority order
+    if hightableitem.iUnitIDTANK ~= nil then
+        if TryBuildUnit(hightableitem.iUnitIDTANK, "tank") then return end
+    end
+
+    if hightableitem.iUnitIDNoLimitTANK ~= nil and iSupportCap > 10 then
+        if TryBuildUnit(hightableitem.iUnitIDNoLimitTANK, "no_limit_tank") then return end
+    end
+
+    if hightableitem.iUnitID ~= nil then
+        if TryBuildUnit(hightableitem.iUnitID, "regular") then return end
+    end
+
+    if hightableitem.iUnitIDNoLimit ~= nil and iSquadCap > 12 then
+        if TryBuildUnit(hightableitem.iUnitIDNoLimit, "no_limit") then return end
+    end
+end
+
+-- Override TryBuild to track addon construction
+function MarineBuildBaseStrategy:TryBuild(build_type)
+    local success = BuildBaseStrategy.TryBuild(self, build_type)
+
+    -- If we successfully started building an addon, track it
+    if success and build_type.btype == CpuPrerequisites.BT_AddOn then
+        self.addon_under_construction = build_type.name
+        debug_print("[ADDON] Started construction of " .. build_type.name)
+    end
+
+    return success
+end
+
+function MarineBuildBaseStrategy:CountSquads(squad_name, filter_func)
+    --debug_function_enter("CountSquads", {
+    --squad = squad_name,
+    --filter = filter_func
+    --})
+    local count = 0
+
+    -- Count squads that are already built
+    for squad_ai in military_manager:GetSquads() do
+        if squad_ai:IsValid() and squad_ai:GetSquadName() == squad_name then
+            if not filter_func or filter_func(squad_ai) then
+                count = count + 1
+            end
+        end
+    end
+
+    -- Count squads that are in production
+    local squad_id = cpu_manager.stats:GetSquadID(squad_name)
+    if squad_id ~= 0 then
+        count = count + self:PlanCount("Build Squad Plan", squad_id)
+    end
+
+    return count
+end
+
+-- Override Update function
+-- Simplified Update function
+function MarineBuildBaseStrategy:UpdateCommanderPresence()
+    -- Detect presence of key commander squads and store in self.commander_presence
+    local commanders = {
+        force_commander = "space_marine_squad_force_commander",
+        chaplain = "space_marine_squad_chaplain",
+        librarian = "space_marine_squad_librarian",
+        chapter_master = "space_marine_squad_chapter_master", -- Add other commanders as needed
+    }
+    self.commander_presence = {}
+    for key, squadName in pairs(commanders) do
+        self.commander_presence[key] = self:CountSquads(squadName) > 0
+    end
+    debug_print("[AI] Commander presence: " .. safe_tostring(self.commander_presence))
+end
+
+function MarineBuildBaseStrategy:Update()
+    BuildBaseStrategy.Update(self) -- Call parent
+
+    -- Update commander presence
+    self:UpdateCommanderPresence()
+
+    -- Check for emergency state periodically
+    if g_iGMT and math.mod(g_iGMT, 5) == 0 then
+        self:BaseEmergency()
+    end
+
+    -- Check if we need to manage squad/support caps
+    local squad_cap_left = build_manager:GetSquadCapLeft()
+    local support_cap_left = build_manager:GetSupportCapLeft()
+
+    if squad_cap_left <= 4 or support_cap_left <= 1 then
+        self:EvalCap()
+    else
+        -- Only check tier level if we have room for more units
+        self:ChecktierLevel()
+    end
+
+    -- Let the build manager handle construction
+    self:BuildFlexible()
+
+    self:BuildUnits()
+end

@@ -1,0 +1,46 @@
+-- File: aiutils.ai
+-- Central AI utility helpers for Dawn of War Soulstorm
+
+AiUtils = AiUtils or {}
+
+-- Count pending research requests to avoid duplicates
+function AiUtils.GetPendingResearchCount(player, researchName)
+    local cnt = 0
+    if player and player.m_researchMgr and player.m_researchMgr.m_queResearch then
+        for _, r in pairs(player.m_researchMgr.m_queResearch) do
+            if r and r.researchName == researchName then
+                cnt = cnt + 1
+            end
+        end
+    end
+    return cnt
+end
+
+-- Check if we have enough resources to queue
+function AiUtils.CanAfford(reqCost, powCost)
+    local res = resource_manager:GetResourceAmount()
+    if not res then return false end
+    local req = res:Get(ResourceAmount.RT_Requisition) or 0
+    local pow = res:Get(ResourceAmount.RT_Power) or 0
+    return req >= reqCost and pow >= powCost
+end
+
+-- Validate that each tier from 1 to 6 has at least one requirement
+function AiUtils.ValidateTierRequirements(tiers)
+    for i = 1, 6 do
+        local req = tiers[i]
+        if not req or ((not req.addon_name) and (not req.research_name) and (not req.required_buildings)) then
+            error("[AiUtils] Tier requirements missing or malformed for tier " .. i)
+        end
+    end
+end
+
+-- Check that a blueprint name exists in stats
+function AiUtils.IsValidBlueprint(name)
+    if cpu_manager and cpu_manager.stats then
+        if cpu_manager.stats:GetBuildingID(name) ~= 0 then return true end
+        if cpu_manager.stats:GetSquadID(name) ~= 0 then return true end
+        if cpu_manager.stats:GetResearchID(name) ~= 0 then return true end
+    end
+    return false
+end

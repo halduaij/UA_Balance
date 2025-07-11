@@ -1,0 +1,424 @@
+----------------------------------------
+-- File: 'ai_improvements.ai'
+-- Enhanced AI system for Warhammer 40k: Dawn of War Soulstorm
+-- Optimized for Lua 5.1 compatibility
+-- Created by AI Assistant @ 2024
+
+-- Performance optimization constants
+local CACHE_SIZE = 100
+local UPDATE_INTERVAL = 0.1
+local MEMORY_CLEANUP_INTERVAL = 5.0
+
+-- Enhanced utility functions optimized for Lua 5.1
+local AI_Improvements = {}
+
+-- Object pooling for better memory management
+AI_Improvements.ObjectPool = {}
+AI_Improvements.ObjectPool.cache = {}
+AI_Improvements.ObjectPool.count = 0
+
+function AI_Improvements.ObjectPool:Get()
+    if self.count > 0 then
+        self.count = self.count - 1
+        return self.cache[self.count + 1]
+    end
+    return {}
+end
+
+function AI_Improvements.ObjectPool:Return(obj)
+    if self.count < CACHE_SIZE then
+        -- Clear the object
+        for k in obj do
+            obj[k] = nil
+        end
+        self.count = self.count + 1
+        self.cache[self.count] = obj
+    end
+end
+
+-- Enhanced table operations (Lua 5.1 compatible)
+function AI_Improvements.TableShallowCopy(orig)
+    local copy = AI_Improvements.ObjectPool:Get()
+    for k, v in orig do
+        copy[k] = v
+    end
+    return copy
+end
+
+function AI_Improvements.TableDeepCopy(orig)
+    local copy = AI_Improvements.ObjectPool:Get()
+    for k, v in orig do
+        if type(v) == "table" then
+            copy[k] = AI_Improvements.TableDeepCopy(v)
+        else
+            copy[k] = v
+        end
+    end
+    return copy
+end
+
+-- Fast table search with caching
+AI_Improvements.TableCache = {}
+function AI_Improvements.FastTableSearch(tbl, value)
+    local cache_key = tostring(tbl) .. "_" .. tostring(value)
+    if AI_Improvements.TableCache[cache_key] then
+        return AI_Improvements.TableCache[cache_key]
+    end
+    
+    for k, v in tbl do
+        if v == value then
+            AI_Improvements.TableCache[cache_key] = k
+            return k
+        end
+    end
+    
+    AI_Improvements.TableCache[cache_key] = nil
+    return nil
+end
+
+-- Enhanced math utilities
+function AI_Improvements.Clamp(value, min, max)
+    if value < min then return min end
+    if value > max then return max end
+    return value
+end
+
+function AI_Improvements.Lerp(a, b, t)
+    return a + (b - a) * t
+end
+
+function AI_Improvements.SmoothStep(edge0, edge1, x)
+    local t = AI_Improvements.Clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0)
+    return t * t * (3.0 - 2.0 * t)
+end
+
+-- Enhanced vector operations
+function AI_Improvements.VectorDistanceSqr(vec1, vec2)
+    local dx = vec1.x - vec2.x
+    local dy = vec1.y - vec2.y
+    local dz = vec1.z - vec2.z
+    return dx * dx + dy * dy + dz * dz
+end
+
+function AI_Improvements.VectorDistance(vec1, vec2)
+    return math.sqrt(AI_Improvements.VectorDistanceSqr(vec1, vec2))
+end
+
+function AI_Improvements.VectorLerp(vec1, vec2, t)
+    return {
+        x = AI_Improvements.Lerp(vec1.x, vec2.x, t),
+        y = AI_Improvements.Lerp(vec1.y, vec2.y, t),
+        z = AI_Improvements.Lerp(vec1.z, vec2.z, t)
+    }
+end
+
+-- Enhanced squad analysis
+function AI_Improvements.AnalyzeSquadComposition(squads)
+    local composition = {
+        infantry = 0,
+        vehicles = 0,
+        commanders = 0,
+        support = 0,
+        total_health = 0,
+        total_damage = 0,
+        average_range = 0,
+        has_anti_vehicle = false,
+        has_anti_infantry = false,
+        has_healing = false
+    }
+    
+    local range_sum = 0
+    local squad_count = 0
+    
+    for squad in squads do
+        local stats = squad:GetStats()
+        local class = stats:GetClass()
+        local health = stats:GetMaxHealth()
+        local damage = stats:GetDamage()
+        local range = stats:GetRange()
+        
+        composition.total_health = composition.total_health + health
+        composition.total_damage = composition.total_damage + damage
+        range_sum = range_sum + range
+        squad_count = squad_count + 1
+        
+        -- Classify units
+        if class == UnitStatsAI.UC_Commander then
+            composition.commanders = composition.commanders + 1
+        elseif class == UnitStatsAI.UC_VehicleLow or 
+               class == UnitStatsAI.UC_VehicleMed or 
+               class == UnitStatsAI.UC_VehicleHigh then
+            composition.vehicles = composition.vehicles + 1
+            composition.has_anti_vehicle = true
+        else
+            composition.infantry = composition.infantry + 1
+            composition.has_anti_infantry = true
+        end
+        
+        -- Check for support abilities
+        if stats:HasAbility("heal") or stats:HasAbility("repair") then
+            composition.has_healing = true
+        end
+    end
+    
+    if squad_count > 0 then
+        composition.average_range = range_sum / squad_count
+    end
+    
+    return composition
+end
+
+-- Enhanced threat assessment
+function AI_Improvements.AssessThreat(enemy_squads, friendly_position)
+    local threats = {}
+    local total_threat = 0
+    
+    for squad in enemy_squads do
+        local stats = squad:GetStats()
+        local position = squad:GetPosition()
+        local distance = AI_Improvements.VectorDistance(friendly_position, position)
+        local health = stats:GetHealth()
+        local max_health = stats:GetMaxHealth()
+        local damage = stats:GetDamage()
+        local range = stats:GetRange()
+        
+        -- Calculate threat based on damage, health, and distance
+        local threat = damage * (health / max_health)
+        if distance <= range then
+            threat = threat * 2.0  -- In range, higher threat
+        else
+            threat = threat / (distance / range)  -- Distance penalty
+        end
+        
+        table.insert(threats, {
+            squad = squad,
+            threat = threat,
+            distance = distance,
+            position = position
+        })
+        
+        total_threat = total_threat + threat
+    end
+    
+    -- Sort threats by priority
+    table.sort(threats, function(a, b) return a.threat > b.threat end)
+    
+    return threats, total_threat
+end
+
+-- Enhanced formation calculation
+function AI_Improvements.CalculateFormation(squads, center_position, formation_type)
+    local positions = {}
+    local squad_count = 0
+    
+    -- Count squads
+    for squad in squads do
+        squad_count = squad_count + 1
+    end
+    
+    if squad_count == 0 then
+        return positions
+    end
+    
+    local spacing = 15.0  -- Base spacing between units
+    
+    if formation_type == "line" then
+        -- Line formation
+        local start_x = center_position.x - (squad_count - 1) * spacing / 2
+        local index = 0
+        for squad in squads do
+            positions[squad] = {
+                x = start_x + index * spacing,
+                y = center_position.y,
+                z = center_position.z
+            }
+            index = index + 1
+        end
+        
+    elseif formation_type == "wedge" then
+        -- Wedge formation
+        local index = 0
+        for squad in squads do
+            local row = math.floor(index / 3)
+            local col = index % 3
+            positions[squad] = {
+                x = center_position.x + (col - 1) * spacing * row,
+                y = center_position.y + row * spacing,
+                z = center_position.z
+            }
+            index = index + 1
+        end
+        
+    elseif formation_type == "circle" then
+        -- Circle formation
+        local angle_step = 2 * math.pi / squad_count
+        local radius = spacing * 2
+        local index = 0
+        for squad in squads do
+            local angle = index * angle_step
+            positions[squad] = {
+                x = center_position.x + math.cos(angle) * radius,
+                y = center_position.y + math.sin(angle) * radius,
+                z = center_position.z
+            }
+            index = index + 1
+        end
+    end
+    
+    return positions
+end
+
+-- Enhanced resource management
+function AI_Improvements.CalculateResourceEfficiency(player_stats)
+    local req_rate = player_stats:GetResourceRate(0)  -- Requisition
+    local power_rate = player_stats:GetResourceRate(1)  -- Power
+    local pop_used = player_stats:GetPopulationUsed()
+    local pop_max = player_stats:GetPopulationMax()
+    
+    local efficiency = {
+        req_efficiency = req_rate / math.max(pop_used, 1),
+        power_efficiency = power_rate / math.max(pop_used, 1),
+        pop_efficiency = pop_used / math.max(pop_max, 1),
+        overall_efficiency = (req_rate + power_rate) / math.max(pop_used * 2, 1)
+    }
+    
+    return efficiency
+end
+
+-- Enhanced tactical positioning
+function AI_Improvements.FindOptimalPosition(squads, enemy_squads, map_bounds)
+    local best_position = nil
+    local best_score = -999999
+    
+    -- Sample positions around the map
+    local sample_count = 20
+    local step_x = (map_bounds.max_x - map_bounds.min_x) / sample_count
+    local step_y = (map_bounds.max_y - map_bounds.min_y) / sample_count
+    
+    for i = 0, sample_count do
+        for j = 0, sample_count do
+            local test_pos = {
+                x = map_bounds.min_x + i * step_x,
+                y = map_bounds.min_y + j * step_y,
+                z = 0
+            }
+            
+            local score = AI_Improvements.EvaluatePosition(test_pos, squads, enemy_squads)
+            
+            if score > best_score then
+                best_score = score
+                best_position = test_pos
+            end
+        end
+    end
+    
+    return best_position, best_score
+end
+
+function AI_Improvements.EvaluatePosition(position, friendly_squads, enemy_squads)
+    local score = 0
+    
+    -- Distance to enemies (prefer medium distance)
+    for squad in enemy_squads do
+        local distance = AI_Improvements.VectorDistance(position, squad:GetPosition())
+        local stats = squad:GetStats()
+        local range = stats:GetRange()
+        
+        if distance <= range * 0.5 then
+            score = score - 100  -- Too close
+        elseif distance <= range * 1.5 then
+            score = score + 50   -- Good engagement distance
+        elseif distance <= range * 3.0 then
+            score = score + 25   -- Acceptable distance
+        else
+            score = score - 25   -- Too far
+        end
+    end
+    
+    -- Distance to friendlies (prefer close to allies)
+    for squad in friendly_squads do
+        local distance = AI_Improvements.VectorDistance(position, squad:GetPosition())
+        if distance <= 30 then
+            score = score + 20   -- Close to allies
+        elseif distance <= 60 then
+            score = score + 10   -- Reasonable distance
+        else
+            score = score - 10   -- Too far from allies
+        end
+    end
+    
+    return score
+end
+
+-- Enhanced decision making with weighted random selection
+function AI_Improvements.WeightedRandomChoice(options)
+    local total_weight = 0
+    for _, option in options do
+        total_weight = total_weight + option.weight
+    end
+    
+    local random_value = math.random() * total_weight
+    local current_weight = 0
+    
+    for _, option in options do
+        current_weight = current_weight + option.weight
+        if random_value <= current_weight then
+            return option.value
+        end
+    end
+    
+    return options[1].value  -- Fallback
+end
+
+-- Enhanced performance monitoring
+AI_Improvements.PerformanceMonitor = {
+    timers = {},
+    counters = {},
+    last_cleanup = 0
+}
+
+function AI_Improvements.PerformanceMonitor:StartTimer(name)
+    self.timers[name] = os.clock()
+end
+
+function AI_Improvements.PerformanceMonitor:EndTimer(name)
+    if self.timers[name] then
+        local duration = os.clock() - self.timers[name]
+        if not self.counters[name] then
+            self.counters[name] = { total = 0, count = 0, max = 0 }
+        end
+        self.counters[name].total = self.counters[name].total + duration
+        self.counters[name].count = self.counters[name].count + 1
+        if duration > self.counters[name].max then
+            self.counters[name].max = duration
+        end
+        self.timers[name] = nil
+    end
+end
+
+function AI_Improvements.PerformanceMonitor:GetAverageTime(name)
+    if self.counters[name] and self.counters[name].count > 0 then
+        return self.counters[name].total / self.counters[name].count
+    end
+    return 0
+end
+
+function AI_Improvements.PerformanceMonitor:Cleanup()
+    local current_time = os.clock()
+    if current_time - self.last_cleanup > MEMORY_CLEANUP_INTERVAL then
+        -- Clear old cache entries
+        local cache_size = 0
+        for _ in AI_Improvements.TableCache do
+            cache_size = cache_size + 1
+        end
+        
+        if cache_size > CACHE_SIZE then
+            AI_Improvements.TableCache = {}
+        end
+        
+        self.last_cleanup = current_time
+    end
+end
+
+-- Export the improvements
+return AI_Improvements 

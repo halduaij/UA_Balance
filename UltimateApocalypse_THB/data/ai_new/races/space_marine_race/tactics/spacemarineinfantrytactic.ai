@@ -1,0 +1,412 @@
+----------------------------------------
+-- File: 'spacemarineinfantrytactic.ai'
+-- Created by Arkhan		@ 12.01.2006
+-- Edited by Thudmeizer         @ 03.09.2016
+-- Edited by Cylarne 2013
+-- Updated by Clockwork 2022 @07/28/2022
+-- Optimized by CannibalToast 2025
+class 'SpaceMarineInfantryTactic' (InfantryTactic)
+import("core/logging.ai")
+-- Central ability IDs repository (empty table to be populated during initialization)
+SpaceMarineInfantryTactic.ABILITY_IDS = {}
+
+-- Initialize all ability IDs in one place with a single mapping table
+function SpaceMarineInfantryTactic:InitAbilityIDs()
+    -- Only initialize once
+    if next(SpaceMarineInfantryTactic.ABILITY_IDS) ~= nil then
+        return
+    end
+    
+    -- Map ability keys to their file names (eliminates redundancy)
+    local ability_map = {
+        -- Basic Abilities
+        RUN = "UA_all_run!",
+        RALLY = "UA_marines_rally",
+        
+        -- Grenades
+        FLASHBANG = "UA_marines_flashbang_grenades",
+        FRAG = "UA_marines_frag_grenades",
+        INFERNO = "UA_marines_inferno_grenades",
+        KRAK = "UA_marines_krak_grenades",
+        MELTA = "UA_marines_melta_bombs",
+        SMOKE = "UA_marines_smoke_grenades",
+        
+        -- Special Weapons
+        SABOTAGE = "UA_marines_sabotage",
+        DEMO_CHARGE = "UA_marines_demo_charge",
+        DEMO_DETONATE = "UA_marines_demo_detonate",
+        TURRET = "UA_marines_turret",
+        INFILTRATE = "UA_marines_infiltrate",
+        SCAN = "UA_marines_scan",
+        
+        -- Elite Abilities
+        DEATHWATCH_INFERNO = "deathwatch_inferno_grenade",
+        DEMORALIZE = "UA_marines_demoralize",
+        
+        -- Commander Abilities
+        ORBITAL_BOMBARDMENT = "UA_marines_orbital_bombardment",
+        ORBITAL_BOMBARDMENT_TERMINATOR = "UA_marines_orbital_bombardment_terminator",
+        BATTLECRY = "UA_marines_battlecry",
+        COMMANDER_BOMB = "UA_marines_commander_bomb",
+        HELLSTORM = "UA_marines_hellstorm",
+        
+        -- Psychic Powers
+        SMITE = "UA_marines_smite",
+        WEAKEN_RESOLVE = "UA_marines_weaken_resolve",
+        FIREBOLT = "UA_marines_firebolt",
+        INQUISITION_LIBRARIAN = "UA_marines_inquisition_librarian",
+        MACHINE_SPIRIT = "UA_marines_curse_machine_spirits", -- Curse Machine Spirits
+        HASTE = "UA_marines_haste",
+        ALL_OUT_WAR = "UA_marines_all_out_war",
+        MIND_WAR = "UA_marines_mind_war",
+        WORD_EMPEROR = "UA_marines_word_of_the_emperor"
+    }
+    
+    -- Populate the ABILITY_IDS table by iterating through the map
+    for key, ability_name in pairs(ability_map) do
+        SpaceMarineInfantryTactic.ABILITY_IDS[key] = cpu_manager.stats:GetAbilityID(ability_name)
+    end
+    
+    -- Ability IDs are now initialized
+end
+
+-- Getter method to access ability IDs from child classes
+function SpaceMarineInfantryTactic:GetAbilityID(key)
+    return SpaceMarineInfantryTactic.ABILITY_IDS[key]
+end
+
+
+
+-- Transportable unit groups defined directly in the constructor
+-- Group 1: Regular transport, teleport from Orbital Relay
+-- Group 2: Terminator transport, teleport from Barracks
+
+-- Define grenade type constants as semantic string values
+-- Using descriptive names for better readability and maintainability
+local GRENADES = {
+    FLASHBANG = "FLASHBANG",
+    FRAG = "FRAG",
+    INFERNO = "INFERNO",
+    KRAK = "KRAK",
+    MELTA = "MELTA",
+    SMOKE = "SMOKE"
+}
+
+-- Function to determine allowed grenades for a tactic class
+-- Returns array of allowed grenade types directly
+function SpaceMarineInfantryTactic:GetAllowedGrenades(class_name)
+    if class_name == "DeathwatchTactic" then
+        return { GRENADES.FRAG, GRENADES.INFERNO, GRENADES.KRAK }
+    elseif class_name == "ScoutTactic" then
+        return { GRENADES.FLASHBANG, GRENADES.SMOKE }
+    elseif class_name == "TerminatorTactic" or class_name == "AssaultTerminatorTactic" or class_name == "SkullProbeTactic" then
+        return {}
+    elseif class_name == "TechmarineTactic" then
+        -- Techmarine has access to all grenade types including SMOKE (per backup.lua)
+        return { GRENADES.FLASHBANG, GRENADES.FRAG, GRENADES.INFERNO, GRENADES.KRAK, GRENADES.MELTA, GRENADES.SMOKE }
+    else
+        -- Default for DevastatorTactic, SternguardTactic, TacticalMarineTactic, VanguardTactic
+        -- All except SMOKE
+        return { GRENADES.FLASHBANG, GRENADES.FRAG, GRENADES.INFERNO, GRENADES.KRAK, GRENADES.MELTA }
+    end
+end
+
+
+-- Simplified grenade configuration with direct string keys
+SpaceMarineInfantryTactic.GRENADE_CONFIG = {
+    ["FLASHBANG"] = { filter = Ability.Filters.CloseSquadEnemy, count = 4 },
+    ["FRAG"] = { filter = Ability.Filters.CloseSquadEnemy, count = 2 },
+    ["INFERNO"] = { filter = Ability.Filters.CloseSquadEnemy, count = 3 },
+    ["KRAK"] = { filter = Ability.Filters.CloseVehicleEnemy, count = 1 },
+    ["MELTA"] = { filter = Ability.Filters.CloseVehicleEnemy, count = 1 },
+    ["SMOKE"] = { filter = Ability.Filters.CloseHurt, count = 1, minStrength = 150 }
+}
+
+-- In SpaceMarineInfantryTactic (parent class)
+function SpaceMarineInfantryTactic:__init(squad_ai)
+    -- Call the grandparent's init first
+    InfantryTactic.__init(self, squad_ai)
+
+    -- Initialize ability IDs
+    self:InitAbilityIDs()
+
+    -- Set grenades based on class name - using direct function call instead of table lookup
+    self.allowed_grenades = self:GetAllowedGrenades(self.class_name)
+
+    -- Check transportable type
+    local squadName = squad_ai:GetSquadName()
+    
+    -- Direct check for transportable type instead of table lookup
+    if squadName == "space_marine_squad_servitor_weapons" or
+       squadName == "space_marine_squad_scout" or
+       squadName == "space_marine_squad_tactical" or
+       squadName == "space_marine_squad_devastator" or
+       squadName == "space_marine_squad_lotd_tactical" or
+       squadName == "space_marine_squad_sternguard_veteran" or
+       squadName == "space_marine_squad_vanguard_veteran" or
+       squadName == "space_marine_squad_apothecary" or
+       squadName == "space_marine_squad_banner_bearer" or
+       squadName == "space_marine_squad_chaplain" or
+       squadName == "space_marine_squad_chaplain_advance_sp" or
+       squadName == "space_marine_squad_librarian" or
+       squadName == "space_marine_squad_force_commander" or
+       squadName == "space_marine_squad_force_commander_lotd" or
+       squadName == "space_marine_squad_force_commander_killeus" or
+       squadName == "space_marine_squad_honor_guard_gladiator" or
+       squadName == "space_marine_squad_chapter_master" then
+        -- Regular transport (Group 1)
+        self.m_iTransportable = 1
+        self.m_iDeepStrikeBlueprintID = cpu_manager.stats:GetBuildingID("space_marine_orbital_relay")
+    elseif squadName == "space_marine_squad_assault" or
+           squadName == "space_marine_squad_force_commander_terminator" or 
+           squadName == "space_marine_squad_terminator" or
+           squadName == "space_marine_squad_terminator_assault" then
+        -- Terminator transport (Group 2)
+        self.m_iTransportable = 2
+        self.m_iDeepStrikeBlueprintID = cpu_manager.stats:GetBuildingID("space_marine_barracks")
+    end
+end
+
+-- Simplified DoGrenades function using direct string-based ability IDs
+function SpaceMarineInfantryTactic:DoGrenades(allowed_types)
+    if not allowed_types then return end
+
+    -- Early exit if ABILITY_IDS not initialized
+    if not self.ABILITY_IDS then return end
+    
+    for _, grenade_type in ipairs(allowed_types) do
+        local config = self.GRENADE_CONFIG[grenade_type]
+        if config then
+            -- Get ability ID directly from centralized cache
+            local ability_id = self.ABILITY_IDS[grenade_type]
+            
+            -- Only proceed if we have a valid ability ID
+            if ability_id then
+                if grenade_type == GRENADES.SMOKE then
+                    -- Special handling for smoke grenades
+                    local range = self.squad_ai:GetAbilityRange(ability_id)
+                    local unit = config.filter(self.squad_ai:GetPosition(), range, 1)
+                    if unit and unit:IsInCombat() and cpu_manager:GetUnitStrength(unit) > config.minStrength then
+                        self.squad_ai:DoSpecialAbilitySquad(ability_id, unit:GetSquad())
+                    end
+                else
+                    -- Standard grenades
+                    Ability.DoAbilityTarget(self.squad_ai, ability_id, config.filter, config.count)
+                end
+            end
+        end
+    end
+end
+
+-- Table of units that can have sergeants
+SpaceMarineInfantryTactic.SergeantUnits = {
+    "space_marine_squad_tactical",
+    "space_marine_squad_assault",
+    "space_marine_squad_devastator",
+    "space_marine_squad_terminator",
+    "space_marine_squad_terminator_assault",
+    "space_marine_squad_sternguard_veteran",
+    "space_marine_squad_vanguard_veteran",
+    "space_marine_squad_scout"
+}
+
+-- Initialize hash table for O(1) lookup
+SpaceMarineInfantryTactic.SergeantUnitsHash = {}
+for _, unit in ipairs(SpaceMarineInfantryTactic.SergeantUnits) do
+    SpaceMarineInfantryTactic.SergeantUnitsHash[unit] = true
+end
+
+-- Add these constants at the top of the file with other tables
+SpaceMarineInfantryTactic.LEADER_TYPES = {
+    SERGEANT = 0,
+    APOTHECARY = 1,
+    BANNER = 2,
+    SKULL = 3
+}
+
+function SpaceMarineInfantryTactic:Reinforce()
+    -- Early return if already reinforcing
+    if self.squad_ai:IsReinforcing() then
+        return
+    end
+
+    -- Try for squad leader first
+    if self.squad_ai:CanReinforce(false, 0) then
+        self.squad_ai:DoReinforce(false, 0)
+        return
+    end
+
+    -- Cache leader counts
+    local leaderCounts = {
+        [self.LEADER_TYPES.SERGEANT] = self.squad_ai:GetLeaderCount(self.LEADER_TYPES.SERGEANT),
+        [self.LEADER_TYPES.APOTHECARY] = self.squad_ai:GetLeaderCount(self.LEADER_TYPES.APOTHECARY),
+        [self.LEADER_TYPES.BANNER] = self.squad_ai:GetLeaderCount(self.LEADER_TYPES.BANNER),
+        [self.LEADER_TYPES.SKULL] = self.squad_ai:GetLeaderCount(self.LEADER_TYPES.SKULL)
+    }
+
+    -- Reinforcement priority order with random desired counts
+    local reinforcementPriority = {
+        { type = self.LEADER_TYPES.APOTHECARY, desired = math.random(0, 1) },
+        { type = self.LEADER_TYPES.BANNER,     desired = math.random(0, 1) },
+        { type = self.LEADER_TYPES.SERGEANT,   desired = math.random(0, 1) },
+        { type = self.LEADER_TYPES.SKULL,      desired = math.random(0, 1) }
+    }
+
+    -- Try to reinforce in priority order
+    for _, leader in ipairs(reinforcementPriority) do
+        if leaderCounts[leader.type] < leader.desired then
+            if self.squad_ai:CanReinforce(true, leader.type) then
+                self.squad_ai:DoReinforce(true, leader.type)
+                return
+            end
+        end
+    end
+end
+
+function SpaceMarineInfantryTactic:AddCommanders()
+    table.insert(self.commander, { "space_marine_squad_force_commander", true })
+    table.insert(self.commander, { "space_marine_squad_force_commander_lotd", true })
+    table.insert(self.commander, { "space_marine_squad_force_commander_killeus", true })
+    table.insert(self.commander, { "space_marine_squad_force_commander_terminator", true })
+    table.insert(self.commander, { "space_marine_squad_force_commander_advance_sp", true })
+    table.insert(self.commander, { "space_marine_squad_chapter_master", true })
+    table.insert(self.commander, { "space_marine_squad_honor_guard_gladiator", false })
+    table.insert(self.commander, { "space_marine_squad_librarian", false })
+    table.insert(self.commander, { "space_marine_squad_chaplain", false })
+    table.insert(self.commander, { "space_marine_squad_chaplain_advance_sp", false })
+end
+
+-- Single table for all commanders
+local COMMANDER_CHECKS = {
+    -- Force Commanders
+    space_marine_squad_force_commander_killeus = ForceCommanderTactic,
+    space_marine_squad_force_commander_lotd = ForceCommanderLotdTactic,
+    space_marine_squad_force_commander_terminator = ForceCommanderTerminatorTactic,
+    space_marine_squad_force_commander = ForceCommanderAdvancedTactic,
+    space_marine_squad_force_commander_advance_sp = ForceCommanderCampaignTactic,
+    -- Support Commanders
+    space_marine_squad_chapter_master = ChapterMasterTactic,
+    space_marine_squad_librarian = LibrarianTactic,
+    space_marine_squad_chaplain = ChaplainTactic,
+    space_marine_squad_chaplain_advance_sp = ChaplainTerminatorTactic
+}
+
+-- Standard DoAbilities pattern
+-- In SpaceMarineInfantryTactic:DoAbilities()
+function SpaceMarineInfantryTactic:DoAbilities()
+    if self.squad_ai:IsAttached() then
+        for name, tactic in pairs(COMMANDER_CHECKS) do
+            if self.squad_ai:HasSquadAttached(name) then
+                -- Commander attached, use commander tactic abilities
+                tactic.InitAbilities(self)
+                tactic.DoAbilities(self)
+                return
+            end
+        end
+    end
+
+    -- Add safety check for allowed_grenades
+    if self.allowed_grenades and table.getn(self.allowed_grenades) > 0 then
+        self:DoGrenades(self.allowed_grenades)
+    end
+
+    self:CheckForBroken()
+    self:CheckForRun()
+end
+
+function SpaceMarineInfantryTactic:CheckForBroken()
+    -- Early return if no squad
+    if not self.squad_ai then
+        return
+    end
+
+    -- Only check if squad is broken
+    if not self.squad_ai:IsBroken() then
+        return
+    end
+
+    -- Quick lookup if squad can have sergeant
+    if not self.SergeantUnitsHash[self.squad_ai:GetSquadName()] then
+        return
+    end
+
+    -- Check if squad has a sergeant and can rally
+    if self.squad_ai:HasLeader() and self.squad_ai:CanDoAbility(self.ABILITY_IDS.RALLY) then
+        self.squad_ai:DoSpecialAbility(self.ABILITY_IDS.RALLY)
+    end
+end
+
+function SpaceMarineInfantryTactic:CheckForRun()
+    -- Early return if no squad
+    if not self.squad_ai then
+        return
+    end
+
+    -- Check if safe to run
+    if (not self.squad_ai:IsInCombat() and self.squad_ai:IsInStateMove()) or
+        self.stateID ~= Tactic.StateID.NoState then
+        -- Try to run
+        if self.squad_ai:CanDoAbility(self.ABILITY_IDS.RUN) then
+            self.squad_ai:DoSpecialAbility(self.ABILITY_IDS.RUN)
+        end
+    end
+end
+
+-- Standard Upgrade pattern
+function SpaceMarineInfantryTactic:Upgrade()
+    -- Combine early return conditions
+    if not Tactic.Options.can_reinforce or
+        (self:IsAffectedByMorale() and self.squad_ai:IsBroken()) or
+        (self.squad_ai:GetSquadName() == "space_marine_squad_tactical" and self.squad_ai:GetNumTroopers() < 2) then
+        return
+    end
+
+    -- Cache upgrade conditions
+    local can_upgrade = not self.squad_ai:IsReinforcing() and
+        self.squad_ai:HasUpgradableTrooper() and
+        self.squad_ai:GetNumTroopers() > 1
+
+    if can_upgrade then
+        local enemy = cpu_manager:FindClosestEnemyPlayer()
+        if not enemy then
+            return
+        end
+
+        local class_type = enemy:GetMajorityClassType()
+        local enemy_race = enemy:GetPlayerRaceName()
+
+        -- Check for heavy infantry races
+        if class_type < UnitStatsAI.UC_HeavyInfantryMed then
+            if enemy_race == "space_marine_race" or
+                enemy_race == "chaos_marine_race" or
+                enemy_race == "necron_race" then
+                class_type = UnitStatsAI.UC_HeavyInfantryMed
+            end
+        end
+
+        self.squad_ai:DoBestUpgrade(class_type)
+    end
+end
+
+-- Standard Update pattern used by most units
+-- In SpaceMarineInfantryTactic
+function SpaceMarineInfantryTactic:Update()
+    if not self.squad_ai or self:IsComplete() then
+        return
+    end
+
+    -- State machine with error checking
+    local success, error = pcall(function()
+        if not InfantryTactic.Update(self) then
+            return
+        end
+    end)
+
+    if not success then
+        -- Error handling silently continues execution
+        return
+    end
+
+    -- Check if we are in serious trouble
+    self:EmergencyRetreat()
+end

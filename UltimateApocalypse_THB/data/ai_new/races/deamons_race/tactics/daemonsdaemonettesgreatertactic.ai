@@ -1,0 +1,44 @@
+-----------------------------------------------
+-- File: 'daemonsdaemonettesgreatertactic.ai'
+-- Edited by Gambit 10.06.2013
+
+class 'DaemonsDaemonettesGreaterTactic' (DaemonsInfantryTactic)
+
+DaemonsDaemonettesGr = {}
+
+function DaemonsDaemonettesGreaterTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Daemons Favoured Daemonettes Tactic")
+	
+end
+
+function DaemonsInfantryTactic:AddCommanders()
+	table.insert(self.commander, { "daemon_squad_lord", true })
+	table.insert(self.commander, { "daemon_squad_lord_slaanesh", true })
+	table.insert(self.commander, { "daemon_squad_lord_stature", true })
+	table.insert(self.commander, { "daemon_squad_lord_stature_slaanesh", true })
+	table.insert(self.commander, { "daemon_squad_slaanesh_herald", true })
+end
+
+function DaemonsDaemonettesGreaterTactic:InitAbilities()
+
+	if (DaemonsDaemonettesGr.grpavane_id == nil) then
+		DaemonsDaemonettesGr.grpavane_id = cpu_manager.stats:GetAbilityID( "UA_daemons_pavane_of_slaanesh_greater" )
+	end
+	
+	if (DaemonsDaemonettesGr.grallure_id == nil) then
+		DaemonsDaemonettesGr.grallure_id = cpu_manager.stats:GetAbilityID( "UA_daemons_allure_greater" )
+	end
+end
+
+function DaemonsDaemonettesGreaterTactic:DoAbilities()
+
+	Ability.DoAbility( self.squad_ai, DaemonsDaemonettesGr.grpavane_id, Ability.Filters.IsInCombat )
+	
+	if (self.squad_ai:CanDoAbility(DaemonsDaemonettesGr.grallure_id) and self.squad_ai:IsInCombat()) then
+		Ability.DoAbilityTarget( self.squad_ai, DaemonsDaemonettesGr.grallure_id, Ability.Filters.CloseInfantryEnemy, 4 )
+	end
+
+	-- Call basic DoAbilities methods
+	DaemonsInfantryTactic.DoAbilities(self)
+end

@@ -1,0 +1,178 @@
+----------------------------------------
+-- File: 'necronlorddestroyertactic.ai'
+-- Edited by Thudmeizer @ 11.11.2016
+
+class 'NecronLordDestroyerTactic' (NecronInfantryTactic)
+
+NecronLordDestroyer = {}
+
+function NecronLordDestroyerTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Necron Lord Destroyer Tactic")
+
+	self.m_oTimedSpecialAbilities = Timer( NecronLordDestroyerTactic.DoTimedSpecialAbilities, self, 7 )
+
+	-- Set Stuck Unit Positions
+	self.initialPosition = self.squad_ai:GetPosition()
+	self.isStuck = false
+end
+
+function NecronLordDestroyerTactic:IsAttacker()
+	return self:IsCommanderAttacker()
+end
+
+function NecronLordDestroyerTactic:IsDefender()
+	return self:IsCommanderDefender()
+end
+
+function NecronLordDestroyerTactic:MoveToDisengage()
+	Tactic.MoveToDisengage(self)
+end
+
+function NecronLordDestroyerTactic:JumpAttack()
+	Tactic.JumpAttack(self)
+end
+
+function NecronLordDestroyerTactic:CheckForDance()
+	InfantryTactic.CheckForDance(self)
+end
+
+function NecronLordDestroyerTactic:CheckForDeath()
+	InfantryTactic.CheckForDeath(self)
+end
+
+-- Necron Lord Destroyer is allowed to retreat even directly after a jump
+function NecronLordDestroyerTactic:SetTarget( target, variant_type )
+
+	self.variant_type = variant_type
+	self.variant_type = variant_type
+       if self.variant_type==Tactic.Variant.Vector then
+    self.target = Vector3f(target)
+       elseif self.variant_type==Tactic.Variant.SquadAI then
+    self.target = target
+       elseif self.variant_type==Tactic.Variant.BaseAI then
+    self.target = target
+       end
+	self.m_iMoveDelay = 0
+	self.last_jump = 0
+end
+
+function NecronLordDestroyerTactic:InitAbilities()
+	
+	-- Timed / Passive: Lightning Storm
+	if (NecronLordDestroyer.lightningstorm_id == nil) then
+		NecronLordDestroyer.lightningstorm_id = cpu_manager.stats:GetAbilityID( "UA_necron_lightning_storm" )
+	end
+
+	-- Timed: Mass Resurrection
+	if (NecronLordDestroyer.resurrection_id == nil) then
+		NecronLordDestroyer.resurrection_id = cpu_manager.stats:GetAbilityID( "UA_necron_mass_resurrection_destroyer" )
+	end
+	
+	-- Timed: Shroud of Antigravity
+	if (NecronLordDestroyer.antigravity_id == nil) then
+		NecronLordDestroyer.antigravity_id = cpu_manager.stats:GetAbilityID( "UA_necron_shroud_of_antigravity_destroyer" )
+	end
+end
+
+function NecronLordDestroyerTactic:DoAbilities()
+
+	-- Lightning Storm: Centered on the caster, a giant blast of electrical energy strikes down enemy targets within a 25m radius.
+	-- Devastating blast of electrical energy pulses that deal good damage to all affected targets.
+	if (self.squad_ai:CanDoAbility( NecronLordDestroyer.lightningstorm_id )) then
+	
+		local oUnit = Ability.Filters.CloseEnemy(self.squad_ai:GetPosition(), 20, 6)
+		if (oUnit ~= nil) then
+			self.squad_ai:DoSpecialAbility( NecronLordDestroyer.lightningstorm_id )
+		end
+	end
+
+	-- Antigravitic Lightning Pulse: pull all infantry up into the air rendering them helpless in a large radius; meanwhile lightning strikes damage the victims before throwing all infantry backwards.
+	-- Caster will not be able to move or use abilities throughout the duration of effect.
+	if (self.squad_ai:CanDoAbility( NecronLordDestroyer.antigravity_id ) and self.squad_ai:GetHealthPercentage() > 0.6) then
+	
+		local oUnit = Ability.Filters.CloseInfantryEnemy(self.squad_ai:GetPosition(), 20, 4)
+		if (oUnit ~= nil) then
+			self.squad_ai:DoSpecialAbility( NecronLordDestroyer.antigravity_id )
+		end
+	end
+
+	-- Try to use mass resurrection ability
+	if (self.m_oTimedSpecialAbilities ~= nil) then
+		self.m_oTimedSpecialAbilities:Call()
+	else
+		NecronLordDestroyerTactic.DoTimedSpecialAbilities(self)
+	end
+--[[
+	-- Jump squads' unstuck code call.
+	-- Checks jump-able stuck squads, and force them to jump nearby
+   	if self.squad_ai:CanJump() then
+        	self:SolveStuckCase()
+	end
+]]
+	-- Try to possess to become Deceiver when low on health
+	if (self.squad_ai:GetHealthPercentage() < 0.4) then
+		if (self.squad_ai:IsInCombat() and self.squad_ai:CanPossess()) then
+			self.squad_ai:DoPossess()
+		end
+	end
+end
+
+function NecronLordDestroyerTactic:DoTimedSpecialAbilities()
+
+	-- Try to use mass resurrection ability
+	Ability.DoAbility(self.squad_ai, NecronLordDestroyer.resurrection_id, Ability.PredicateFilters.HasUsableBodies, { ability_id = NecronLordDestroyer.resurrection_id, min_bodies = 5 })
+end
+
+-- Unstuck Code
+function NecronLordDestroyerTactic:SolveStuckCase()
+
+	local iPosition = self.squad_ai:GetPosition()
+    	if iPosition.x ~= self.initialPosition.x or iPosition.z ~= self.initialPosition.z then
+        	self.isStuck = false
+    	elseif (self.squad_ai:IsInStateMove() or self.squad_ai:IsInStateAttackMove()) and not self.squad_ai:IsInCombat()
+    		and iPosition.x == self.initialPosition.x and iPosition.z == self.initialPosition.z then
+        	self.isStuck = true
+    	end
+    	if self.isStuck then
+        	self:ForceSquadJumpNear(iPosition)
+	end
+    	self.initialPosition = self.squad_ai:GetPosition()
+end
+
+function NecronLordDestroyerTactic:ForceSquadJumpNear(pos)
+
+	-- Try to jump somewhere near, perform 16 checks for a viable position
+    	local jumpDisSqr = sqr(self.squad_ai:GetJumpDistance())
+    	for iLoop1 = 1, 16 do
+        	-- Create a jump position
+        	local vJumpPosition = pos
+        	local vDir = cpu_manager:GetDirectionToEnemy(pos)
+        	vJumpPosition.x = vJumpPosition.x + vDir.x * math.random(-20, 50)
+        	vJumpPosition.z = vJumpPosition.z + vDir.z * math.random(-20, 50)
+        	-- Check if target position is in range and if unit is able to jump to target position
+        	local iDistance = distance_sqr(vJumpPosition, pos)
+        	if iDistance < jumpDisSqr and self.squad_ai:CanJumpToPosition(vJumpPosition) then
+            		-- Jump to position
+            		self.squad_ai:DoJump(vJumpPosition)
+            		self.last_jump = g_iGMT
+            		self.m_iLastGatherMove = self.last_jump - 10
+            		return
+		end
+	end
+end
+
+function NecronLordDestroyerTactic:Update()
+
+	if (self:IsComplete()) then
+		return
+	end
+
+	-- State machine
+	if (not InfantryTactic.Update(self)) then
+		return
+	end
+    
+	-- Check if we are in serious trouble
+	self:EmergencyRetreat()
+end

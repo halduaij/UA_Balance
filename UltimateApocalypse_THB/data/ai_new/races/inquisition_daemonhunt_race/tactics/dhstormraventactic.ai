@@ -1,0 +1,58 @@
+----------------------------------------
+-- File: 'dhstormraventactic.ai'
+-- Edited by Thudmeizer     @ 26.06.2016
+
+class 'DHStormRavenTactic' (DaemonhuntVehicleTactic)
+
+DHStormRaven = {}
+
+function DHStormRavenTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("DH StormRaven Tactic")
+	
+	-- Vehicle is a heavy transport
+	self.m_iTransportVehicle = 2
+	self.m_iTransportSlots = 4
+end
+
+--Storm Raven is allowed to retreat even directly after a jump
+function DHStormRavenTactic:SetTarget( target, variant_type )
+
+	self.variant_type = variant_type
+	self.variant_type = variant_type
+       if self.variant_type==Tactic.Variant.Vector then
+    self.target = Vector3f(target)
+       elseif self.variant_type==Tactic.Variant.SquadAI then
+    self.target = target
+       elseif self.variant_type==Tactic.Variant.BaseAI then
+    self.target = target
+       end
+	self.m_iMoveDelay = 0
+	self.last_jump = 0
+end
+
+function DHStormRavenTactic:InitAbilities()
+
+end
+
+function DHStormRavenTactic:DoAbilities()
+	
+	-- Call standard method
+	DaemonhuntVehicleTactic.DoAbilities(self)
+end
+
+function DHStormRavenTactic:Update()
+
+	if (self:IsComplete()) then
+		return
+	end
+	
+	-- State machine
+	if (not VehicleTactic.Update(self)) then
+		return
+	end
+
+	-- Check if we are in serious trouble
+	self:EmergencyRetreat()
+end
+

@@ -1,0 +1,134 @@
+----------------------------------------
+-- File: 'sistersmissionarytactic.ai'
+-- Edited by Thudmeizer @ 11.04.2016
+
+class 'SistersMissionaryTactic' (SistersInfantryTactic)
+
+SistersMissionary = {}
+
+function SistersMissionaryTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Sisters Missionary Tactic")
+end
+
+function SistersMissionaryTactic:IsAttacker()
+
+	-- Check for infiltrators
+	local bNeedSupportDetector = (cpu_manager:EnemyHasUnitInfiltrators() or cpu_manager:EnemyHasBaseInfiltrators())
+		return (cpu_manager:GetTierLevel() >= 2 or bNeedSupportDetector)
+end
+
+function SistersMissionaryTactic:IsDefender()
+
+	-- Check for infiltrators
+	local bNeedSupportDetector = (cpu_manager:EnemyHasUnitInfiltrators() or cpu_manager:EnemyHasBaseInfiltrators())
+		return (cpu_manager:GetTierLevel() >= 2 or bNeedSupportDetector)
+end
+
+-- Missionary is allowed to retreat even directly after a jump
+function SistersMissionaryTactic:SetTarget( target, variant_type )
+
+	self.variant_type = variant_type
+	self.variant_type = variant_type
+       if self.variant_type==Tactic.Variant.Vector then
+    self.target = Vector3f(target)
+       elseif self.variant_type==Tactic.Variant.SquadAI then
+    self.target = target
+       elseif self.variant_type==Tactic.Variant.BaseAI then
+    self.target = target
+       end
+	self.m_iMoveDelay = 0
+	self.last_jump = 0
+end
+
+function SistersMissionaryTactic:JumpAttack()
+	Tactic.JumpAttack(self)
+end
+
+function SistersMissionaryTactic:CanJumpAttached()
+	return true
+end
+
+function SistersMissionaryTactic:InitAbilities()
+
+	-- Init ability ID's
+	if (SistersMissionary.touch_id == nil) then
+		SistersMissionary.touch_id = cpu_manager.stats:GetAbilityID( "UA_sisters_act_of_faith_an_emperors_touch" )
+	end
+	if (SistersMissionary.retribution_id == nil) then
+		SistersMissionary.retribution_id = cpu_manager.stats:GetAbilityID( "UA_sisters_act_of_faith_divine_retribution" )
+	end
+	if (SistersMissionary.passion_id == nil) then
+		SistersMissionary.passion_id = cpu_manager.stats:GetAbilityID( "UA_sisters_act_of_faith_holy_passion" )
+	end
+	if (SistersMissionary.medics_id == nil) then
+		SistersMissionary.medics_id = cpu_manager.stats:GetAbilityID( "UA_sisters_battlefield_medics" )
+	end
+	if (SistersMissionary.run_id == nil) then
+		SistersMissionary.run_id = cpu_manager.stats:GetAbilityID( "UA_all_run!" )	
+	end	
+end
+
+function SistersMissionaryTactic:DoAbilities()
+
+	-- Attached ranged squads do extra damage (Faith cost: 165) 
+	if (self.squad_ai:IsAttached() and self.squad_ai:IsAttacking() and self.squad_ai:CanDoAbility(SistersMissionary.touch_id)) then
+		self.squad_ai:DoSpecialAbility(SistersMissionary.touch_id) 
+	end
+	
+	-- Enemies take additional damage when they attack the attached squad (Faith cost: 120)
+	if (self.squad_ai:IsAttached() and self.squad_ai:IsUnderAttack() and self.squad_ai:CanDoAbility(SistersMissionary.retribution_id)) then
+		self.squad_ai:DoSpecialAbility(SistersMissionary.retribution_id) 
+	end
+	
+	-- Recover morale immediately by Holy Passion. (Faith cost: 60)
+	if (self.squad_ai:IsBroken()) then
+
+		 if (self.squad_ai:CanDoAbility(SistersMissionary.passion_id)) then
+			self.squad_ai:DoSpecialAbility(SistersMissionary.passion_id) 
+		end
+	end
+
+	-- Heals attached/nearby allies squads (Faith cost: 50)
+	if (self.squad_ai:IsAttached() and self.squad_ai:WasRecentlyHurt() and self.squad_ai:GetHealthPercentage() < 0.4) then
+	
+		if (self.squad_ai:CanDoAbility(SistersMissionary.medics_id)) then
+			self.squad_ai:DoSpecialAbility(SistersMissionary.medics_id) 
+		end
+	end
+
+	-- Run if safe
+	if ((not self.squad_ai:IsInCombat() and self.squad_ai:IsInStateMove()) or self.stateID ~= Tactic.StateID.NoState) then
+
+		-- If I am safe I can run
+		if (self.squad_ai:CanDoAbility( SistersMissionary.run_id )) then
+			self.squad_ai:DoSpecialAbility( SistersMissionary.run_id )
+		end
+	end	
+end
+
+function SistersMissionaryTactic:Update()
+
+	if (self:IsComplete()) then
+		return
+	end
+
+	if not InfantryTactic.Update( self ) then
+		return false
+	end
+
+	-- Try to attach to melee in tier 2+
+	if (cpu_manager:GetTierLevel() >= 2 or self.squad_ai:WasRecentlyHurt()) then
+	
+		if (self:TryAttachSquad(true, true, 50, 100, nil) ~= nil) then
+			return
+		end
+		
+		if (self:TryAttachSquad(false, true, 50, 100, nil) == nil) then
+			self:TryAttachSquadMelee()
+		end
+	end
+
+	-- Check if we are in serious trouble
+	self:EmergencyRetreat()
+end

@@ -1,0 +1,54 @@
+----------------------------------------
+-- File: 'darkeldardaisofdestructiontactic.ai'
+-- Edited by Thudmeizer @ 11.11.2016
+
+class 'DarkEldarDaisOfDestructionTactic' (DarkEldarVehicleTactic)
+
+DarkEldarDaisOfDestruction = {}
+
+function DarkEldarDaisOfDestructionTactic:__init( squad_ai ) super( squad_ai )
+	
+	self:SetName("Dark Eldar Dais of Destruction Tactic")
+end
+
+-- Dias is allowed to retreat even directly after a jump
+function DarkEldarDaisOfDestructionTactic:SetTarget( target, variant_type )
+
+	self.variant_type = variant_type
+	self.variant_type = variant_type
+       if self.variant_type==Tactic.Variant.Vector then
+    self.target = Vector3f(target)
+       elseif self.variant_type==Tactic.Variant.SquadAI then
+    self.target = target
+       elseif self.variant_type==Tactic.Variant.BaseAI then
+    self.target = target
+       end
+	self.m_iMoveDelay = 0
+	self.last_jump = 0
+end
+
+function DarkEldarDaisOfDestructionTactic:InitAbilities()
+
+	if (DarkEldarDaisOfDestruction.darklance_id == nil) then
+		DarkEldarDaisOfDestruction.darklance_id = cpu_manager.stats:GetAbilityID( "UA_dark_eldar_darklance_sweep" )	
+	end
+	if (DarkEldarDaisOfDestruction.darklance2_id == nil) then
+		DarkEldarDaisOfDestruction.darklance2_id = cpu_manager.stats:GetAbilityID( "UA_dark_eldar_darklance_sweep2" )	
+	end
+end
+
+function DarkEldarDaisOfDestructionTactic:DoAbilities()
+
+	-- Send massive darklance blast against enemy forces!
+	Ability.DoAbilityPos( self.squad_ai, DarkEldarDaisOfDestruction.darklance_id, Ability.Filters.CloseEnemy, 8 )
+	Ability.DoAbilityPos( self.squad_ai, DarkEldarDaisOfDestruction.darklance2_id, Ability.Filters.CloseEnemy, 12 ) 
+
+	-- We are dying, lower requisites for attacks
+	if (self.squad_ai:WasRecentlyHurt() and self.squad_ai:GetHealthPercentage() < 0.4) then
+		Ability.DoAbilityPos( self.squad_ai, DarkEldarDaisOfDestruction.darklance_id, Ability.Filters.CloseEnemy, 5 )
+		Ability.DoAbilityPos( self.squad_ai, DarkEldarDaisOfDestruction.darklance2_id, Ability.Filters.CloseEnemy, 2 ) 
+	end
+
+	-- Call standard method
+	DarkEldarVehicleTactic.DoAbilities(self)
+end

@@ -1,0 +1,230 @@
+----------------------------------------
+-- File: 'chaosloader.ai'
+-- Edited by Arkhan	@ 23.10.2006
+-- Edited by Thudmeizer @ 12.03.2016
+-- Renamed by Corsix    @ 13.02.2006
+-- Edited by Cylarne_04 2011
+-- Optimized by CannibalToast @ 2025
+
+class 'chaos_marine_race'
+
+-- Constructor
+-- Returns the name of the race
+function chaos_marine_race:GetRaceName()
+	return "chaos_marine_race"
+end
+function chaos_marine_race:__init()
+    -- Tactics lookup table
+    self.unit_tactics = {
+        -- Infantry
+        chaos_squad_slave = SlaveTactic,
+        chaos_squad_cultist = CultistTactic,
+        chaos_marine_bike_squad = ChaosAttackbikeTactic,
+        chaos_marine_squad = ChaosMarineSquadTactic,
+        chaos_havoc_marine_squad = ChaosMarineSquadTactic,
+        chaos_plague_marine_squad = ChaosPlagueSquadTactic,
+        chaos_noise_marine_squad = ChaosNoiseSquadTactic,
+        chaos_rubric_marine_squad = ChaosRubricSquadTactic,
+        chaos_marine_icon_bearer_squad = IconBearerTactic,
+
+        -- Heroes and Special Units
+        chaos_squad_daemon_prince = DaemonPrinceTactic,
+        chaos_squad_daemon_prince_advance_sp = DaemonPrinceAdvancedTactic,
+        chaos_squad_lord = ChaosLordTactic,
+        chaos_squad_lord_terminator = ChaosLordTerminatorTactic,
+        chaos_squad_lord_khorne = ChaosLordsTactic,
+        chaos_squad_lord_nurgle = ChaosLordsTactic,
+        chaos_squad_lord_slaanesh = ChaosLordsTactic,
+        chaos_squad_lord_advance_sp = ChaosLordAdvancedTactic,
+        chaos_squad_lord_undivided = HellSmithTactic,
+        chaos_squad_psyker = ChaosPsykerTactic,
+        chaos_squad_sorcerer = SorcererTactic,
+        chaos_squad_sorcerer_advance_sp = SorcererAdvancedTactic,
+
+        -- Demons and Monsters
+        chaos_squad_bloodthirster = BloodThirsterTactic,
+        chaos_squad_guo = GUOTactic,
+        chaos_squad_keeper_of_secrets = KOSTactic,
+        chaos_squad_lord_of_change = LocTactic,
+        chaos_squad_heldrake = HeldrakeTactic,
+
+        -- Vehicles
+        chaos_squad_rhino = ChaosRhinoTactic,
+        chaos_squad_thunderhawk = ChaosThunderhawkTactic,
+        chaos_squad_assaultpod = AssaultPodTactic,
+        chaos_squad_hell_talon = HellTalonTactic,
+        chaos_squad_deathwheel = DeathWheelTactic,
+        chaos_squad_brass_scorpion = BrassScorpionTactic,
+        chaos_squad_defiler = BrassScorpionTactic,
+        chaos_squad_landraider = ChaosLandRaiderTactic,
+
+        -- Titans
+        chaos_squad_warhound_titan = TitanTactic,
+        chaos_squad_reaver_titan = TitanTactic
+    }
+
+    -- Building tactics lookup table
+    self.building_tactics = {
+        chaos_sacrificial_circle = ChaosDeepstrikeTactic,
+        chaos_machine_pit = ChaosDeepstrikeTactic,
+        chaos_greater_sacrificial_circle = ChaosDeepstrikeTactic,
+        chaos_temple = ChaosDeepstrikeTactic,
+        chaos_warpforge = ChaosDeepstrikeTactic,
+        chaos_warpgate = ChaosDeepstrikeTactic,
+        chaos_hq = ChaosHQTactic,
+        chaos_hq_super = ChaosHQSuperTactic,
+        chaos_commander_bomb = ChaosBombTactic,
+        chaos_thermo_plasma_generator = ChaosBigGeneratorTactic
+    }
+
+    -- Generic buildings that use ChaosBuildingTactic
+    self.generic_buildings = {
+        chaos_armoury = true,
+        chaos_listening_post = true,
+        chaos_plasma_generator = true,
+        chaos_shrine_khorne = true,
+        chaos_turret_bolter = true,
+        chaos_wall = true
+    }
+
+    -- Building types lookup table
+    self.building_types = {
+        chaos_hq = { "HQ", 0 },
+        chaos_plasma_generator = { "Generator", 0 },
+        chaos_thermo_plasma_generator = { "BiggerGenerator", 0 },
+        chaos_machine_pit = { "VehicleBuilding", 0 },
+        chaos_armoury = { "Armoury", 0 },
+        chaos_listening_post = { "ListeningPost", 0 },
+        chaos_turret_bolter = { "Turret", 50 },
+        chaos_mine_field = { "Mine", 25 }
+    }
+
+    -- Info lookup table
+    self.info_types = {
+        TurretPower = 400,
+        SupportAllyFactor = 8 / 4,
+        AttackModifier = 10,
+        CriticalRangeIncreasePerTier = 10,
+        MinArmyStrengthPerTier = 750,
+        AttackRatio = 4 / 5,
+        RetreatRatio = 3 / 5,
+        InvisibleBuildings = false,
+        HarassingLeader = "chaos_squad_lord",
+        AutoConstructBuildings = false
+    }
+end
+
+-- This function is called if chaos are the race being played
+function chaos_marine_race:LoadRace(eDifficulty)
+    -- Import strategies
+    import('Races/chaos_marine_race/Strategies/ChaosBuildBaseStrategy.ai')
+    import("Races/chaos_marine_race/Strategies/ChaosStrategyInfo.ai")
+
+    -- Import tactics
+    import('Races/chaos_marine_race/Tactics/ChaosMarineInfantryTactic.ai')
+    import('Races/chaos_marine_race/Tactics/ChaosMarineVehicleTactic.ai')
+    import('Races/chaos_marine_race/Tactics/SlaveTactic.ai')
+    import('Races/chaos_marine_race/Tactics/ChaosCommanders.ai')
+    --import('Races/chaos_marine_race/Tactics/CultistTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/ChaosAttackbikeTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/ChaosMarineSquadTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/ChaosPlagueSquadTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/ChaosNoiseSquadTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/ChaosRubricSquadTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/IconBearerTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/ChaosLordTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/ChaosLordTerminatorTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/ChaosLordAdvancedTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/ChaosLordsTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/HellSmithTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/ChaosPsykerTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/SorcererTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/SorcererAdvancedTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/DaemonPrinceTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/DaemonPrinceAdvancedTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/BloodThirsterTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/GUOTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/KOSTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/LocTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/HeldrakeTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/ChaosThunderhawkTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/ChaosRhinoTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/AssaultPodTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/HellTalonTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/DeathWheelTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/BrassScorpionTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/ChaosLandRaiderTactic.ai')
+    --import('Races/chaos_marine_race/Tactics/TitanTactic.ai')
+    import('Races/chaos_marine_race/Tactics/ChaosBuildingTactic.ai')
+    import('Races/chaos_marine_race/Tactics/ChaosVehicles.ai')
+    return true
+end
+
+-- This function is called even if chaos are not the race being played
+function chaos_marine_race:LoadGlobalInfo()
+    -- Import info files
+    import('Races/chaos_marine_race/Info/chaosunitstats.ai')
+    -- Add chaos unit stats
+    table.insert(UnitStats, ChaosMarineUnitStats)
+    return true
+end
+
+-- Creates build base strategy
+function chaos_marine_race:CreateBuildBaseStrategy()
+    return ChaosBuildBaseStrategy(BuildBaseStrategyInfo)
+end
+
+-- Creates a special tactic for a chaos marine unit
+function chaos_marine_race:CreateTactic(oSquadAI)
+    local sUnitName = oSquadAI:GetSquadName()
+    local eClass = oSquadAI:GetStats():GetClass()
+
+    -- Check if unit has a specific tactic
+    if self.unit_tactics[sUnitName] then
+        return self.unit_tactics[sUnitName](oSquadAI)
+    end
+
+    -- Check for vehicle/air units
+    if (eClass == UnitStatsAI.UC_VehicleLow or
+            eClass == UnitStatsAI.UC_VehicleMed or
+            eClass == UnitStatsAI.UC_VehicleHigh or
+            eClass == UnitStatsAI.UC_AirLow or
+            eClass == UnitStatsAI.UC_AirMed or
+            eClass == UnitStatsAI.UC_AirHigh) then
+        return ChaosMarineVehicleTactic(oSquadAI)
+    end
+
+    -- Default to infantry tactic
+    return ChaosMarineInfantryTactic(oSquadAI)
+end
+
+-- Creates a base tactic
+function chaos_marine_race:CreateBaseTactic(oBuilding)
+    local sBuildingName = oBuilding:GetBaseName()
+
+    -- Check if building has a specific tactic
+    if self.building_tactics[sBuildingName] then
+        return self.building_tactics[sBuildingName](oBuilding)
+    end
+
+    -- Check for generic buildings
+    if self.generic_buildings[sBuildingName] then
+        return ChaosBuildingTactic(oBuilding)
+    end
+
+    return nil
+end
+
+-- Returns a specific information
+function chaos_marine_race:GetInfo(sType)
+    return self.info_types[sType]
+end
+
+-- Returns the building type and threat
+function chaos_marine_race:GetBuildingType(sBuildingName)
+    local buildingInfo = self.building_types[sBuildingName]
+    if buildingInfo then
+        return buildingInfo[1], buildingInfo[2]
+    end
+    return nil, 0
+end

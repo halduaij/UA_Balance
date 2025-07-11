@@ -1,0 +1,101 @@
+----------------------------------------
+-- File: 'darkeldarslavetactic.ai'
+-- Edited by Thudmeizer @ 22.06.2016
+
+class 'DarkEldarSlaveTactic' (EngineerTactic)
+
+DarkEldarSlave = {}
+
+function DarkEldarSlaveTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Dark Eldar Slave Tactic")
+end
+
+function DarkEldarSlaveTactic:IsAttacker()
+	return false
+end
+
+function DarkEldarSlaveTactic:IsDefender()
+	return false
+end
+
+function DarkEldarSlaveTactic:IsAffectedByMorale()
+	return false
+end
+
+function DarkEldarSlaveTactic:InitAbilities()
+--[[
+	if (DarkEldarSlave.run_id == nil) then
+		DarkEldarSlave.run_id = cpu_manager.stats:GetAbilityID( "UA_all_run!" )	
+	end
+
+	if (DarkEldarSlave.foot_id == nil) then
+		DarkEldarSlave.foot_id = cpu_manager.stats:GetAbilityID( "UA_dark_eldar_footonfire" )	
+	end
+]]
+end
+
+function DarkEldarSlaveTactic:DoAbilities()
+--[[
+	-- Run if safe
+	if (not self.squad_ai:IsInCombat() and self.squad_ai:IsInStateMove()) or (self.stateID ~= Tactic.StateID.NoState) then
+
+		-- If I am safe I can run
+		if (self.squad_ai:CanDoAbility( DarkEldarSlave.foot_id )) then
+			self.squad_ai:DoSpecialAbility( DarkEldarSlave.foot_id )
+		elseif (self.squad_ai:CanDoAbility( DarkEldarSlave.run_id )) then
+			self.squad_ai:DoSpecialAbility( DarkEldarSlave.run_id )
+		end
+	end
+]]
+	self:Cannibalize()
+--[[
+	if (cpu_manager:GetTierLevel() < 3) then 
+
+		if (not self.squad_ai:IsBuilding() or self.squad_ai:IsIdle()) then
+	
+			-- Check if we have corpses in range
+			local numCorpses = self.squad_ai:GetNumCorpses(35);
+			if (numCorpses > 0) then
+				self.squad_ai:DoCannibalize();
+			end
+		end
+	end
+
+	if (cpu_manager:GetTierLevel() > 2) then 
+
+		if (not self.squad_ai:IsBuilding() or self.squad_ai:IsIdle()) then
+
+			-- Check if we have corpses in range (get additional souls due to late tier requirements needing far more of them)
+			local numCorpses = self.squad_ai:GetNumCorpses(70);
+			if (numCorpses > 0) then
+				self.squad_ai:DoCannibalize();
+			end
+		end
+	end
+]]
+end
+
+function DarkEldarSlaveTactic:Cannibalize()
+
+	if (not self.squad_ai:IsBuilding()) or self.squad_ai:IsIdle() then
+	
+		-- Check if we have corpses in range
+		local numCorpses = self.squad_ai:GetNumCorpses(70);
+		if (numCorpses > 0) then
+			self.squad_ai:DoCannibalize();
+		end
+	end
+end
+
+function DarkEldarSlaveTactic:Update()
+
+	if (self:IsComplete()) then
+		return
+	end
+	
+	-- State machine
+	if (not EngineerTactic.Update( self )) then
+		return
+	end
+end

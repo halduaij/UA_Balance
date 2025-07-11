@@ -1,0 +1,78 @@
+----------------------------------------
+-- File: 'darkeldarmandraketactic.ai'
+-- Created by Arkhan		@ 06.04.2008
+-- Edited by Thudmeizer		@ 05.04.2016
+
+class 'DarkEldarMandrakeTactic' (DarkEldarInfantryTactic)
+
+DarkEldarMandrake = {}
+
+function DarkEldarMandrakeTactic:__init( squad_ai ) super( squad_ai )
+
+	self:SetName("Mandrake Tactic")
+end
+
+function DarkEldarMandrakeTactic:InitAbilities()
+
+	-- Init ability ID's
+	if (DarkEldarMandrake.leach_id == nil) then
+		DarkEldarMandrake.leach_id = cpu_manager.stats:GetAbilityID( "UA_dark_eldar_soul_leach" )
+	end
+--[[
+	if (DarkEldarMandrake.run_id == nil) then
+		DarkEldarMandrake.run_id = cpu_manager.stats:GetAbilityID( "UA_all_run!" )	
+	end
+]]
+end
+
+function DarkEldarMandrakeTactic:DoAbilities()
+
+	-- Luster of Souls: Restore the strength of your squad by concealing them and regaining their health. Exchange this great ritual in exchange for souls.
+	if (self.squad_ai:WasRecentlyHurt() and self.squad_ai:GetHealthPercentage() < 0.4) then
+
+		Ability.DoAbilityArea(self.squad_ai, DarkEldarMandrake.leach_id, Ability.Filters.CloseSquadEnemy, 15, 4)
+		Ability.DoAbilityArea(self.squad_ai, DarkEldarMandrake.leach_id, Ability.Filters.CloseCommanderEnemy, 15, 1)
+	end
+--[[
+	-- Run if safe
+	if ((not self.squad_ai:IsInCombat() and self.squad_ai:IsInStateMove()) or self.stateID ~= Tactic.StateID.NoState) then
+
+		-- If I am safe I can run
+		if (self.squad_ai:CanDoAbility( DarkEldarMandrake.run_id )) then
+			self.squad_ai:DoSpecialAbility( DarkEldarMandrake.run_id )
+		end
+	end
+]]
+	-- Call basic DoAbilities methods
+	DarkEldarInfantryTactic.DoAbilities(self)
+end
+
+function DarkEldarMandrakeTactic:Reinforce()
+
+	-- Check if we are reinforcing
+	if (self.squad_ai:IsReinforcing()) then
+		return
+	end
+	
+	-- If I am broken, don't upgrade!
+	if (self:IsAffectedByMorale() and self.squad_ai:IsBroken()) then
+		return
+	end
+	
+	-- Don't reinforce squads in critical condition
+	if (self.squad_ai:GetNumTroopers() <= self.squad_ai:GetMaxTroopers() / 3 and self.squad_ai:IsUnderAttack()) then
+		return
+	end
+
+	-- Check resources
+	local iRequisition = resource_manager:GetResourceAmount():Get(ResourceAmount.RT_Requisition)
+	if ((iRequisition < 800 or self.m_bPowerCost) and not Tactic.Options.can_reinforce) then
+		return
+	end
+	
+	-- Always try to reinforce, as long as I have money
+	if (self.squad_ai:CanReinforce( false, 0 ) and cpu_manager:GetTierLevel() >= 2) then
+		self.squad_ai:DoReinforce( false, 0 )
+	end
+end
+
