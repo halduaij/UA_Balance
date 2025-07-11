@@ -10,6 +10,10 @@
 
 local VerifiedAI = {}
 
+-- Verification state to avoid repeated expensive checks
+VerifiedAI.VerificationDone = false
+VerifiedAI.Verified = false
+
 -- Performance optimization constants
 local CACHE_SIZE = 50  -- Reduced for better compatibility
 local UPDATE_INTERVAL = 0.1
@@ -1204,6 +1208,10 @@ end
 -- Export the verified AI improvements
 -- VERIFIED: Safety check function to prevent fatal errors
 function VerifiedAI.VerifyAPIs()
+    if VerifiedAI.VerificationDone then
+        return VerifiedAI.Verified
+    end
+
     local verified_apis = {
         -- Core APIs that must exist
         cpu_manager = cpu_manager ~= nil,
@@ -1245,17 +1253,24 @@ function VerifiedAI.VerifyAPIs()
     -- Log missing APIs
     if #missing_apis > 0 then
         aitrace("AI Warning: Missing APIs: " .. table.concat(missing_apis, ", "))
+        VerifiedAI.VerificationDone = true
+        VerifiedAI.Verified = false
         return false
     end
-    
+
     aitrace("AI: All required APIs verified successfully")
+    VerifiedAI.VerificationDone = true
+    VerifiedAI.Verified = true
     return true
 end
 
 -- VERIFIED: Safe wrapper for all VerifiedAI function calls
 function VerifiedAI.SafeCall(func_name, ...)
-    -- Verify APIs first
-    if not VerifiedAI.VerifyAPIs() then
+    -- Verify APIs once and cache result
+    if not VerifiedAI.VerificationDone then
+        VerifiedAI.Verified = VerifiedAI.VerifyAPIs()
+    end
+    if not VerifiedAI.Verified then
         aitrace("AI Error: Cannot call " .. func_name .. " - missing required APIs")
         return nil
     end
@@ -1294,7 +1309,23 @@ end
 
 -- VERIFIED: Safe tier progression with full error handling
 function VerifiedAI.SafeTierProgression(build_strategy, current_tier, game_time)
-    -- Use safe wrapper for all calls
+    -- Basic tier progression logic with error handling
+    local status, err = pcall(function()
+        if not build_strategy or not build_strategy.SaveRessources then return end
+
+        if current_tier < 2 and game_time > 240 then
+            build_strategy:SaveRessources(true, "Tier1")
+        elseif current_tier < 3 and game_time > 480 then
+            build_strategy:SaveRessources(true, "Tier2")
+        elseif current_tier < 4 and game_time > 720 then
+            build_strategy:SaveRessources(true, "Tier3")
+        end
+    end)
+
+    if not status and aitrace then
+        aitrace("VerifiedAI.SafeTierProgression error: " .. tostring(err))
+    end
+end
 
 -- VERIFIED: Optimal resource planning using RTS game economic theory
 function VerifiedAI.OptimalResourcePlanning(player_stats, game_time, current_tier, threat_level, build_strategy)
@@ -1617,32 +1648,34 @@ function VerifiedAI.MathematicalDecisionMaking(player_stats, game_time, current_
     
     return decision
 end
+
+-- VERIFIED: Safe AI decision helper
+function VerifiedAI.SafeDecision(build_strategy, current_tier, game_time)
     local resource_efficiency = VerifiedAI.SafeCall("CalculateResourceEfficiency", cpu_manager.player_stats)
     if not resource_efficiency then
         aitrace("AI Warning: Could not calculate resource efficiency")
         return "SAFE_MODE"
     end
-    
+
     local enemy_player = cpu_manager:FindClosestEnemyPlayer()
     local threat_level = VerifiedAI.SafeCall("CalculateThreatLevel", enemy_player)
     if not threat_level then
         threat_level = 0  -- Safe default
     end
-    
+
     local tier_priority = VerifiedAI.SafeCall("CalculateTierPriority", current_tier, game_time, resource_efficiency, threat_level)
     if not tier_priority then
         aitrace("AI Warning: Could not calculate tier priority")
         return "SAFE_MODE"
     end
-    
-    -- Make safe decisions
+
     if tier_priority > 150 then
         if build_strategy and build_strategy.SaveRessources then
             build_strategy:SaveRessources(true, "Tier Advancement")
         end
         return "TIER_ADVANCEMENT"
     end
-    
+
     return "NORMAL_MODE"
 end
 
