@@ -39,7 +39,7 @@ end
 -- Enhanced table operations (Lua 5.1 compatible)
 function AI_Improvements.TableShallowCopy(orig)
     local copy = AI_Improvements.ObjectPool:Get()
-    for k, v in orig do
+    for k, v in pairs(orig) do
         copy[k] = v
     end
     return copy
@@ -47,7 +47,7 @@ end
 
 function AI_Improvements.TableDeepCopy(orig)
     local copy = AI_Improvements.ObjectPool:Get()
-    for k, v in orig do
+    for k, v in pairs(orig) do
         if type(v) == "table" then
             copy[k] = AI_Improvements.TableDeepCopy(v)
         else
@@ -65,7 +65,7 @@ function AI_Improvements.FastTableSearch(tbl, value)
         return AI_Improvements.TableCache[cache_key]
     end
     
-    for k, v in tbl do
+    for k, v in pairs(tbl) do
         if v == value then
             AI_Improvements.TableCache[cache_key] = k
             return k
@@ -353,14 +353,14 @@ end
 -- Enhanced decision making with weighted random selection
 function AI_Improvements.WeightedRandomChoice(options)
     local total_weight = 0
-    for _, option in options do
+    for _, option in pairs(options) do
         total_weight = total_weight + option.weight
     end
     
     local random_value = math.random() * total_weight
     local current_weight = 0
     
-    for _, option in options do
+    for _, option in pairs(options) do
         current_weight = current_weight + option.weight
         if random_value <= current_weight then
             return option.value

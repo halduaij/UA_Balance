@@ -313,7 +313,7 @@ function EnhancedConfig:GetCurrentConfig()
     local merged_config = self:DeepCopyTable(base_config)
     
     -- Apply race-specific modifications
-    for key, value in race_config do
+    for key, value in pairs(race_config) do
         if type(value) == "table" then
             merged_config[key] = self:DeepCopyTable(value)
         else
@@ -322,7 +322,7 @@ function EnhancedConfig:GetCurrentConfig()
     end
     
     -- Apply map-specific modifications
-    for key, value in map_config do
+    for key, value in pairs(map_config) do
         merged_config[key] = value
     end
     
@@ -356,7 +356,7 @@ end
 -- Utility functions
 function EnhancedConfig:DeepCopyTable(orig)
     local copy = {}
-    for k, v in orig do
+    for k, v in pairs(orig) do
         if type(v) == "table" then
             copy[k] = self:DeepCopyTable(v)
         else
@@ -369,7 +369,7 @@ end
 function EnhancedConfig:InterpolateConfig(config1, config2, factor)
     local result = {}
     
-    for key, value1 in config1 do
+    for key, value1 in pairs(config1) do
         if type(value1) == "number" and config2[key] and type(config2[key]) == "number" then
             result[key] = value1 + (config2[key] - value1) * factor
         elseif type(value1) == "table" and config2[key] and type(config2[key]) == "table" then
@@ -465,7 +465,7 @@ function EnhancedConfig:ValidateConfig(config)
         "update_frequency", "cache_size"
     }
     
-    for _, field in required_fields do
+    for _, field in pairs(required_fields) do
         if not config[field] then
             return false, "Missing required field: " .. field
         end

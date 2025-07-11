@@ -1896,7 +1896,7 @@ function MarineBuildBaseStrategy:BuildFlexible()
                 if not self:ResearchProgress(tierLevelResearch) then
                     debug_print("[COMMANDER] Need tier level research for current tier " .. iTier)
                     -- Find the research entry in buildPrograms
-                    for _, entry in pairs(buildPrograms) do
+        for _, entry in pairs(buildPrograms) do
                         if type(entry) == "table" and entry[5] == "Research" and entry[6] == tierLevelResearch then
                             debug_print("[COMMANDER] Queueing tier level research: " .. tierLevelResearch)
                             self:DynamicResearch(entry[6], entry[1], entry[2], entry[3], entry[4], 0, nil, 0, true)
