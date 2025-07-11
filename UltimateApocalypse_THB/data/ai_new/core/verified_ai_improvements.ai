@@ -31,7 +31,7 @@ end
 function VerifiedAI.ObjectPool:Return(obj)
     if self.count < CACHE_SIZE then
         -- Clear the object safely
-        for k in obj do
+        for k in pairs(obj) do
             obj[k] = nil
         end
         self.count = self.count + 1
@@ -42,7 +42,7 @@ end
 -- VERIFIED: Table operations (Lua 5.1 compatible)
 function VerifiedAI.TableShallowCopy(orig)
     local copy = VerifiedAI.ObjectPool:Get()
-    for k, v in orig do
+    for k, v in pairs(orig) do
         copy[k] = v
     end
     return copy
@@ -283,14 +283,14 @@ end
 -- VERIFIED: Weighted random selection
 function VerifiedAI.WeightedRandomChoice(options)
     local total_weight = 0
-    for _, option in options do
+    for _, option in pairs(options) do
         total_weight = total_weight + option.weight
     end
     
     local random_value = math.random() * total_weight
     local current_weight = 0
     
-    for _, option in options do
+    for _, option in pairs(options) do
         current_weight = current_weight + option.weight
         if random_value <= current_weight then
             return option.value
@@ -301,7 +301,7 @@ function VerifiedAI.WeightedRandomChoice(options)
 end
 
 -- VERIFIED: Performance monitoring using only os.clock()
-function VerifiedAI.PerformanceMonitor = {
+VerifiedAI.PerformanceMonitor = {
     timers = {},
     counters = {},
     last_cleanup = 0
@@ -358,7 +358,7 @@ function VerifiedAI.FastTableSearch(tbl, value)
         return VerifiedAI.TableCache[cache_key]
     end
     
-    for k, v in tbl do
+    for k, v in pairs(tbl) do
         if v == value then
             VerifiedAI.TableCache[cache_key] = k
             return k
@@ -1202,8 +1202,6 @@ function VerifiedAI.MonitorTierProgression(game_time, current_tier, research_com
 end
 
 -- Export the verified AI improvements
-return VerifiedAI 
-
 -- VERIFIED: Safety check function to prevent fatal errors
 function VerifiedAI.VerifyAPIs()
     local verified_apis = {
@@ -1967,3 +1965,5 @@ function VerifiedAI.ApplyModernAI(build_strategy, game_time, current_tier)
         learning = learning_data
     }
 end 
+return VerifiedAI
+
