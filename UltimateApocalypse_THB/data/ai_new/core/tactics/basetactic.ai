@@ -13,7 +13,7 @@ BaseTactic.UtilityFunctions =
 {
 	InitAbilitiesTable = function(abilities)
 		if table.getn(abilities) > 0 and abilities[1][1] == nil then
-			for i in abilities do
+			for i=1,table.getn(abilities) do
 				local ability_id = cpu_manager.stats:GetAbilityID( abilities[i][2] )
 				abilities[i][1] = ability_id
 			end
@@ -23,7 +23,7 @@ BaseTactic.UtilityFunctions =
 	-- if args is a table, set attribute ability_id to the id of the ability
 	SetArgAbilityID = function(abilities)
 		if table.getn(abilities) > 0 and abilities[1][1] ~= nil then
-			for i in abilities do
+			for i=1,table.getn(abilities) do
 				if (type(abilities[i][4]) == "table") then
 					abilities[i][4].ability_id = abilities[i][1]
 				end
@@ -32,7 +32,7 @@ BaseTactic.UtilityFunctions =
 	end,
 	
 	DoAbilities = function(abilities,ai,do_functor)
-		for i in abilities do
+		for i=1,table.getn(abilities) do
 			local ability_id = abilities[i][1]
 			if ability_id ~= nil then
 

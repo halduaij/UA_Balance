@@ -107,7 +107,7 @@ function foreach_bind( tbl, func, ... )
 	local ret_val = nil
 	
 	local arg_count = arg.n
-	for i in tbl do
+	for i=1,table.getn(tbl) do
 		if( arg_count == 0) then
 			ret_val = func( tbl[i] )
 		elseif( arg_count == 1) then

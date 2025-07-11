@@ -1218,7 +1218,7 @@ function InfantryTactic:CommanderAttached()
 
    if self.squad_ai:IsAttached() then
 
-	   for i in self.commander do
+	   for i=1,table.getn(self.commander) do
 
 	      if self.squad_ai:HasSquadAttached( self.commander[i][1] ) then
 			   return true
