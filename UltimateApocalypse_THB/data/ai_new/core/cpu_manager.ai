@@ -151,7 +151,12 @@ function CpuManager:__init(cpu_player_id)
 	self.terrain_analyzer = self.cpu_player:GetTerrainAnalyzer()
 	self.start_pos = self.cpu_player:GetStartingPosition()
 
-	math.randomseed(math.mod(os.time(), 10000) + (self.player_id - 1000) * 1000)
+        math.randomseed(math.mod(os.time(), 10000) + (self.player_id - 1000) * 1000)
+
+        -- Initialize enhanced AI modules if available
+        if VerifiedAI and VerifiedAI.Initialize then
+                VerifiedAI.Initialize()
+        end
 
 	dbAssert(self.start_pos ~= nil)
 
