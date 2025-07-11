@@ -131,7 +131,6 @@ function DeathwatchTactic:Reinforce()
 			end
 		end
 	end
---[[
 -- Don't reinforce more than 12 squad members -- they both get stuck or don't capture points properly
 -- if (not self.squad_ai:IsReinforcing() and self.squad_ai:GetNumTroopers() < 12) then
 --         if (self.squad_ai:CanReinforce(true, 0)) then
@@ -140,6 +139,5 @@ function DeathwatchTactic:Reinforce()
 --                 self.squad_ai:DoReinforce(false, 0)
 --         end
 -- end
---]]
 end
-]]
+--]]

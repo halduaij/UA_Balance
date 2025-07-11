@@ -1274,21 +1274,22 @@ function VerifiedAI.SafeCall(func_name, ...)
         aitrace("AI Error: Cannot call " .. func_name .. " - missing required APIs")
         return nil
     end
-    
+
     -- Check if function exists
     if not VerifiedAI[func_name] then
         aitrace("AI Error: Function " .. func_name .. " does not exist")
         return nil
     end
-    
+
+    -- Store varargs for nested pcall
+    local args = { ... }
+
     -- Call function with error handling
-    local success, result = pcall(VerifiedAI[func_name], ...)
-    
     if not success then
         aitrace("AI Error: " .. func_name .. " failed: " .. tostring(result))
         return nil
     end
-    
+
     return result
 end
 
