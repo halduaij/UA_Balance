@@ -99,7 +99,7 @@ function ProfileAllEnd()
   
 	debug.sethook(nil, "c")   -- cannot change `T' during traversal!
 	aipushtrace("Start Profiling")
-	for k,v in T do
+	for k,v in pairs(T) do
 		if v.count > 100 then
 			
 			aitrace( string.format( "%s | %s | %d | %s | %d | %f", tostring(v.name), tostring(v.what), v.line, v.source, v.count, v.time ) )

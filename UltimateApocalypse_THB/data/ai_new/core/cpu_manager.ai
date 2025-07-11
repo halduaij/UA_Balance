@@ -53,6 +53,10 @@ import('Races/RaceLoader.ai')
 -- AI Config
 import('Core/AIConfig.ai')
 
+-- Advanced decision modules
+import('Core/verified_ai_improvements.ai')
+import('Core/mathematical_decision_theory.ai')
+
 VALUE_ALWAYS_ATTACK = -100000
 
 
@@ -147,7 +151,12 @@ function CpuManager:__init(cpu_player_id)
 	self.terrain_analyzer = self.cpu_player:GetTerrainAnalyzer()
 	self.start_pos = self.cpu_player:GetStartingPosition()
 
-	math.randomseed(math.mod(os.time(), 10000) + (self.player_id - 1000) * 1000)
+        math.randomseed(math.mod(os.time(), 10000) + (self.player_id - 1000) * 1000)
+
+        -- Initialize enhanced AI modules if available
+        if VerifiedAI and VerifiedAI.Initialize then
+                VerifiedAI.Initialize()
+        end
 
 	dbAssert(self.start_pos ~= nil)
 
@@ -2141,7 +2150,7 @@ function CpuManager:FindClosestBase(from_pos, min_displacement, player_stats, fu
 	table.sort(candidate_bases, function(e1, e2) return e1.distance < e2.distance end)
 
 	-- Find "best base"
-	for i, candidate in candidate_bases do
+	for i, candidate in pairs(candidate_bases) do
 		local base = candidate.base
 		local base_pos = candidate.pos
 
@@ -2201,7 +2210,7 @@ function CpuManager:FindClosestStrategicPoint(from_pos, min_displacement, player
 	-- sort candidates so we start with closest
 	table.sort(candidate_points, function(e1, e2) return e1.distance < e2.distance end)
 
-	for i, candidate in candidate_points do
+	for i, candidate in pairs(candidate_points) do
 		local strat_ai = candidate.point
 		local strat_pos = candidate.pos
 
@@ -2362,7 +2371,7 @@ function CpuManager:FindClosestFriendlyBase(from_pos, min_displacement, functor)
 	table.sort(candidate_bases, function(e1, e2) return e1.distance < e2.distance end)
 
 	-- Find "best base"
-	for i, candidate in candidate_bases do
+	for i, candidate in pairs(candidate_bases) do
 		local base = candidate.base
 		local base_pos = base:GetPosition()
 

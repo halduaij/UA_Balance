@@ -132,9 +132,9 @@ function BuildOrderStrategy:WaitOnNextPlan()
 							not strat_ai:HasWeapons() then
                             local strat_pos = strat_ai:GetEntity():GetPosition()
                             if self.is_capturing_pos ~= nil then
-                                for i in self.is_capturing_pos do
-                                    aitrace("Already capping point "..self.is_capturing_pos[i].x.."; "..self.is_capturing_pos[i].y.."; "..self.is_capturing_pos[i].z)
-                                    if ( distance_sqr( self.is_capturing_pos [i], strat_pos ) ) == 0 then
+                                for i, pos in ipairs(self.is_capturing_pos) do
+                                    aitrace("Already capping point "..pos.x.."; "..pos.y.."; "..pos.z)
+                                    if ( distance_sqr( pos, strat_pos ) ) == 0 then
                                         fail = 1
                                     end
                                     if fail == 1 then break end
