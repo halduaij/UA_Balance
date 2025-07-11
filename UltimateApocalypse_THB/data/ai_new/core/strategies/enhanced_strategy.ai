@@ -201,7 +201,8 @@ function EnhancedStrategy:ApplyLearning(options, context)
     -- Adjust weights based on success rate
     for i, option in pairs(adjusted_options) do
         local success_rate = self.success_rate[option.value] or 0.5
-        local adjustment = (success_rate - 0.5) * 0.3  -- ±30% adjustment
+        -- Adjust up to roughly 30 percent based on success
+        local adjustment = (success_rate - 0.5) * 0.3
         
         option.weight = math.max(1, option.weight * (1 + adjustment))
     end

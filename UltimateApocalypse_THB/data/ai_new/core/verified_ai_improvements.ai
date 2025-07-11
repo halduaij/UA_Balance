@@ -1282,9 +1282,7 @@ function VerifiedAI.SafeCall(func_name, ...)
     end
     
     -- Call function with error handling
-    local success, result = pcall(function()
-        return VerifiedAI[func_name](...)
-    end)
+    local success, result = pcall(VerifiedAI[func_name], ...)
     
     if not success then
         aitrace("AI Error: " .. func_name .. " failed: " .. tostring(result))
